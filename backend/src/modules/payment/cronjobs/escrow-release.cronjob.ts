@@ -30,12 +30,15 @@ export class EscrowReleaseCronjob {
     this.logger.log('Starting escrow release processing...');
 
     // Step 1: Find holding escrows for completed orders and create pending releases
-    const createResult = await this.escrowService.processCompletedOrderReleases();
+    const createResult =
+      await this.escrowService.processCompletedOrderReleases();
 
     createResult.match(
       (count) => {
         if (count > 0) {
-          this.logger.log(`Created ${count} pending release(s) for completed orders`);
+          this.logger.log(
+            `Created ${count} pending release(s) for completed orders`,
+          );
         }
       },
       (error) => {
@@ -46,7 +49,8 @@ export class EscrowReleaseCronjob {
     );
 
     // Step 2: Process pending releases with retry
-    const processResult = await this.escrowService.processPendingReleasesWithRetry();
+    const processResult =
+      await this.escrowService.processPendingReleasesWithRetry();
 
     processResult.match(
       (count) => {
