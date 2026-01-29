@@ -1,4 +1,0 @@
-# Don't scan these for secrets during build
-src/database/configs/typeorm.config.ts
-.env
-.env.example
