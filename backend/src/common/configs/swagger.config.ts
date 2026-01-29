@@ -24,7 +24,7 @@ export function setupSwagger(
     description = 'The API documentation used for FE from NestJS backend',
     version = '1.0',
     path = 'api/docs',
-    enabled = process.env.NODE_ENV !== 'production',
+    enabled = process.env.NODE_ENV?.trim() !== 'production',
   } = options; //default values
   if (!enabled) {
     return;

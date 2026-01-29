@@ -5,13 +5,8 @@ import * as entities from '../typeorm/entities';
 export const getTypeOrmConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => {
-  const nodeEnv = configService.get('NODE_ENV');
+  const nodeEnv = configService.get<string>('NODE_ENV')?.trim();
   const isProduction = nodeEnv === 'production';
-
-  // Debug log - remove after checking
-  console.log('[TypeORM Config] NODE_ENV:', nodeEnv);
-  console.log('[TypeORM Config] isProduction:', isProduction);
-  console.log('[TypeORM Config] logging:', !isProduction);
 
   return {
     type: 'postgres',

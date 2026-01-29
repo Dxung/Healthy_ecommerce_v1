@@ -6,9 +6,6 @@ import { getValidationPipeOptions } from './common/configs/validation.config';
 import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  // Debug - remove after checking
-  console.log('[main.ts] NODE_ENV from process.env:', process.env.NODE_ENV);
-
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS
@@ -30,7 +27,7 @@ async function bootstrap() {
 
   app.useGlobalPipes(
     new ValidationPipe(
-      getValidationPipeOptions(process.env.NODE_ENV === 'production'),
+      getValidationPipeOptions(process.env.NODE_ENV?.trim() === 'production'),
     ),
   );
 
