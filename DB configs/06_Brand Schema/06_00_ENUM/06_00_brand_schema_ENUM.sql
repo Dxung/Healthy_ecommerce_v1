@@ -1,0 +1,3 @@
+-- Brand Schema ENUMs
+-- Currently no custom ENUMs needed for brand_schema
+-- Add ENUMs here if needed in the future

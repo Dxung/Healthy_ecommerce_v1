@@ -10,7 +10,6 @@ import {
 import { ORMOrder } from './orm.order.entity';
 import { ORMProduct } from '../product';
 import { ORMProductVariant } from '../product';
-import { RefundStatus } from './enums/refund-status.enum';
 
 /**
  * ORM Entity for order_items table.

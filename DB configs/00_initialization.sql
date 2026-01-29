@@ -1,11 +1,11 @@
 -- Enable extensions
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";  -- For fuzzy text search on food_presets.name
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- For gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";  -- For gen_random_bytes() used in uuidv7()
 
 -- ============================================================================
 -- UUID v7 Function
 -- Generates time-sortable UUIDs (millisecond precision + random)
--- Compatible with PostgreSQL without pg_uuidv7 extension
+-- Required for PostgreSQL 17 (native uuidv7() only available in PostgreSQL 18+)
 -- ============================================================================
 CREATE OR REPLACE FUNCTION uuidv7() RETURNS uuid AS $$
 DECLARE
@@ -49,6 +49,7 @@ CREATE SCHEMA IF NOT EXISTS auth_schema;
 CREATE SCHEMA IF NOT EXISTS location_schema;
 CREATE SCHEMA IF NOT EXISTS session_schema;
 CREATE SCHEMA IF NOT EXISTS authorization_schema;
+CREATE SCHEMA IF NOT EXISTS brand_schema;
 CREATE SCHEMA IF NOT EXISTS shop_schema;
 CREATE SCHEMA IF NOT EXISTS product_schema;
 CREATE SCHEMA IF NOT EXISTS penalty_schema;
