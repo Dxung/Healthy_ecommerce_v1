@@ -118,9 +118,6 @@ export class ORMOrderMapper {
       ormOrderItem.quantity,
       Number(ormOrderItem.totalPrice),
       ormOrderItem.createdAt,
-      ormOrderItem.refundStatus,
-      ormOrderItem.refundedAt,
-      ormOrderItem.refundReason,
     );
   }
 
@@ -140,9 +137,6 @@ export class ORMOrderMapper {
     ormOrderItem.quantity = domainOrderItem.quantity;
     ormOrderItem.totalPrice = domainOrderItem.totalPrice;
     ormOrderItem.createdAt = domainOrderItem.createdAt;
-    ormOrderItem.refundStatus = domainOrderItem.refundStatus;
-    ormOrderItem.refundedAt = domainOrderItem.refundedAt;
-    ormOrderItem.refundReason = domainOrderItem.refundReason;
     return ormOrderItem;
   }
 

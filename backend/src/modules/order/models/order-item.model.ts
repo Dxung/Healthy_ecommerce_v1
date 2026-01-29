@@ -1,15 +1,10 @@
 import { v7 as uuidv7 } from 'uuid';
-import { RefundStatus } from 'src/database/typeorm/entities/order/enums/refund-status.enum';
 
 /**
  * OrderItem Domain Model
  * Represents a single product item in an order with snapshotted info.
  */
 export class OrderItem {
-  private _refundStatus: RefundStatus;
-  private _refundedAt: Date | null;
-  private _refundReason: string | null;
-
   constructor(
     private readonly _id: string,
     private readonly _orderId: string,
@@ -22,14 +17,7 @@ export class OrderItem {
     private readonly _quantity: number,
     private readonly _totalPrice: number,
     private readonly _createdAt: Date,
-    refundStatus: RefundStatus = RefundStatus.NONE,
-    refundedAt: Date | null = null,
-    refundReason: string | null = null,
-  ) {
-    this._refundStatus = refundStatus;
-    this._refundedAt = refundedAt;
-    this._refundReason = refundReason;
-  }
+  ) {}
 
   /**
    * Creates a new order item with snapshotted product info
@@ -104,49 +92,5 @@ export class OrderItem {
 
   get createdAt(): Date {
     return this._createdAt;
-  }
-
-  get refundStatus(): RefundStatus {
-    return this._refundStatus;
-  }
-
-  get refundedAt(): Date | null {
-    return this._refundedAt;
-  }
-
-  get refundReason(): string | null {
-    return this._refundReason;
-  }
-
-  // ======================== BUSINESS LOGIC ========================
-
-  /**
-   * Check if this item has been refunded
-   */
-  isRefunded(): boolean {
-    return this._refundStatus === RefundStatus.REFUNDED;
-  }
-
-  /**
-   * Check if this item can be reviewed (not refunded)
-   */
-  canBeReviewed(): boolean {
-    return this._refundStatus === RefundStatus.NONE;
-  }
-
-  /**
-   * Mark this item as refunded
-   */
-  markAsRefunded(reason: string): void {
-    this._refundStatus = RefundStatus.REFUNDED;
-    this._refundedAt = new Date();
-    this._refundReason = reason;
-  }
-
-  /**
-   * Mark this item as pending refund
-   */
-  markRefundPending(): void {
-    this._refundStatus = RefundStatus.PENDING;
   }
 }

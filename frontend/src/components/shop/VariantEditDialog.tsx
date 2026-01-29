@@ -35,15 +35,11 @@ export function VariantEditDialog({
 }: VariantEditDialogProps) {
   const [name, setName] = useState(variant.name);
   const [sku, setSku] = useState(variant.sku || '');
-  const [barcode, setBarcode] = useState(variant.barcode || '');
   const [price, setPrice] = useState(String(variant.price));
   const [compareAtPrice, setCompareAtPrice] = useState(
     variant.compareAtPrice ? String(variant.compareAtPrice) : ''
   );
   const [stockQuantity, setStockQuantity] = useState(String(variant.stockQuantity));
-  const [lowStockThreshold, setLowStockThreshold] = useState(
-    String(variant.lowStockThreshold)
-  );
   const [imageUrl, setImageUrl] = useState(variant.imageUrl || '');
   const [isActive, setIsActive] = useState(variant.isActive);
   const [submitting, setSubmitting] = useState(false);
@@ -68,8 +64,6 @@ export function VariantEditDialog({
 
       if (name !== variant.name) updateData.name = name.trim();
       if (sku !== (variant.sku || '')) updateData.sku = sku.trim() || null;
-      if (barcode !== (variant.barcode || ''))
-        updateData.barcode = barcode.trim() || null;
       if (priceNum !== variant.price) updateData.price = priceNum;
 
       const compareNum = compareAtPrice ? parseFloat(compareAtPrice) : null;
@@ -77,10 +71,6 @@ export function VariantEditDialog({
         updateData.compareAtPrice = compareNum;
 
       if (stockNum !== variant.stockQuantity) updateData.stockQuantity = stockNum;
-
-      const thresholdNum = parseInt(lowStockThreshold) || 0;
-      if (thresholdNum !== variant.lowStockThreshold)
-        updateData.lowStockThreshold = thresholdNum;
 
       if (imageUrl !== (variant.imageUrl || ''))
         updateData.imageUrl = imageUrl.trim() || null;
@@ -149,7 +139,7 @@ export function VariantEditDialog({
             </div>
           </div>
 
-          {/* Stock Row */}
+          {/* Stock & SKU Row */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="stockQuantity">Tồn kho *</Label>
@@ -162,36 +152,12 @@ export function VariantEditDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lowStockThreshold">Ngưỡng cảnh báo</Label>
-              <Input
-                id="lowStockThreshold"
-                type="number"
-                value={lowStockThreshold}
-                onChange={(e) => setLowStockThreshold(e.target.value)}
-                placeholder="10"
-              />
-            </div>
-          </div>
-
-          {/* SKU & Barcode */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
               <Label htmlFor="sku">SKU</Label>
               <Input
                 id="sku"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
                 placeholder="Mã SKU"
-                className="font-mono"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="barcode">Barcode</Label>
-              <Input
-                id="barcode"
-                value={barcode}
-                onChange={(e) => setBarcode(e.target.value)}
-                placeholder="Mã vạch"
                 className="font-mono"
               />
             </div>
