@@ -18,7 +18,6 @@ import { ORMProductVariant } from '../product';
 @Entity('order_items', { schema: 'order_schema' })
 @Index('idx_order_items_order_id', ['orderId'])
 @Index('idx_order_items_product_id', ['productId'])
-@Index('idx_order_items_refund_status', ['refundStatus'])
 export class ORMOrderItem {
   @PrimaryColumn({ type: 'uuid' })
   id: string;
@@ -57,26 +56,6 @@ export class ORMOrderItem {
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;
-
-  // ======================== REFUND TRACKING ========================
-
-  /** Refund status of this item */
-  @Column({
-    name: 'refund_status',
-    type: 'enum',
-    enum: RefundStatus,
-    enumName: 'refund_status_enum',
-    default: RefundStatus.NONE,
-  })
-  refundStatus: RefundStatus;
-
-  /** Timestamp when the item was refunded */
-  @Column({ name: 'refunded_at', type: 'timestamp', nullable: true })
-  refundedAt: Date | null;
-
-  /** Reason for refund (if refunded) */
-  @Column({ name: 'refund_reason', type: 'text', nullable: true })
-  refundReason: string | null;
 
   // ======================== RELATIONSHIPS ========================
 
