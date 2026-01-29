@@ -86,11 +86,13 @@ export class AuthController {
       .match(
         (result) => {
           // Set sessionToken as HTTP-only cookie
+          const cookieDomain = this.configService.get<string>('COOKIE_DOMAIN');
           response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
             httpOnly: true,
             secure: this.configService.get('NODE_ENV') === 'production',
             sameSite: 'lax',
             maxAge: SESSION_COOKIE_MAX_AGE,
+            ...(cookieDomain && { domain: cookieDomain }),
           });
         },
         (error) => {
@@ -121,11 +123,13 @@ export class AuthController {
       .match(
         (result) => {
           // Set sessionToken as HTTP-only cookie
+          const cookieDomain = this.configService.get<string>('COOKIE_DOMAIN');
           response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
             httpOnly: true,
             secure: this.configService.get('NODE_ENV') === 'production',
             sameSite: 'lax',
             maxAge: SESSION_COOKIE_MAX_AGE,
+            ...(cookieDomain && { domain: cookieDomain }),
           });
         },
         (error) => {
