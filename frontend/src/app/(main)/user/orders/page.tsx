@@ -7,12 +7,12 @@ import {
   type OrderStatus,
   type ApiError,
 } from '@/lib/api';
+import { AccountSidebar } from '@/components/user/AccountSidebar';
 import { OrderCard } from '@/components/order/OrderCard';
 import { OrderDetailDialog } from '@/components/order/OrderDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Loader2, ShoppingBag, Package } from 'lucide-react';
 import { toast } from 'sonner';
-import Link from 'next/link';
 
 const statusTabs: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Tất cả' },
@@ -93,88 +93,101 @@ export default function MyOrdersPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <ShoppingBag className="w-6 h-6 text-primary" />
-        <h1 className="text-2xl font-bold text-gray-900">Đơn hàng của tôi</h1>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex gap-4">
+          {/* Left Sidebar */}
+          <AccountSidebar />
 
-      {/* Status Tabs */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        {statusTabs.map((tab) => (
-          <button
-            key={tab.value}
-            onClick={() => handleStatusChange(tab.value)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-              statusFilter === tab.value
-                ? 'bg-primary text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Orders List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      ) : !orders || orders.items.length === 0 ? (
-        <div className="text-center py-12">
-          <Package className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-medium text-gray-900 mb-2">Chưa có đơn hàng</h2>
-          <p className="text-gray-500 mb-6">
-            {statusFilter === 'all'
-              ? 'Bạn chưa có đơn hàng nào'
-              : `Không có đơn hàng "${statusTabs.find((t) => t.value === statusFilter)?.label}"`}
-          </p>
-          <Link href="/products">
-            <Button>Mua sắm ngay</Button>
-          </Link>
-        </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            {orders.items.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                onViewDetail={handleViewDetail}
-                onCancelOrder={handleCancelOrder}
-                onConfirmDelivery={handleConfirmDelivery}
-              />
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {orders.totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-8">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1 || loading}
-              >
-                Trước
-              </Button>
-              <span className="text-sm text-gray-600">
-                Trang {page} / {orders.totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(orders.totalPages, p + 1))}
-                disabled={page === orders.totalPages || loading}
-              >
-                Sau
-              </Button>
+          {/* Main Content */}
+          <div className="flex-1 bg-white rounded-lg shadow-sm">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <ShoppingBag className="w-6 h-6 text-primary" />
+                <h1 className="text-xl font-semibold text-gray-900">Đơn hàng của tôi</h1>
+              </div>
             </div>
-          )}
-        </>
-      )}
+
+            {/* Status Tabs */}
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {statusTabs.map((tab) => (
+                  <button
+                    key={tab.value}
+                    onClick={() => handleStatusChange(tab.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                      statusFilter === tab.value
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Orders List */}
+            <div className="p-6">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : !orders || orders.items.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+                  <h2 className="text-xl font-medium text-gray-900 mb-2">Chưa có đơn hàng</h2>
+                  <p className="text-gray-500">
+                    {statusFilter === 'all'
+                      ? 'Bạn chưa có đơn hàng nào'
+                      : `Không có đơn hàng "${statusTabs.find((t) => t.value === statusFilter)?.label}"`}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {orders.items.map((order) => (
+                      <OrderCard
+                        key={order.id}
+                        order={order}
+                        onViewDetail={handleViewDetail}
+                        onCancelOrder={handleCancelOrder}
+                        onConfirmDelivery={handleConfirmDelivery}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {orders.totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 mt-8">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page === 1 || loading}
+                      >
+                        Trước
+                      </Button>
+                      <span className="text-sm text-gray-600">
+                        Trang {page} / {orders.totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setPage((p) => Math.min(orders.totalPages, p + 1))}
+                        disabled={page === orders.totalPages || loading}
+                      >
+                        Sau
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Order Detail Dialog */}
       <OrderDetailDialog
