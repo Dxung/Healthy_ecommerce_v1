@@ -12,7 +12,7 @@ import {
  * ORM Entity for brands table.
  * Represents product brands/manufacturers.
  */
-@Entity('brands', { schema: 'product_schema' })
+@Entity('brands', { schema: 'brand_schema' })
 @Index('idx_brands_slug', ['slug'])
 export class ORMBrand {
   @PrimaryColumn({ type: 'uuid' })
@@ -22,7 +22,7 @@ export class ORMBrand {
   name: string;
 
   // Note: Unique constraint is handled by partial index at DB level
-  // CREATE UNIQUE INDEX idx_brands_slug_unique ON product_schema.brands(slug) WHERE deleted_at IS NULL;
+  // CREATE UNIQUE INDEX idx_brands_slug_unique ON brand_schema.brands(slug) WHERE deleted_at IS NULL;
   @Column({ name: 'slug', type: 'varchar', length: 255 })
   slug: string;
 
