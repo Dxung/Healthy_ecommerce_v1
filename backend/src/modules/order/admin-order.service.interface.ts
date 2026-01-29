@@ -50,16 +50,4 @@ export interface IAdminOrderService {
     newStatus: OrderStatus,
     note?: string,
   ): ResultAsync<OrderWithShopAndBuyer, DomainError>;
-
-  /**
-   * Refund a specific order item (admin action)
-   * Marks the item as refunded and hides any associated review.
-   * @param orderItemId - The order item ID to refund
-   * @param reason - The reason for the refund
-   * @returns void on success
-   */
-  refundOrderItem(
-    orderItemId: string,
-    reason: string,
-  ): ResultAsync<void, DomainError>;
 }

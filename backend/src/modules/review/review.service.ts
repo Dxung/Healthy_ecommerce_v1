@@ -290,7 +290,7 @@ export class ReviewService implements IReviewService {
         return okAsync({ canReview: false, reason: 'order_item_not_found' });
       }
 
-      const { item, order } = result;
+      const { order } = result;
 
       // Check buyer
       if (order.buyerId !== userId) {
@@ -302,10 +302,7 @@ export class ReviewService implements IReviewService {
         return okAsync({ canReview: false, reason: 'order_not_completed' });
       }
 
-      // Check refund status
-      if (!item.canBeReviewed()) {
-        return okAsync({ canReview: false, reason: 'item_refunded' });
-      }
+      // TODO: Check refund status via refund_requests table when implemented
 
       // Check existing review
       return this.reviewRepository

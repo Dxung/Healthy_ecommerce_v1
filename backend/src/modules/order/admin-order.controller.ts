@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Post,
   Patch,
   Param,
   Query,
@@ -9,8 +8,6 @@ import {
   Inject,
   UseGuards,
   ParseUUIDPipe,
-  HttpCode,
-  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import type { IAdminOrderService } from './admin-order.service.interface';
@@ -26,7 +23,6 @@ import {
   AdminOrderListResponseDto,
 } from './dto/admin-order-response.dto';
 import { AdminUpdateOrderStatusArgumentDto } from './dto/admin-update-status-argument.dto';
-import { RefundOrderItemArgumentDto } from './dto/refund-order-item-argument.dto';
 
 @ApiTags('Admin - Order Management')
 @ApiBearerAuth()
@@ -123,31 +119,5 @@ export class AdminOrderController {
           );
         },
       );
-  }
-
-  @Post('items/:orderItemId/refund')
-  @Permissions('order:manage')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Refund a specific order item (admin)',
-    description:
-      'Marks the order item as refunded and hides any associated review. This also recalculates product and shop ratings.',
-  })
-  @ApiResponse({ status: 204, description: 'Order item refunded successfully' })
-  @ApiResponse({ status: 404, description: 'Order item not found' })
-  @ApiResponse({ status: 400, description: 'Item already refunded' })
-  refundOrderItem(
-    @Param('orderItemId', ParseUUIDPipe) orderItemId: string,
-    @Body() dto: RefundOrderItemArgumentDto,
-  ): Promise<void> {
-    return this.adminOrderService.refundOrderItem(orderItemId, dto.reason).match(
-      () => undefined,
-      (error) => {
-        throw OrderErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
   }
 }

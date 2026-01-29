@@ -10,9 +10,7 @@ import type {
   OrderWithShopAndBuyer,
   PaginatedResult,
 } from './repository/order.repository.interface';
-import type { IReviewService } from '../review/review.service.interface';
 import { ORDER_REPOSITORY } from 'src/database/typeorm/tokens/database.token';
-import { REVIEW_SERVICE } from '../review/tokens/review.token';
 import {
   createDomainError,
   type DomainError,
@@ -25,8 +23,6 @@ export class AdminOrderService implements IAdminOrderService {
   constructor(
     @Inject(ORDER_REPOSITORY)
     private readonly orderRepository: IOrderRepository,
-    @Inject(REVIEW_SERVICE)
-    private readonly reviewService: IReviewService,
   ) {}
 
   getAllOrders(
@@ -95,44 +91,6 @@ export class AdminOrderService implements IAdminOrderService {
           }
           return okAsync(result);
         });
-      });
-  }
-
-  refundOrderItem(
-    orderItemId: string,
-    reason: string,
-  ): ResultAsync<void, DomainError> {
-    return this.orderRepository
-      .findOrderItemById(orderItemId)
-      .andThen((result) => {
-        if (!result) {
-          return errAsync(
-            createDomainError(ORDER_ERRORS.ORDER_ITEM_NOT_FOUND, { cause: null }),
-          );
-        }
-
-        const { item } = result;
-
-        // Check if already refunded
-        if (item.isRefunded()) {
-          return errAsync(
-            createDomainError(ORDER_ERRORS.ITEM_ALREADY_REFUNDED, { cause: null }),
-          );
-        }
-
-        // Mark item as refunded
-        item.markAsRefunded(reason);
-
-        return okAsync(item);
-      })
-      .andThen((item) => {
-        // Save the updated order item
-        return this.orderRepository.updateOrderItem(item).map(() => item.id);
-      })
-      .andThen((orderItemId) => {
-        // Trigger review hide hook - this will hide any review for this item
-        // and recalculate product/shop ratings
-        return this.reviewService.onItemRefunded(orderItemId);
       });
   }
 }
