@@ -6,9 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   User,
   MapPin,
-  Bell,
   ShoppingBag,
-  BellDot,
   Shield,
   ChevronDown,
   ChevronRight
@@ -30,18 +28,12 @@ const menuItems: MenuItem[] = [
     children: [
       { label: 'Hồ sơ', href: '/user/account/profile', icon: <User className="w-4 h-4" /> },
       { label: 'Địa chỉ', href: '/user/account/address', icon: <MapPin className="w-4 h-4" /> },
-      { label: 'Cài đặt thông báo', href: '/user/setting/notification', icon: <Bell className="w-4 h-4" /> },
     ],
   },
   {
     label: 'Đơn mua',
     href: '/user/orders',
     icon: <ShoppingBag className="w-4 h-4" />,
-  },
-  {
-    label: 'Thông báo của tôi',
-    href: '/user/notifications',
-    icon: <BellDot className="w-4 h-4" />,
   },
   {
     label: 'Bảo mật',
@@ -61,6 +53,10 @@ export function AccountSidebar() {
         ? prev.filter(item => item !== label)
         : [...prev, label]
     );
+  };
+
+  const collapseAll = () => {
+    setExpandedItems([]);
   };
 
   const isActive = (href?: string) => {
@@ -107,6 +103,7 @@ export function AccountSidebar() {
         <Link
           key={item.label}
           href={item.href}
+          onClick={depth === 0 ? collapseAll : undefined}
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
             depth > 0 && 'pl-6',
