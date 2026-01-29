@@ -418,7 +418,7 @@ export function ProductDetailDialog({
                       <td className="px-3 py-2 text-right">
                         <span
                           className={
-                            variant.stockQuantity <= variant.lowStockThreshold
+                            variant.stockQuantity <= 10
                               ? 'text-red-500 font-medium'
                               : ''
                           }
