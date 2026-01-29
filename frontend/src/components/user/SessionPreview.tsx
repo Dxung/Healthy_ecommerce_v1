@@ -37,8 +37,8 @@ export function SessionPreview({ sessions, loading, onViewAll }: SessionPreviewP
   const formatSessionDisplay = (session: SessionInfo) => {
     const browser = session.browser || 'Unknown Browser';
     const device = session.deviceName || session.os || 'Unknown Device';
-    const location = session.location || 'Không xác định';
-    return { device: `${browser} - ${device}`, location };
+    const sessionLocation = session.location || 'Không xác định';
+    return { device: `${browser} - ${device}`, location: sessionLocation };
   };
 
   const currentSession = getCurrentSession();
