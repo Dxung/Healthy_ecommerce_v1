@@ -89,7 +89,7 @@ export class AuthController {
           response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
             httpOnly: true,
             secure: this.configService.get('NODE_ENV') === 'production',
-            sameSite: 'lax',
+            sameSite: 'none',
             maxAge: SESSION_COOKIE_MAX_AGE,
           });
         },
@@ -124,7 +124,7 @@ export class AuthController {
           response.cookie(SESSION_COOKIE_NAME, result.sessionToken, {
             httpOnly: true,
             secure: this.configService.get('NODE_ENV') === 'production',
-            sameSite: 'lax',
+            sameSite: 'none',
             maxAge: SESSION_COOKIE_MAX_AGE,
           });
         },

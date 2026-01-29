@@ -5,6 +5,8 @@ import * as entities from '../typeorm/entities';
 export const getTypeOrmConfig = (
   configService: ConfigService,
 ): TypeOrmModuleOptions => {
+  const isProduction = configService.get('NODE_ENV') === 'production';
+
   return {
     type: 'postgres',
     host: configService.get('DB_HOST', 'localhost'),
@@ -14,7 +16,8 @@ export const getTypeOrmConfig = (
     database: configService.get('DB_DATABASE'),
     entities: Object.values(entities),
     synchronize: false,
-    logging: configService.get('NODE_ENV') === 'development',
+    logging: !isProduction,
+    ssl: isProduction ? { rejectUnauthorized: false } : false,
 
     extra: {
       max: 10,
