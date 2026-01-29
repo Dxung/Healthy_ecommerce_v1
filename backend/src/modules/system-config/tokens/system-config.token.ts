@@ -1,0 +1,1 @@
+export const SYSTEM_CONFIG_SERVICE = Symbol('SYSTEM_CONFIG_SERVICE');

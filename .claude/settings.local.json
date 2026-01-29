@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(backend-architecture)",
+      "Bash(cd:*)",
+      "Bash(npm run build:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(findstr:*)",
+      "Bash(powershell -Command \"\\(Get-Content ''C:\\\\Users\\\\PC\\\\backup.sql'' -Raw\\).Length\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File \"C:\\\\Users\\\\PC\\\\fix_backup.ps1\")",
+      "Bash(find:*)",
+      "Bash(dir)",
+      "Bash(dir \"C:\\\\Users\\\\PC\\\\Documents\\\\Studying\\\\20251\\\\Graduation Project\\\\Project Folder\\\\Healthy_ecommerce\\\\DB configs\")"
+    ]
+  }
+}
