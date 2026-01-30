@@ -87,4 +87,12 @@ export const ORDER_ERRORS = {
     code: 'ORDER_ITEM_ALREADY_REFUNDED',
     message: 'Sản phẩm này đã được hoàn tiền.',
   },
+  ORDER_NOT_PENDING: {
+    code: 'ORDER_NOT_PENDING',
+    message: 'Đơn hàng không ở trạng thái chờ xử lý.',
+  },
+  ORDER_ALREADY_PAID: {
+    code: 'ORDER_ALREADY_PAID',
+    message: 'Đơn hàng đã được thanh toán.',
+  },
 } as const satisfies Record<string, { code: string; message: string }>;

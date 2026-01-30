@@ -23,6 +23,13 @@ export interface IPaymentTransactionRepository {
   ): ResultAsync<PaymentTransaction | null, DomainError>;
 
   /**
+   * Find payment transaction by order ID
+   */
+  findByOrderId(
+    orderId: string,
+  ): ResultAsync<PaymentTransaction | null, DomainError>;
+
+  /**
    * Update payment transaction
    */
   update(

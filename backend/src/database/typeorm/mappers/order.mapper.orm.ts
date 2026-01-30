@@ -49,6 +49,7 @@ export class ORMOrderMapper {
       ormOrder.cancelledAt,
       ormOrder.cancelReason,
       ormOrder.cancelledBy,
+      ormOrder.cancelledByAdminId,
       ormOrder.buyerNote,
       ormOrder.shopNote,
       ormOrder.createdAt,
@@ -95,6 +96,7 @@ export class ORMOrderMapper {
     ormOrder.cancelledAt = domainOrder.cancelledAt;
     ormOrder.cancelReason = domainOrder.cancelReason;
     ormOrder.cancelledBy = domainOrder.cancelledBy;
+    ormOrder.cancelledByAdminId = domainOrder.cancelledByAdminId;
     ormOrder.buyerNote = domainOrder.buyerNote;
     ormOrder.shopNote = domainOrder.shopNote;
     ormOrder.createdAt = domainOrder.createdAt;

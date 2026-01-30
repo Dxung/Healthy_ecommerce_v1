@@ -8,11 +8,8 @@ CREATE TYPE order_schema.order_status_enum AS ENUM (
     'delivered',
     'completed',
     'cancelled',
-    'refund_requested',     -- Buyer yêu cầu hoàn tiền (không trả hàng)
-    'refund_rejected',      -- Shop từ chối hoàn tiền
-    'return_requested',     -- Buyer yêu cầu trả hàng
-    'return_rejected',      -- Shop từ chối trả hàng
-    'in_dispute'            -- Đang khiếu nại (admin xử lý)
+    'refunding',            -- Đang xử lý hoàn tiền
+    'refunded'              -- Đã hoàn tiền
 );
 
 -- ============================================================================

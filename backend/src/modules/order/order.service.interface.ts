@@ -169,4 +169,10 @@ export interface IOrderService {
    * Called by PaymentService when VNPay callback indicates failure
    */
   processVnpayPaymentFailed(orderId: string): ResultAsync<void, DomainError>;
+
+  /**
+   * Cancel order due to payment timeout
+   * Called by OrderPaymentTimeoutCronjob
+   */
+  cancelOrderDueToPaymentTimeout(orderId: string): ResultAsync<Order, DomainError>;
 }

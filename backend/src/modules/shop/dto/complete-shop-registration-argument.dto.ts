@@ -8,7 +8,7 @@ import {
   IsUUID,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RegistrationDocumentDto } from './register-shop-argument.dto';
+import { RegistrationDocumentDto } from './registration-document.dto';
 
 /**
  * DTO for completing shop registration (Phase 2)

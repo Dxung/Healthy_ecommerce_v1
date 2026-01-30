@@ -5,21 +5,25 @@ import {
   ManyToOne,
   JoinColumn,
   Index,
-  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { ORMShop } from './orm.shop.entity';
+import { ORMBrand } from '../product/orm.brand.entity';
 import { ShopBadgeCode } from './enums/shop-badge-code.enum';
 import { ShopBadgeStatus } from './enums/shop-badge-status.enum';
 
 /**
  * ORM Entity for shop_badge_assignments table.
  * Tracks badge assignments (preferred/approved/official) for shops.
+ *
+ * Unique constraints:
+ * - PREFERRED/APPROVED: one per shop (shopId + badgeCode)
+ * - OFFICIAL: one per shop per brand (shopId + badgeCode + brandId)
  */
 @Entity('shop_badge_assignments', { schema: 'shop_schema' })
 @Index('idx_shop_badge_assignments_shop_id', ['shopId'])
 @Index('idx_shop_badge_assignments_status', ['status'])
-@Unique('uq_shop_badge', ['shopId', 'badgeCode'])
+@Index('idx_shop_badge_assignments_brand_id', ['brandId'])
 export class ORMShopBadgeAssignment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -57,6 +61,14 @@ export class ORMShopBadgeAssignment {
   @Column({ name: 'disabled_reason', type: 'text', nullable: true })
   disabledReason: string | null;
 
+  /** Expiration date for badge (for APPROVED/OFFICIAL badges) */
+  @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
+  expiresAt: Date | null;
+
+  /** Brand ID for OFFICIAL badges (null for PREFERRED/APPROVED) */
+  @Column({ name: 'brand_id', type: 'uuid', nullable: true })
+  brandId: string | null;
+
   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
   updatedAt: Date;
 
@@ -68,4 +80,9 @@ export class ORMShopBadgeAssignment {
   })
   @JoinColumn({ name: 'shop_id' })
   shop: ORMShop;
+
+  /** Brand for OFFICIAL badges */
+  @ManyToOne(() => ORMBrand, { nullable: true })
+  @JoinColumn({ name: 'brand_id' })
+  brand: ORMBrand | null;
 }

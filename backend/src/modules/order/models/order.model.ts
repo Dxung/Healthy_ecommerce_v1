@@ -62,6 +62,7 @@ export class Order {
     private _cancelledAt: Date | null,
     private _cancelReason: string | null,
     private _cancelledBy: CancelledBy | null,
+    private _cancelledByAdminId: string | null,
     private readonly _buyerNote: string | null,
     private _shopNote: string | null,
     private readonly _createdAt: Date,
@@ -141,6 +142,7 @@ export class Order {
       null, // cancelledAt
       null, // cancelReason
       null, // cancelledBy
+      null, // cancelledByAdminId
       params.buyerNote ?? null,
       null, // shopNote
       now,
@@ -283,6 +285,7 @@ export class Order {
   adminForceStatus(
     newStatus: OrderStatus,
     adminNote?: string,
+    adminId?: string,
   ): Result<void, DomainError> {
     const validTransitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
@@ -330,6 +333,7 @@ export class Order {
       case OrderStatus.CANCELLED:
         this._cancelledAt = now;
         this._cancelledBy = CancelledBy.SYSTEM;
+        this._cancelledByAdminId = adminId ?? null;
         this._cancelReason = adminNote ?? 'Đơn hàng bị hủy bởi Admin';
         break;
     }
@@ -499,6 +503,10 @@ export class Order {
 
   get cancelledBy(): CancelledBy | null {
     return this._cancelledBy;
+  }
+
+  get cancelledByAdminId(): string | null {
+    return this._cancelledByAdminId;
   }
 
   get buyerNote(): string | null {

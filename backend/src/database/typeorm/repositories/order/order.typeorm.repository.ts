@@ -20,6 +20,8 @@ import { ORMOrderItem } from '../../entities/order/orm.order-item.entity';
 import { ORMOrderMapper } from '../../mappers/order.mapper.orm';
 import { OrderStatus } from '../../entities/order/enums/order-status.enum';
 import { PaymentStatus } from '../../entities/order/enums/payment-status.enum';
+import { PaymentMethod } from '../../entities/order/enums/payment-method.enum';
+import { ORDER_PAYMENT_CHECK_BATCH_LIMIT } from 'src/modules/order/constants/order.constants';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
   createDomainError,
@@ -502,6 +504,36 @@ export class OrmOrderRepository implements IOrderRepository {
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormOrders) => ormOrders.map((orm) => ORMOrderMapper.toDomain(orm)));
+  }
+
+  // ===================== PAYMENT TIMEOUT =====================
+
+  @WithPosition()
+  findPendingOrdersForPaymentCheck(
+    minutesSinceCreation: number,
+    limit: number = ORDER_PAYMENT_CHECK_BATCH_LIMIT,
+  ): ResultAsync<Order[], DomainError> {
+    const repo = this.getOrderRepository();
+    const cutoffDate = new Date();
+    cutoffDate.setMinutes(cutoffDate.getMinutes() - minutesSinceCreation);
+
+    return ResultAsync.fromPromise(
+      repo
+        .createQueryBuilder('order')
+        .leftJoinAndSelect('order.items', 'items')
+        .where('order.status = :status', { status: OrderStatus.PENDING })
+        .andWhere('order.paymentStatus = :paymentStatus', {
+          paymentStatus: PaymentStatus.PENDING,
+        })
+        .andWhere('order.paymentMethod IN (:...paymentMethods)', {
+          paymentMethods: [PaymentMethod.VNPAY, PaymentMethod.WALLET_VNPAY],
+        })
+        .andWhere('order.createdAt <= :cutoffDate', { cutoffDate })
+        .orderBy('order.createdAt', 'ASC')
+        .take(limit)
+        .getMany(),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((ormOrders) => ORMOrderMapper.toDomainList(ormOrders));
   }
 
   private getEntityManager() {

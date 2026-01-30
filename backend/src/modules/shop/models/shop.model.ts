@@ -18,7 +18,7 @@ export class Shop {
 
   constructor(
     private readonly _id: string,
-    private readonly _registrationId: string,
+    private readonly _registrationId: string | null,
     private readonly _userId: string,
     private readonly _name: string,
     private readonly _slug: string,
@@ -91,6 +91,70 @@ export class Shop {
       null, // deletedAt
       [], // badgeAssignments
     );
+  }
+
+  /**
+   * Creates a new Shop directly (for immediate registration without admin approval).
+   * Shop starts with ACTIVE status, no badges, limited product slots.
+   */
+  static createNew(data: {
+    userId: string;
+    name: string;
+    slug: string;
+    phone: string;
+    email: string;
+    addressLine: string;
+    wardId: string;
+    districtId: string;
+    provinceId: string;
+  }): Shop {
+    const now = new Date();
+    return new Shop(
+      uuidv7(),
+      null, // registrationId - null for direct registration
+      data.userId,
+      data.name,
+      data.slug,
+      null, // logoUrl
+      null, // coverUrl
+      data.phone,
+      data.email,
+      data.addressLine,
+      data.wardId,
+      data.districtId,
+      data.provinceId,
+      0, // averageRating
+      0, // totalRatings
+      0, // totalProducts
+      0, // totalOrders
+      0, // orderSuccessRate
+      0, // responseTimeHours
+      0, // returnRate
+      ShopStatus.ACTIVE,
+      false, // isRefundDebt
+      false, // isAdminSuspended
+      null, // statusReason
+      null, // statusChangedAt
+      null, // statusChangedBy
+      now, // createdAt
+      now, // updatedAt
+      null, // deletedAt
+      [], // badgeAssignments
+    );
+  }
+
+  /**
+   * Generates a URL-friendly slug from shop name.
+   * Handles Vietnamese diacritics.
+   */
+  static generateSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+      .replace(/đ/g, 'd')
+      .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dashes
+      .replace(/^-+|-+$/g, ''); // Trim leading/trailing dashes
   }
 
   // ======================== BADGE METHODS ========================
@@ -170,7 +234,7 @@ export class Shop {
     return this._id;
   }
 
-  public get registrationId(): string {
+  public get registrationId(): string | null {
     return this._registrationId;
   }
 

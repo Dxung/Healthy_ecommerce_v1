@@ -222,4 +222,17 @@ export interface IOrderRepository {
    * These are orders where refund processing may have failed
    */
   findCancelledOrdersNeedingRefund(): ResultAsync<Order[], DomainError>;
+
+  // ===================== PAYMENT TIMEOUT =====================
+
+  /**
+   * Find pending orders with pending payment that were created more than X minutes ago.
+   * Used by cron job to check VNPay payment status and auto-cancel timed out orders.
+   * @param minutesSinceCreation - Minimum age of orders to check
+   * @param limit - Maximum number of orders to return (default: 100)
+   */
+  findPendingOrdersForPaymentCheck(
+    minutesSinceCreation: number,
+    limit?: number,
+  ): ResultAsync<Order[], DomainError>;
 }

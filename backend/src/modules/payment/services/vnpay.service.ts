@@ -10,6 +10,8 @@ import {
   CreatePaymentUrlResult,
   VnpayReturnQuery,
   VnpayVerifyResult,
+  QueryTransactionParams,
+  QueryTransactionResult,
 } from './vnpay.service.interface';
 import {
   createDomainError,
@@ -109,6 +111,91 @@ export class VnpayService implements IVnpayService {
     query: VnpayReturnQuery,
   ): ResultAsync<VnpayVerifyResult, DomainError> {
     return this.verifySignature(query);
+  }
+
+  @WithPosition()
+  queryTransaction(
+    params: QueryTransactionParams,
+  ): ResultAsync<QueryTransactionResult, DomainError> {
+    const { txnRef, transactionDate, ipAddress } = params;
+
+    const requestId = uuidv7();
+    const createDate = this.formatDate(new Date());
+    const transDateStr = this.formatDate(transactionDate);
+
+    // Build query parameters
+    const queryParams: Record<string, string> = {
+      vnp_RequestId: requestId,
+      vnp_Version: '2.1.0',
+      vnp_Command: 'querydr',
+      vnp_TmnCode: this.config.tmnCode,
+      vnp_TxnRef: txnRef,
+      vnp_OrderInfo: `Query transaction ${txnRef}`,
+      vnp_TransactionDate: transDateStr,
+      vnp_CreateDate: createDate,
+      vnp_IpAddr: ipAddress,
+    };
+
+    // Sort parameters alphabetically
+    const sortedParams = this.sortObject(queryParams);
+
+    // Create data string for signing (pipe-separated values)
+    const dataToSign = [
+      sortedParams.vnp_RequestId,
+      sortedParams.vnp_Version,
+      sortedParams.vnp_Command,
+      sortedParams.vnp_TmnCode,
+      sortedParams.vnp_TxnRef,
+      sortedParams.vnp_TransactionDate,
+      sortedParams.vnp_CreateDate,
+      sortedParams.vnp_IpAddr,
+      sortedParams.vnp_OrderInfo,
+    ].join('|');
+
+    // Generate HMAC-SHA512 signature
+    const hmac = crypto.createHmac('sha512', this.config.hashSecret);
+    const secureHash = hmac.update(Buffer.from(dataToSign, 'utf-8')).digest('hex');
+
+    // Add signature to params
+    const requestBody = {
+      ...sortedParams,
+      vnp_SecureHash: secureHash,
+    };
+
+    // Call VNPay API
+    return ResultAsync.fromPromise(
+      fetch(this.config.apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }).then((res) => res.json()),
+      (error) =>
+        createDomainError(PAYMENT_ERRORS.VNPAY_API_ERROR, {
+          cause: error,
+        }),
+    ).andThen((response: Record<string, string>) => {
+      const responseCode = response.vnp_ResponseCode || '99';
+      const transactionStatus = response.vnp_TransactionStatus || '99';
+
+      // Response code 00 means query successful, transaction status 00 means payment successful
+      const isSuccess = responseCode === '00' && transactionStatus === '00';
+
+      const result: QueryTransactionResult = {
+        txnRef: response.vnp_TxnRef || txnRef,
+        amount: parseInt(response.vnp_Amount || '0', 10) / 100,
+        responseCode,
+        transactionStatus,
+        transactionNo: response.vnp_TransactionNo || null,
+        bankCode: response.vnp_BankCode || null,
+        payDate: response.vnp_PayDate || null,
+        isSuccess,
+        message: this.getResponseMessage(responseCode),
+      };
+
+      return okAsync(result);
+    });
   }
 
   private verifySignature(

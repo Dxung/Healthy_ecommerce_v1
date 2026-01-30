@@ -150,6 +150,9 @@ export class ORMOrder {
   })
   cancelledBy: CancelledBy | null;
 
+  @Column({ name: 'cancelled_by_admin_id', type: 'uuid', nullable: true })
+  cancelledByAdminId: string | null;
+
   @Column({ name: 'buyer_note', type: 'text', nullable: true })
   buyerNote: string | null;
 

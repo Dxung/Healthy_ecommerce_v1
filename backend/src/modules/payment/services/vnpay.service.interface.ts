@@ -49,6 +49,24 @@ export interface VnpayVerifyResult {
   message: string;
 }
 
+export interface QueryTransactionParams {
+  txnRef: string;
+  transactionDate: Date;
+  ipAddress: string;
+}
+
+export interface QueryTransactionResult {
+  txnRef: string;
+  amount: number;
+  responseCode: string;
+  transactionStatus: string;
+  transactionNo: string | null;
+  bankCode: string | null;
+  payDate: string | null;
+  isSuccess: boolean;
+  message: string;
+}
+
 export interface IVnpayService {
   createPaymentUrl(
     params: CreatePaymentUrlParams,
@@ -61,4 +79,12 @@ export interface IVnpayService {
   verifyIpn(
     query: VnpayReturnQuery,
   ): ResultAsync<VnpayVerifyResult, DomainError>;
+
+  /**
+   * Query VNPay API to check transaction status
+   * Used by cron job to verify pending payments
+   */
+  queryTransaction(
+    params: QueryTransactionParams,
+  ): ResultAsync<QueryTransactionResult, DomainError>;
 }

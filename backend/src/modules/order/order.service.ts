@@ -22,7 +22,11 @@ import { IWalletService } from '../payment/services/wallet.service.interface';
 import { IEscrowService } from '../payment/services/escrow.service.interface';
 import { IPaymentService } from '../payment/payment.service.interface';
 import { IBuyerService } from '../buyer/buyer.service.interface';
-import { ORDER_REPOSITORY } from 'src/database/typeorm/tokens/database.token';
+import { IProductVariantRepository } from '../product/repository/product-variant.repository.interface';
+import {
+  ORDER_REPOSITORY,
+  PRODUCT_VARIANT_REPOSITORY,
+} from 'src/database/typeorm/tokens/database.token';
 import { CART_SERVICE } from '../cart/tokens/cart.token';
 import { USER_SERVICE } from '../user/tokens/user.token';
 import { SHOP_SERVICE } from '../shop/tokens/shop.token';
@@ -32,12 +36,15 @@ import {
   ESCROW_SERVICE,
   PAYMENT_SERVICE,
 } from '../payment/tokens/payment.token';
+import { UOW_TOKEN } from 'src/shared/unitOfWork/tokens/uow.token';
+import { IUow } from 'src/shared/unitOfWork/interfaces/uow.interface';
 import { Order } from './models/order.model';
 import { OrderItem } from './models/order-item.model';
 import { ORDER_AUTO_COMPLETE_DAYS } from './constants/order.constants';
 import { CancelledBy } from 'src/database/typeorm/entities/order/enums/cancelled-by.enum';
 import { PaymentMethod } from 'src/database/typeorm/entities/order/enums/payment-method.enum';
 import { PaymentStatus } from 'src/database/typeorm/entities/order/enums/payment-status.enum';
+import { OrderStatus } from 'src/database/typeorm/entities/order/enums/order-status.enum';
 import { EscrowStatus } from 'src/database/typeorm/entities/payment/enums/escrow-status.enum';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
@@ -68,6 +75,10 @@ export class OrderService implements IOrderService {
     private readonly paymentService: IPaymentService,
     @Inject(BUYER_SERVICE)
     private readonly buyerService: IBuyerService,
+    @Inject(PRODUCT_VARIANT_REPOSITORY)
+    private readonly variantRepository: IProductVariantRepository,
+    @Inject(UOW_TOKEN)
+    private readonly transactionUow: IUow,
   ) {}
 
   private getUserId(): string | undefined {
@@ -90,6 +101,30 @@ export class OrderService implements IOrderService {
       }
       return okAsync(shop.id);
     });
+  }
+
+  /**
+   * Restores stock for cancelled order items.
+   * Called when an order is cancelled to return stock to inventory.
+   */
+  private restoreStockForOrder(order: Order): ResultAsync<void, DomainError> {
+    const items = order.items;
+    if (items.length === 0) {
+      return okAsync(undefined);
+    }
+
+    // Aggregate quantities by variant
+    const stockMap = new Map<string, number>();
+    for (const item of items) {
+      const currentQty = stockMap.get(item.variantId) ?? 0;
+      stockMap.set(item.variantId, currentQty + item.quantity);
+    }
+
+    const stockRestoreItems = Array.from(stockMap.entries()).map(
+      ([variantId, quantity]) => ({ variantId, quantity }),
+    );
+
+    return this.variantRepository.restoreStock(stockRestoreItems);
   }
 
   // ===================== BUYER METHODS =====================
@@ -165,80 +200,105 @@ export class OrderService implements IOrderService {
           }
         }
 
-        // Step 4: Create orders for each shop
-        const shopNoteMap = new Map(
-          (input.shopNotes ?? []).map((n) => [n.shopId, n.note]),
+        // Prepare stock deduction items (aggregate by variant)
+        const stockDeductionMap = new Map<string, number>();
+        for (const item of selectedItems) {
+          const currentQty = stockDeductionMap.get(item.variant.id) ?? 0;
+          stockDeductionMap.set(
+            item.variant.id,
+            currentQty + item.cartItem.quantity,
+          );
+        }
+        const stockDeductionItems = Array.from(stockDeductionMap.entries()).map(
+          ([variantId, quantity]) => ({ variantId, quantity }),
         );
 
-        const orderCreationResults: ResultAsync<OrderWithShop, DomainError>[] =
-          [];
+        // Step 4: Execute stock deduction + order creation in transaction
+        // This ensures atomicity: if order creation fails, stock is not deducted
+        return this.transactionUow
+          .executeInTransaction(() => {
+            // Deduct stock with pessimistic lock
+            return this.variantRepository
+              .deductStockWithLock(stockDeductionItems)
+              .andThen(() => {
+                // Create orders for each shop
+                const shopNoteMap = new Map(
+                  (input.shopNotes ?? []).map((n) => [n.shopId, n.note]),
+                );
 
-        for (const [shopId, items] of shopGroups) {
-          const shopNote = shopNoteMap.get(shopId) ?? null;
-          const subtotal = items.reduce(
-            (sum, item) => sum + item.variant.price * item.cartItem.quantity,
-            0,
-          );
+                const orderCreationResults: ResultAsync<
+                  OrderWithShop,
+                  DomainError
+                >[] = [];
 
-          // Create order
-          const order = Order.create({
-            buyerId: userId,
-            shopId,
-            receiverName: address.recipientName,
-            receiverPhone: address.recipientPhone,
-            shippingAddress: address.addressLine,
-            shippingWardId: address.wardId,
-            shippingDistrictId: address.districtId,
-            shippingProvinceId: address.provinceId,
-            subtotal,
-            shippingFee: 0, // TODO: Calculate shipping fee
-            platformFee: 0, // TODO: Calculate platform fee
-            platformFeePercent: 0,
-            tierDiscountAmount: 0, // TODO: Apply tier discount
-            tierDiscountPercent: 0,
-            voucherDiscountAmount: 0, // TODO: Apply voucher
-            coinUsed: 0, // TODO: Apply coin usage
-            totalAmount: subtotal, // Simplified for now
-            buyerTierCode: 'bronze', // TODO: Get from buyer profile
-            coinMultiplier: 0.01, // TODO: Get from config
-            paymentMethod: input.paymentMethod,
-            buyerNote: shopNote,
-          });
+                for (const [shopId, items] of shopGroups) {
+                  const shopNote = shopNoteMap.get(shopId) ?? null;
+                  const subtotal = items.reduce(
+                    (sum, item) =>
+                      sum + item.variant.price * item.cartItem.quantity,
+                    0,
+                  );
 
-          // Create order items
-          const orderItems = items.map((item) =>
-            OrderItem.create({
-              orderId: order.id,
-              productId: item.product.id,
-              variantId: item.variant.id,
-              productName: item.product.name,
-              variantName: item.variant.name,
-              productImageUrl: item.product.thumbnailUrl,
-              unitPrice: item.variant.price,
-              quantity: item.cartItem.quantity,
-            }),
-          );
+                  // Create order
+                  const order = Order.create({
+                    buyerId: userId,
+                    shopId,
+                    receiverName: address.recipientName,
+                    receiverPhone: address.recipientPhone,
+                    shippingAddress: address.addressLine,
+                    shippingWardId: address.wardId,
+                    shippingDistrictId: address.districtId,
+                    shippingProvinceId: address.provinceId,
+                    subtotal,
+                    shippingFee: 0, // TODO: Calculate shipping fee
+                    platformFee: 0, // TODO: Calculate platform fee
+                    platformFeePercent: 0,
+                    tierDiscountAmount: 0, // TODO: Apply tier discount
+                    tierDiscountPercent: 0,
+                    voucherDiscountAmount: 0, // TODO: Apply voucher
+                    coinUsed: 0, // TODO: Apply coin usage
+                    totalAmount: subtotal, // Simplified for now
+                    buyerTierCode: 'bronze', // TODO: Get from buyer profile
+                    coinMultiplier: 0.01, // TODO: Get from config
+                    paymentMethod: input.paymentMethod,
+                    buyerNote: shopNote,
+                  });
 
-          // Save order and items
-          const saveResult = this.orderRepository
-            .saveOrderWithItems(order, orderItems)
-            .andThen((savedOrder) =>
-              okAsync<OrderWithShop, DomainError>({
-                order: savedOrder,
-                shop: items[0].shop,
-              }),
-            );
+                  // Create order items
+                  const orderItems = items.map((item) =>
+                    OrderItem.create({
+                      orderId: order.id,
+                      productId: item.product.id,
+                      variantId: item.variant.id,
+                      productName: item.product.name,
+                      variantName: item.variant.name,
+                      productImageUrl: item.product.thumbnailUrl,
+                      unitPrice: item.variant.price,
+                      quantity: item.cartItem.quantity,
+                    }),
+                  );
 
-          orderCreationResults.push(saveResult);
-        }
+                  // Save order and items
+                  const saveResult = this.orderRepository
+                    .saveOrderWithItems(order, orderItems)
+                    .andThen((savedOrder) =>
+                      okAsync<OrderWithShop, DomainError>({
+                        order: savedOrder,
+                        shop: items[0].shop,
+                      }),
+                    );
 
-        return ResultAsync.combine(orderCreationResults).map(
-          (createdOrders) => ({
+                  orderCreationResults.push(saveResult);
+                }
+
+                return ResultAsync.combine(orderCreationResults);
+              });
+          })
+          .map((createdOrders) => ({
             createdOrders,
             selectedItems,
             paymentMethod: input.paymentMethod,
-          }),
-        );
+          }));
       })
       .andThen(({ createdOrders, selectedItems, paymentMethod }) => {
         // Step 5: Remove purchased items from cart using cart service
@@ -354,6 +414,7 @@ export class OrderService implements IOrderService {
   ): ResultAsync<CreateOrderResult, DomainError> {
     // Use first order ID as primary reference
     const primaryOrderId = orderIds[0];
+    const primaryOrder = createdOrders[0].order;
 
     // Create payment transaction via PaymentService
     return this.paymentService
@@ -361,6 +422,7 @@ export class OrderService implements IOrderService {
         primaryOrderId,
         totalAmount,
         '127.0.0.1', // TODO: Get from request context
+        primaryOrder.createdAt, // Pass order creation time for timeout validation
       )
       .map((paymentResult) => ({
         orders: createdOrders,
@@ -394,12 +456,14 @@ export class OrderService implements IOrderService {
         DomainError
       > => {
         const primaryOrderId = orderIds[0];
+        const primaryOrder = createdOrders[0].order;
 
         return this.paymentService
           .createOrderPayment(
             primaryOrderId,
             vnpayAmount,
             '127.0.0.1', // TODO: Get from request context
+            primaryOrder.createdAt, // Pass order creation time for timeout validation
           )
           .map((paymentResult) => ({
             orders: createdOrders,
@@ -521,41 +585,46 @@ export class OrderService implements IOrderService {
   }
 
   /**
-   * Process refund for a cancelled order if it was paid
-   * Finds escrow holds and refunds them to buyer wallet
+   * Process refund and stock restoration for a cancelled order.
+   * Restores stock to inventory and refunds escrow if order was paid.
    */
   private processRefundIfNeeded(
     order: Order,
     buyerId: string,
   ): ResultAsync<Order, DomainError> {
-    // If order was not paid, just save the cancellation
-    if (order.paymentStatus !== PaymentStatus.PAID) {
-      return this.orderRepository.updateOrder(order);
-    }
-
-    // Find escrow holds for this order
-    return this.escrowService.findByOrderId(order.id).andThen((escrowHolds) => {
-      // Filter to only holding escrows (not already released/refunded)
-      const holdingEscrows = escrowHolds.filter(
-        (escrow) => escrow.status === EscrowStatus.HOLDING,
-      );
-
-      if (holdingEscrows.length === 0) {
-        // No escrow to refund, just mark as refunded and save
-        order.markAsRefunded();
+    // Step 1: Restore stock for cancelled order items
+    return this.restoreStockForOrder(order).andThen(() => {
+      // Step 2: If order was not paid, just save the cancellation
+      if (order.paymentStatus !== PaymentStatus.PAID) {
         return this.orderRepository.updateOrder(order);
       }
 
-      // Refund each escrow hold to buyer
-      const refundResults = holdingEscrows.map((escrow) =>
-        this.escrowService.refundToBuyer(escrow.id, buyerId),
-      );
+      // Step 3: Find and refund escrow holds for this order
+      return this.escrowService
+        .findByOrderId(order.id)
+        .andThen((escrowHolds) => {
+          // Filter to only holding escrows (not already released/refunded)
+          const holdingEscrows = escrowHolds.filter(
+            (escrow) => escrow.status === EscrowStatus.HOLDING,
+          );
 
-      return ResultAsync.combine(refundResults).andThen(() => {
-        // Mark order as refunded and save
-        order.markAsRefunded();
-        return this.orderRepository.updateOrder(order);
-      });
+          if (holdingEscrows.length === 0) {
+            // No escrow to refund, just mark as refunded and save
+            order.markAsRefunded();
+            return this.orderRepository.updateOrder(order);
+          }
+
+          // Refund each escrow hold to buyer
+          const refundResults = holdingEscrows.map((escrow) =>
+            this.escrowService.refundToBuyer(escrow.id, buyerId),
+          );
+
+          return ResultAsync.combine(refundResults).andThen(() => {
+            // Mark order as refunded and save
+            order.markAsRefunded();
+            return this.orderRepository.updateOrder(order);
+          });
+        });
     });
   }
 
@@ -808,6 +877,17 @@ export class OrderService implements IOrderService {
         return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
       }
 
+      // Check if order is still in valid state for payment processing
+      if (order.status !== OrderStatus.PENDING) {
+        // Order has been cancelled or already confirmed - skip payment processing
+        return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_PENDING));
+      }
+
+      if (order.paymentStatus === PaymentStatus.PAID) {
+        // Order already paid (e.g., processed via IPN) - skip duplicate processing
+        return okAsync(order);
+      }
+
       // Create escrow hold for shop
       return this.escrowService
         .createHold(order.id, order.shopId, order.totalAmount)
@@ -831,5 +911,28 @@ export class OrderService implements IOrderService {
     // The PaymentTransaction is already marked as FAILED by PaymentService
     // before calling this method, so no additional action is needed here.
     return okAsync(undefined);
+  }
+
+  @WithPosition()
+  cancelOrderDueToPaymentTimeout(orderId: string): ResultAsync<Order, DomainError> {
+    return this.orderRepository.findByIdWithItems(orderId).andThen((order) => {
+      if (!order) {
+        return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
+      }
+
+      // Cancel order with SYSTEM as canceller and reason
+      const cancelResult = order.cancel(
+        CancelledBy.SYSTEM,
+        'Đơn hàng đã bị hủy do quá thời gian thanh toán cho phép.',
+      );
+      if (cancelResult.isErr()) {
+        return errAsync(cancelResult.error);
+      }
+
+      // Restore stock for cancelled order items
+      return this.restoreStockForOrder(order).andThen(() =>
+        this.orderRepository.updateOrder(order),
+      );
+    });
   }
 }

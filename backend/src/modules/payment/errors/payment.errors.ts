@@ -35,6 +35,10 @@ export const PAYMENT_ERRORS = {
     code: 'PAYMENT_VNPAY_CONFIG_ERROR',
     message: 'Cấu hình VNPay không đầy đủ.',
   },
+  VNPAY_API_ERROR: {
+    code: 'PAYMENT_VNPAY_API_ERROR',
+    message: 'Lỗi khi gọi API VNPay.',
+  },
   ESCROW_NOT_FOUND: {
     code: 'PAYMENT_ESCROW_NOT_FOUND',
     message: 'Không tìm thấy ký quỹ.',

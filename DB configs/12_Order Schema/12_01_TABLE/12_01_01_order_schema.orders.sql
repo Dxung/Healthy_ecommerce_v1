@@ -32,6 +32,7 @@
       cancelled_at TIMESTAMP,
       cancel_reason TEXT,
       cancelled_by order_schema.cancelled_by_enum,
+      cancelled_by_admin_id UUID REFERENCES users_schema.user_core(id),
       buyer_note TEXT,
       shop_note TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

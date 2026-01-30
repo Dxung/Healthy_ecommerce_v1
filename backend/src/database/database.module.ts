@@ -44,6 +44,9 @@ import {
   OrmAllergenExclusionRepository,
 } from './typeorm/repositories/meal-plan';
 import { OrmBuyerCoinWalletRepository } from './typeorm/repositories/buyer/buyer-coin-wallet.typeorm.repository';
+import { OrmBadgeApplicationRepository } from './typeorm/repositories/shop/badge-application.typeorm.repository';
+import { OrmShopOfficialBrandRepository } from './typeorm/repositories/shop/shop-official-brand.typeorm.repository';
+import { OrmBrandDocumentRequirementRepository } from './typeorm/repositories/shop/brand-document-requirement.typeorm.repository';
 import {
   USER_AUTH_REPOSITORY,
   USER_CORE_REPOSITORY,
@@ -85,6 +88,9 @@ import {
   DIET_PREFERENCE_REPOSITORY,
   ALLERGEN_EXCLUSION_REPOSITORY,
   BUYER_COIN_WALLET_REPOSITORY,
+  BADGE_APPLICATION_REPOSITORY,
+  SHOP_OFFICIAL_BRAND_REPOSITORY,
+  BRAND_DOCUMENT_REQUIREMENT_REPOSITORY,
 } from './typeorm/tokens/database.token';
 import { AlsModule } from 'src/shared/als/als.module';
 
@@ -262,6 +268,18 @@ import { AlsModule } from 'src/shared/als/als.module';
       provide: BUYER_COIN_WALLET_REPOSITORY,
       useClass: OrmBuyerCoinWalletRepository,
     },
+    {
+      provide: BADGE_APPLICATION_REPOSITORY,
+      useClass: OrmBadgeApplicationRepository,
+    },
+    {
+      provide: SHOP_OFFICIAL_BRAND_REPOSITORY,
+      useClass: OrmShopOfficialBrandRepository,
+    },
+    {
+      provide: BRAND_DOCUMENT_REQUIREMENT_REPOSITORY,
+      useClass: OrmBrandDocumentRequirementRepository,
+    },
   ],
   exports: [
     USER_CORE_REPOSITORY,
@@ -304,6 +322,9 @@ import { AlsModule } from 'src/shared/als/als.module';
     DIET_PREFERENCE_REPOSITORY,
     ALLERGEN_EXCLUSION_REPOSITORY,
     BUYER_COIN_WALLET_REPOSITORY,
+    BADGE_APPLICATION_REPOSITORY,
+    SHOP_OFFICIAL_BRAND_REPOSITORY,
+    BRAND_DOCUMENT_REQUIREMENT_REPOSITORY,
   ],
 })
 export class DatabaseModule {}

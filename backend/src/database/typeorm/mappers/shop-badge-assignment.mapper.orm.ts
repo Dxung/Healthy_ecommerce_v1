@@ -17,8 +17,10 @@ export class ORMShopBadgeAssignmentMapper {
       orm.id,
       orm.shopId,
       orm.badgeCode,
+      orm.brandId,
       orm.status,
       orm.grantedAt,
+      orm.expiresAt,
       orm.disabledAt,
       orm.disabledReason,
       orm.updatedAt,
@@ -35,8 +37,10 @@ export class ORMShopBadgeAssignmentMapper {
     orm.id = domain.id;
     orm.shopId = domain.shopId;
     orm.badgeCode = domain.badgeCode;
+    orm.brandId = domain.brandId;
     orm.status = domain.status;
     orm.grantedAt = domain.grantedAt;
+    orm.expiresAt = domain.expiresAt;
     orm.disabledAt = domain.disabledAt;
     orm.disabledReason = domain.disabledReason;
     orm.updatedAt = domain.updatedAt;

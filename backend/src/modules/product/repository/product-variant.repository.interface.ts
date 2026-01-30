@@ -99,4 +99,24 @@ export interface IProductVariantRepository {
   findByIdWithProduct(
     variantId: string,
   ): ResultAsync<VariantWithProduct | null, DomainError>;
+
+  /**
+   * Deduct stock for multiple variants with pessimistic lock.
+   * Must be called within a transaction context.
+   * @param items - Array of { variantId, quantity } to deduct.
+   * @returns void on success, error if insufficient stock or variant not found.
+   */
+  deductStockWithLock(
+    items: Array<{ variantId: string; quantity: number }>,
+  ): ResultAsync<void, DomainError>;
+
+  /**
+   * Restore stock for multiple variants.
+   * Used when order is cancelled to return stock to inventory.
+   * @param items - Array of { variantId, quantity } to restore.
+   * @returns void on success.
+   */
+  restoreStock(
+    items: Array<{ variantId: string; quantity: number }>,
+  ): ResultAsync<void, DomainError>;
 }

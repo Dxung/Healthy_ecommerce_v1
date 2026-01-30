@@ -7,6 +7,7 @@ import type {
   ApproveRegistrationArgumentDto,
   InitShopRegistrationArgumentDto,
   CompleteShopRegistrationArgumentDto,
+  RegisterShopArgumentDto,
 } from './dto';
 
 export type RegistrationWithLocationNames = {
@@ -19,6 +20,27 @@ export type RegistrationWithLocationNames = {
 };
 
 export interface IShopService {
+  //================================================== SINGLE-STEP SHOP REGISTRATION ==================================================
+
+  /**
+   * Single-step shop registration (no admin approval required).
+   *
+   * Creates a shop immediately with ACTIVE status.
+   *
+   * Business logic:
+   * - Check user doesn't already own a shop
+   * - Handle phone verification (same logic as initRegistration)
+   * - Validate location hierarchy (province->district->ward)
+   * - Check shop name uniqueness via slug
+   * - Create shop immediately with ACTIVE status
+   * - Assign 'shop' role to user
+   *
+   * Requires AuthGuard to set userId in ALS.
+   * @param dto - RegisterShopArgumentDto with shop info and optional Firebase OTP token
+   * @returns A ResultAsync that resolves to the created Shop or DomainError.
+   */
+  registerShop(dto: RegisterShopArgumentDto): ResultAsync<Shop, DomainError>;
+
   //================================================== BUYER REGISTRATION (2-PHASE) ==================================================
 
   /**

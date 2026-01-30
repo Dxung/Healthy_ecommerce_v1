@@ -24,8 +24,9 @@ export class ORMShop {
   @PrimaryColumn({ type: 'uuid' })
   id: string;
 
-  @Column({ name: 'registration_id', type: 'uuid' })
-  registrationId: string;
+  /** Registration that created this shop (null for direct registration) */
+  @Column({ name: 'registration_id', type: 'uuid', nullable: true })
+  registrationId: string | null;
 
   @Column({ name: 'owner_id', type: 'uuid' })
   userId: string;

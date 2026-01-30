@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
-import { DataSource, IsNull } from 'typeorm';
-import { ResultAsync } from 'neverthrow';
+import { DataSource, In, IsNull } from 'typeorm';
+import { ResultAsync, errAsync, okAsync } from 'neverthrow';
 import { ITypeORMAlsStore } from 'src/shared/als/interfaces/als-store.interface';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
@@ -9,6 +9,7 @@ import {
   type DomainError,
 } from 'src/shared/types/domain-error.type';
 import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
+import { PRODUCT_ERRORS } from 'src/modules/product/errors/product.errors';
 import {
   IProductVariantRepository,
   VariantWithProduct,
@@ -224,6 +225,139 @@ export class OrmProductVariantRepository implements IProductVariantRepository {
         },
       };
     });
+  }
+
+  @WithPosition()
+  deductStockWithLock(
+    items: Array<{ variantId: string; quantity: number }>,
+  ): ResultAsync<void, DomainError> {
+    if (items.length === 0) {
+      return okAsync(undefined);
+    }
+
+    const em = this.getEntityManager();
+    if (!em) {
+      return errAsync(
+        createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
+          cause: 'deductStockWithLock must be called within a transaction',
+        }),
+      );
+    }
+
+    const variantIds = items.map((item) => item.variantId);
+    const quantityMap = new Map(
+      items.map((item) => [item.variantId, item.quantity]),
+    );
+
+    return ResultAsync.fromPromise(
+      (async () => {
+        // Lock variants with pessimistic write lock (FOR UPDATE)
+        const lockedVariants = await em
+          .getRepository(ORMProductVariant)
+          .createQueryBuilder('variant')
+          .setLock('pessimistic_write')
+          .where({ id: In(variantIds) })
+          .getMany();
+
+        // Validate all variants exist
+        if (lockedVariants.length !== variantIds.length) {
+          const foundIds = new Set(lockedVariants.map((v) => v.id));
+          const missingIds = variantIds.filter((id) => !foundIds.has(id));
+          throw {
+            type: 'VARIANT_NOT_FOUND',
+            variantIds: missingIds,
+          };
+        }
+
+        // Check stock availability for all variants
+        for (const variant of lockedVariants) {
+          const requiredQty = quantityMap.get(variant.id) ?? 0;
+          if (variant.stockQuantity < requiredQty) {
+            throw {
+              type: 'INSUFFICIENT_STOCK',
+              variantId: variant.id,
+              variantName: variant.name,
+              available: variant.stockQuantity,
+              required: requiredQty,
+            };
+          }
+        }
+
+        // Deduct stock for all variants
+        for (const variant of lockedVariants) {
+          const deductQty = quantityMap.get(variant.id) ?? 0;
+          variant.stockQuantity -= deductQty;
+          variant.updatedAt = new Date();
+        }
+
+        // Save all variants
+        await em.getRepository(ORMProductVariant).save(lockedVariants);
+      })(),
+      (error) => {
+        // Handle custom errors
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'type' in error
+        ) {
+          const typedError = error as {
+            type: string;
+            variantId?: string;
+            variantName?: string;
+            available?: number;
+            required?: number;
+          };
+          if (typedError.type === 'VARIANT_NOT_FOUND') {
+            return createDomainError(PRODUCT_ERRORS.VARIANT_NOT_FOUND, {
+              cause: `Variant(s) not found`,
+            });
+          }
+          if (typedError.type === 'INSUFFICIENT_STOCK') {
+            return createDomainError(PRODUCT_ERRORS.VARIANT_INSUFFICIENT_STOCK, {
+              cause: `Variant "${typedError.variantName}" has ${typedError.available} in stock, but ${typedError.required} required`,
+            });
+          }
+        }
+        return createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error });
+      },
+    );
+  }
+
+  @WithPosition()
+  restoreStock(
+    items: Array<{ variantId: string; quantity: number }>,
+  ): ResultAsync<void, DomainError> {
+    if (items.length === 0) {
+      return okAsync(undefined);
+    }
+
+    const em = this.getEntityManager() ?? this.dataSource.manager;
+    const variantIds = items.map((item) => item.variantId);
+    const quantityMap = new Map(
+      items.map((item) => [item.variantId, item.quantity]),
+    );
+
+    return ResultAsync.fromPromise(
+      (async () => {
+        // Find variants to restore stock
+        const variants = await em.getRepository(ORMProductVariant).find({
+          where: { id: In(variantIds) },
+        });
+
+        // Restore stock for each variant
+        for (const variant of variants) {
+          const restoreQty = quantityMap.get(variant.id) ?? 0;
+          variant.stockQuantity += restoreQty;
+          variant.updatedAt = new Date();
+        }
+
+        // Save all variants
+        if (variants.length > 0) {
+          await em.getRepository(ORMProductVariant).save(variants);
+        }
+      })(),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    );
   }
 
   private getEntityManager() {

@@ -23,6 +23,7 @@ import {
 } from 'src/shared/types/domain-error.type';
 import { PAYMENT_ERRORS } from './errors/payment.errors';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
+import { ORDER_PAYMENT_TIMEOUT_MINUTES } from '../order/constants/order.constants';
 
 /**
  * PaymentService - High-level payment orchestration
@@ -55,7 +56,24 @@ export class PaymentService implements IPaymentService {
     orderId: string,
     amount: number,
     ipAddress: string,
+    orderCreatedAt?: Date,
   ): ResultAsync<CreateOrderPaymentResult, DomainError> {
+    // Validate order is still within payment timeout window
+    if (orderCreatedAt) {
+      const orderAgeMinutes =
+        (Date.now() - orderCreatedAt.getTime()) / (1000 * 60);
+      if (orderAgeMinutes >= ORDER_PAYMENT_TIMEOUT_MINUTES) {
+        this.logger.warn(
+          `Order ${orderId} payment rejected: order age ${orderAgeMinutes.toFixed(1)} mins exceeds timeout ${ORDER_PAYMENT_TIMEOUT_MINUTES} mins`,
+        );
+        return errAsync(
+          createDomainError(PAYMENT_ERRORS.PAYMENT_EXPIRED, {
+            cause: `Order exceeded payment timeout of ${ORDER_PAYMENT_TIMEOUT_MINUTES} minutes`,
+          }),
+        );
+      }
+    }
+
     const paymentTxn = PaymentTransaction.createForOrder({
       orderId,
       amount,

@@ -66,6 +66,25 @@ export class OrmPaymentTransactionRepository
   }
 
   @WithPosition()
+  findByOrderId(
+    orderId: string,
+  ): ResultAsync<PaymentTransaction | null, DomainError> {
+    const repo = this.getRepository();
+
+    return ResultAsync.fromPromise(
+      repo.findOne({
+        where: { orderId },
+        order: { createdAt: 'DESC' },
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((ormTransaction) =>
+      ormTransaction
+        ? ORMPaymentTransactionMapper.toDomain(ormTransaction)
+        : null,
+    );
+  }
+
+  @WithPosition()
   update(
     transaction: PaymentTransaction,
   ): ResultAsync<PaymentTransaction, DomainError> {

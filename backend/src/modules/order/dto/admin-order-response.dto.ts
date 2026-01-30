@@ -53,6 +53,7 @@ export class AdminOrderResponseDto {
   cancelledAt: Date | null;
   cancelReason: string | null;
   cancelledBy: CancelledBy | null;
+  cancelledByAdminId: string | null;
 
   confirmedAt: Date | null;
   shippedAt: Date | null;
@@ -96,6 +97,7 @@ export class AdminOrderResponseDto {
     this.cancelledAt = order.cancelledAt;
     this.cancelReason = order.cancelReason;
     this.cancelledBy = order.cancelledBy;
+    this.cancelledByAdminId = order.cancelledByAdminId;
 
     this.confirmedAt = order.confirmedAt;
     this.shippedAt = order.shippedAt;
