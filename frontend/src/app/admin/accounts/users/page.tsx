@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -69,6 +70,8 @@ export default function AdminUsersPage() {
   }>({ open: false, user: null });
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -160,10 +163,41 @@ export default function AdminUsersPage() {
       // Don't close if clicking inside dropdown or action button
       if (target.closest('[data-dropdown]')) return;
       setActiveDropdown(null);
+      setDropdownPosition(null);
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
+
+  // Calculate dropdown position when it opens
+  const openDropdown = (userId: string) => {
+    if (activeDropdown === userId) {
+      setActiveDropdown(null);
+      setDropdownPosition(null);
+      return;
+    }
+
+    const button = buttonRefs.current[userId];
+    if (button) {
+      const rect = button.getBoundingClientRect();
+      const dropdownHeight = 200; // Approximate dropdown height
+      const spaceBelow = window.innerHeight - rect.bottom;
+
+      // If not enough space below, open upward
+      if (spaceBelow < dropdownHeight && rect.top > dropdownHeight) {
+        setDropdownPosition({
+          top: rect.top + window.scrollY - dropdownHeight + 8,
+          left: rect.right + window.scrollX - 192, // 192px = w-48
+        });
+      } else {
+        setDropdownPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.right + window.scrollX - 192,
+        });
+      }
+    }
+    setActiveDropdown(userId);
+  };
 
   // Handle row click to view user details
   const handleRowClick = (userId: string, e: React.MouseEvent) => {
@@ -218,7 +252,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow overflow-visible">
+      <div className="bg-white rounded-lg shadow overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -229,7 +263,7 @@ export default function AdminUsersPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-t-lg overflow-y-visible">
+            <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 rounded-t-lg">
                   <tr>
@@ -302,13 +336,12 @@ export default function AdminUsersPage() {
                         {formatDate(user.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="relative" data-dropdown>
+                        <div data-dropdown>
                           <button
+                            ref={(el) => { buttonRefs.current[user.id] = el; }}
                             onClick={(e) => {
                               e.stopPropagation();
-                              setActiveDropdown(
-                                activeDropdown === user.id ? null : user.id
-                              );
+                              openDropdown(user.id);
                             }}
                             className="p-2 hover:bg-gray-100 rounded-lg"
                             disabled={actionLoading === user.id}
@@ -319,74 +352,6 @@ export default function AdminUsersPage() {
                               <MoreVertical className="w-5 h-5 text-gray-500" />
                             )}
                           </button>
-
-                          {activeDropdown === user.id && (
-                            <div
-                              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-                              data-dropdown
-                            >
-                              <button
-                                onClick={() => {
-                                  router.push(`/admin/accounts/users/${user.id}`);
-                                  setActiveDropdown(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                              >
-                                <Eye className="w-4 h-4" />
-                                Xem chi tiết
-                              </button>
-
-                              <button
-                                onClick={() => {
-                                  router.push(`/admin/orders?buyerId=${user.id}`);
-                                  setActiveDropdown(null);
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                              >
-                                <ShoppingBag className="w-4 h-4" />
-                                Xem đơn hàng
-                              </button>
-
-                              <hr className="my-1" />
-
-                              {user.status === 'active' ? (
-                                <button
-                                  onClick={() => {
-                                    setSuspendDialog({ open: true, user });
-                                    setActiveDropdown(null);
-                                  }}
-                                  className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
-                                >
-                                  <UserX className="w-4 h-4" />
-                                  Khóa tài khoản
-                                </button>
-                              ) : user.status === 'suspended' ? (
-                                <button
-                                  onClick={() => {
-                                    handleActivateUser(user);
-                                    setActiveDropdown(null);
-                                  }}
-                                  className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
-                                >
-                                  <UserCheck className="w-4 h-4" />
-                                  Mở khóa tài khoản
-                                </button>
-                              ) : null}
-
-                              {user.status !== 'deleted' && (
-                                <button
-                                  onClick={() => {
-                                    setDeleteDialog({ open: true, user });
-                                    setActiveDropdown(null);
-                                  }}
-                                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                  Xóa tài khoản
-                                </button>
-                              )}
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -448,6 +413,91 @@ export default function AdminUsersPage() {
           </>
         )}
       </div>
+
+      {/* Dropdown Portal */}
+      {activeDropdown && dropdownPosition && typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="fixed w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-[9999]"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+            }}
+            data-dropdown
+          >
+            {users.filter(u => u.id === activeDropdown).map((user) => (
+              <div key={user.id}>
+                <button
+                  onClick={() => {
+                    router.push(`/admin/accounts/users/${user.id}`);
+                    setActiveDropdown(null);
+                    setDropdownPosition(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  Xem chi tiết
+                </button>
+
+                <button
+                  onClick={() => {
+                    router.push(`/admin/orders?buyerId=${user.id}`);
+                    setActiveDropdown(null);
+                    setDropdownPosition(null);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Xem đơn hàng
+                </button>
+
+                <hr className="my-1" />
+
+                {user.status === 'active' ? (
+                  <button
+                    onClick={() => {
+                      setSuspendDialog({ open: true, user });
+                      setActiveDropdown(null);
+                      setDropdownPosition(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 flex items-center gap-2"
+                  >
+                    <UserX className="w-4 h-4" />
+                    Khóa tài khoản
+                  </button>
+                ) : user.status === 'suspended' ? (
+                  <button
+                    onClick={() => {
+                      handleActivateUser(user);
+                      setActiveDropdown(null);
+                      setDropdownPosition(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center gap-2"
+                  >
+                    <UserCheck className="w-4 h-4" />
+                    Mở khóa tài khoản
+                  </button>
+                ) : null}
+
+                {user.status !== 'deleted' && (
+                  <button
+                    onClick={() => {
+                      setDeleteDialog({ open: true, user });
+                      setActiveDropdown(null);
+                      setDropdownPosition(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Xóa tài khoản
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>,
+          document.body
+        )
+      }
 
       {/* Suspend Dialog */}
       {suspendDialog.open && suspendDialog.user && (
