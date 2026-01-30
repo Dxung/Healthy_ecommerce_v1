@@ -8,5 +8,6 @@ export * from './product';
 export * from './cart';
 export * from './order';
 export * from './payment';
+export * from './buyer';
 export * from './config';
 export * from './meal-plan';

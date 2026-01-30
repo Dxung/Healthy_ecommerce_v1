@@ -1,6 +1,6 @@
   CREATE TABLE shop_schema.shops (
       id UUID PRIMARY KEY DEFAULT uuidv7(),
-      registration_id UUID NOT NULL,
+      registration_id UUID NULL,  -- Nullable for direct registration (single-step)
       owner_id UUID NOT NULL REFERENCES users_schema.user_core(id),
       name VARCHAR(255) NOT NULL,
       slug VARCHAR(255) UNIQUE NOT NULL,
