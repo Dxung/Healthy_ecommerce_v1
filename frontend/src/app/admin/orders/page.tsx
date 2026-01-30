@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   apiClient,
@@ -141,7 +141,7 @@ const formatDate = (dateString: string): string => {
   });
 };
 
-export default function AdminOrdersPage() {
+function AdminOrdersPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const buyerIdParam = searchParams.get('buyerId');
@@ -865,5 +865,19 @@ export default function AdminOrdersPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      }
+    >
+      <AdminOrdersPageContent />
+    </Suspense>
   );
 }
