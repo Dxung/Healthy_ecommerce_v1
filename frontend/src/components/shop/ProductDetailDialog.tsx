@@ -29,15 +29,26 @@ import {
   Play,
   Pause,
   Upload,
+  Plus,
+  X,
+  ImageIcon,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { VariantEditDialog } from './VariantEditDialog';
 import { Tooltip } from '@/components/ui/tooltip';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
+import { UploadProductImageModal } from './UploadProductImageModal';
 
 interface ProductDetailDialogProps {
   productId: string;
   onClose: () => void;
   onUpdated: () => void;
+}
+
+interface DisplayImage {
+  id: string;
+  imageUrl: string;
+  isGallery: boolean;
 }
 
 const statusConfig: Record<ProductStatus, { label: string; className: string }> = {
@@ -47,6 +58,8 @@ const statusConfig: Record<ProductStatus, { label: string; className: string }> 
   suspended: { label: 'Bị khóa', className: 'bg-red-100 text-red-700' },
   deleted: { label: 'Đã xóa', className: 'bg-gray-100 text-gray-400' },
 };
+
+const MAX_GALLERY_IMAGES = 5;
 
 export function ProductDetailDialog({
   productId,
@@ -60,6 +73,15 @@ export function ProductDetailDialog({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
 
+  // Image management state
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [deletingImageId, setDeletingImageId] = useState<string | null>(null);
+
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<{ imageUrl: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
   useEffect(() => {
     fetchProduct();
   }, [productId]);
@@ -69,6 +91,7 @@ export function ProductDetailDialog({
       setLoading(true);
       const data = await apiClient.getMyShopProductById(productId);
       setProduct(data);
+      setCurrentImageIndex(0); // Reset index when product changes
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Không thể tải thông tin sản phẩm');
@@ -147,6 +170,56 @@ export function ProductDetailDialog({
     }
   };
 
+  // Image management handlers
+  const handleAddImage = async (imageUrl: string) => {
+    try {
+      await apiClient.addProductImage(productId, imageUrl);
+      toast.success('Đã thêm ảnh');
+      fetchProduct();
+      onUpdated();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(error.message || 'Không thể thêm ảnh');
+    }
+  };
+
+  const handleRemoveImage = async (imageId: string) => {
+    if (!confirm('Bạn có chắc muốn xóa ảnh này?')) return;
+    try {
+      setDeletingImageId(imageId);
+      await apiClient.removeProductImage(productId, imageId);
+      toast.success('Đã xóa ảnh');
+      // Reset current index if needed
+      if (product && product.images) {
+        const galleryCount = product.images.length - 1;
+        const totalAfterDelete = (product.thumbnailUrl ? 1 : 0) + galleryCount;
+        if (currentImageIndex >= totalAfterDelete) {
+          setCurrentImageIndex(Math.max(0, totalAfterDelete - 1));
+        }
+      }
+      fetchProduct();
+      onUpdated();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(error.message || 'Không thể xóa ảnh');
+    } finally {
+      setDeletingImageId(null);
+    }
+  };
+
+  // Lightbox handlers
+  const openLightbox = (images: { imageUrl: string }[], startIndex: number) => {
+    setLightboxImages(images);
+    setLightboxIndex(startIndex);
+    setLightboxOpen(true);
+  };
+
+  const openVariantLightbox = (imageUrl: string) => {
+    setLightboxImages([{ imageUrl }]);
+    setLightboxIndex(0);
+    setLightboxOpen(true);
+  };
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -180,10 +253,31 @@ export function ProductDetailDialog({
   if (!product) return null;
 
   const status = statusConfig[product.status];
-  const images = product.images?.length > 0 ? product.images : null;
   const variants = product.variants ?? [];
   const allergenTags = product.allergenTags ?? [];
   const dietTags = product.dietTags ?? [];
+  const galleryImages = product.images ?? [];
+  const galleryCount = galleryImages.length;
+
+  // Create combined images array: thumbnail first, then gallery images
+  const allImages: DisplayImage[] = [];
+  if (product.thumbnailUrl) {
+    allImages.push({
+      id: 'thumbnail',
+      imageUrl: product.thumbnailUrl,
+      isGallery: false,
+    });
+  }
+  galleryImages.forEach((img) => {
+    allImages.push({
+      id: img.id,
+      imageUrl: img.imageUrl,
+      isGallery: true,
+    });
+  });
+
+  const hasImages = allImages.length > 0;
+  const currentImage = allImages[currentImageIndex];
 
   return (
     <>
@@ -221,32 +315,47 @@ export function ProductDetailDialog({
             {/* Left: Images */}
             <div className="space-y-4">
               {/* Main Image */}
-              <div className="aspect-square bg-gray-100 rounded-lg relative overflow-hidden">
-                {images ? (
+              <div
+                className="aspect-square bg-gray-100 rounded-lg relative overflow-hidden cursor-pointer"
+                onClick={() => hasImages && openLightbox(allImages.map(img => ({ imageUrl: img.imageUrl })), currentImageIndex)}
+              >
+                {hasImages && currentImage ? (
                   <>
                     <img
-                      src={images[currentImageIndex].imageUrl}
+                      src={currentImage.imageUrl}
                       alt={product.name}
                       className="w-full h-full object-cover"
                     />
-                    {images.length > 1 && (
+                    {/* Badge to indicate thumbnail vs gallery */}
+                    <div className="absolute top-2 left-2">
+                      <span className={`px-2 py-1 text-xs font-medium rounded ${
+                        currentImage.isGallery
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {currentImage.isGallery ? 'Gallery' : 'Thumbnail'}
+                      </span>
+                    </div>
+                    {allImages.length > 1 && (
                       <>
                         <button
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setCurrentImageIndex((i) =>
-                              i === 0 ? images.length - 1 : i - 1
-                            )
-                          }
+                              i === 0 ? allImages.length - 1 : i - 1
+                            );
+                          }}
                           className="absolute left-2 top-1/2 -translate-y-1/2 p-1 bg-white/80 rounded-full hover:bg-white"
                         >
                           <ChevronLeft className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setCurrentImageIndex((i) =>
-                              i === images.length - 1 ? 0 : i + 1
-                            )
-                          }
+                              i === allImages.length - 1 ? 0 : i + 1
+                            );
+                          }}
                           className="absolute right-2 top-1/2 -translate-y-1/2 p-1 bg-white/80 rounded-full hover:bg-white"
                         >
                           <ChevronRight className="w-5 h-5" />
@@ -261,28 +370,69 @@ export function ProductDetailDialog({
                 )}
               </div>
 
-              {/* Thumbnails */}
-              {images && images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {images.map((img, idx) => (
-                    <button
-                      key={img.id}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 ${
-                        idx === currentImageIndex
-                          ? 'border-primary'
-                          : 'border-transparent'
-                      }`}
-                    >
-                      <img
-                        src={img.imageUrl}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
+              {/* Thumbnails + Image Management */}
+              <div className="space-y-2">
+                {/* Gallery header with count and add button */}
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    Ảnh gallery ({galleryCount}/{MAX_GALLERY_IMAGES})
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUploadModalOpen(true)}
+                    disabled={galleryCount >= MAX_GALLERY_IMAGES}
+                    className="gap-1"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Thêm ảnh
+                  </Button>
                 </div>
-              )}
+
+                {/* Thumbnail strip */}
+                {allImages.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-2">
+                    {allImages.map((img, idx) => (
+                      <div key={img.id} className="relative group flex-shrink-0">
+                        <button
+                          onClick={() => setCurrentImageIndex(idx)}
+                          className={`w-16 h-16 rounded overflow-hidden border-2 ${
+                            idx === currentImageIndex
+                              ? 'border-primary'
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <img
+                            src={img.imageUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                        {/* Delete button for gallery images only */}
+                        {img.isGallery && (
+                          <button
+                            onClick={() => handleRemoveImage(img.id)}
+                            disabled={deletingImageId === img.id}
+                            className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                          >
+                            {deletingImageId === img.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <X className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
+                        {/* Indicator for thumbnail */}
+                        {!img.isGallery && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-purple-500/80 text-white text-[10px] text-center py-0.5">
+                            Đại diện
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Right: Info */}
@@ -396,7 +546,8 @@ export function ProductDetailDialog({
                             <img
                               src={variant.imageUrl}
                               alt=""
-                              className="w-8 h-8 rounded object-cover"
+                              className="w-8 h-8 rounded object-cover cursor-pointer hover:ring-2 hover:ring-primary"
+                              onClick={() => openVariantLightbox(variant.imageUrl!)}
                             />
                           )}
                           <div>
@@ -409,7 +560,7 @@ export function ProductDetailDialog({
                       </td>
                       <td className="px-3 py-2 text-right">
                         <p className="font-medium">{formatPrice(variant.price)}</p>
-                        {variant.compareAtPrice && (
+                        {variant.compareAtPrice && variant.compareAtPrice > variant.price && (
                           <p className="text-xs text-gray-400 line-through">
                             {formatPrice(variant.compareAtPrice)}
                           </p>
@@ -538,6 +689,21 @@ export function ProductDetailDialog({
           }}
         />
       )}
+
+      {/* Image Upload Modal */}
+      <UploadProductImageModal
+        isOpen={uploadModalOpen}
+        onClose={() => setUploadModalOpen(false)}
+        onUploadSuccess={handleAddImage}
+      />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
     </>
   );
 }

@@ -148,6 +148,16 @@ export class AdminBadgeService implements IAdminBadgeService {
     badgeCode: ShopBadgeCode,
     dto: AddRequirementArgumentDto,
   ): ResultAsync<BadgeRequirement, DomainError> {
+    // Block adding DOCUMENT requirements to OFFICIAL badge
+    // OFFICIAL badge uses brand-specific requirements instead (via brand_document_requirements table)
+    if (badgeCode === ShopBadgeCode.OFFICIAL && dto.requirementType === RequirementType.DOCUMENT) {
+      return errAsync(
+        createDomainError(SHOP_ERRORS.CANNOT_ADD_DOCUMENT_TO_OFFICIAL, {
+          cause: 'OFFICIAL badge uses brand-specific document requirements. Configure them via brand settings instead.',
+        }),
+      );
+    }
+
     // Verify badge exists
     return this.getBadgeByCode(badgeCode).andThen(() => {
       let requirement: BadgeRequirement;

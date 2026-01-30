@@ -87,4 +87,8 @@ export const SHOP_ERRORS = {
     code: 'SHOP_REQUIREMENT_NOT_FOUND',
     message: 'Không tìm thấy yêu cầu badge.',
   },
+  CANNOT_ADD_DOCUMENT_TO_OFFICIAL: {
+    code: 'SHOP_CANNOT_ADD_DOCUMENT_TO_OFFICIAL',
+    message: 'Badge OFFICIAL sử dụng yêu cầu giấy tờ riêng cho từng thương hiệu. Vui lòng cấu hình trong phần quản lý thương hiệu.',
+  },
 } as const satisfies Record<string, { code: string; message: string }>;

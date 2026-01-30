@@ -344,7 +344,21 @@ export default function AddProductPage() {
         servingUnitId: hasNutrition && servingUnitId ? servingUnitId : undefined,
       };
 
-      await apiClient.createShopProduct(productData);
+      const createdProduct = await apiClient.createShopProduct(productData);
+
+      // Add gallery images after product creation
+      if (imageUrls.length > 0) {
+        try {
+          await Promise.all(
+            imageUrls.map((img) =>
+              apiClient.addProductImage(createdProduct.id, img.url)
+            )
+          );
+        } catch {
+          toast.warning('Sản phẩm đã tạo nhưng một số ảnh gallery không thể thêm');
+        }
+      }
+
       toast.success('Đã tạo sản phẩm mới');
       router.push('/shop/products');
     } catch (err) {
