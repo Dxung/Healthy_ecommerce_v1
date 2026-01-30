@@ -12,6 +12,7 @@ import {
   Plus,
   LayoutDashboard,
   Wallet,
+  Award,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -47,6 +48,11 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    label: 'Huy hiệu & Chứng nhận',
+    href: '/shop/badges',
+    icon: <Award className="w-5 h-5" />,
+  },
+  {
     label: 'Ví của Shop',
     href: '/shop/wallet',
     icon: <Wallet className="w-5 h-5" />,
@@ -54,7 +60,7 @@ const navItems: NavItem[] = [
 ];
 
 // Pages that should show sidebar (shop management pages)
-const pagesWithSidebar = ['/shop', '/shop/orders', '/shop/products', '/shop/wallet'];
+const pagesWithSidebar = ['/shop', '/shop/orders', '/shop/products', '/shop/badges', '/shop/wallet'];
 
 function ShopSidebar() {
   const pathname = usePathname();

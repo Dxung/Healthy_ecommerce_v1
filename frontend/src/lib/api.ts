@@ -167,6 +167,68 @@ export interface ShopInfoResponse {
   updatedAt: string;
 }
 
+// ===================== Shop Badge Application Types =====================
+export type BadgeApplicationStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export interface ShopBadgeAssignmentResponse {
+  id: string;
+  badgeCode: BadgeCode;
+  badgeName: string;
+  status: 'active' | 'disabled';
+  grantedAt: string;
+  expiresAt: string | null;
+  disabledAt: string | null;
+  disabledReason: string | null;
+}
+
+export interface ShopOfficialBrandResponse {
+  id: string;
+  brandId: string;
+  brandName: string;
+  grantedAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  revokedReason: string | null;
+}
+
+export interface BadgeApplicationDocumentResponse {
+  id: string;
+  documentTypeId: string;
+  documentTypeName: string;
+  imageUrl: string;
+  expiresAt: string;
+}
+
+export interface BadgeApplicationResponse {
+  id: string;
+  shopId: string;
+  badgeCode: BadgeCode;
+  brandId: string | null;
+  brandName: string | null;
+  status: BadgeApplicationStatus;
+  documents: BadgeApplicationDocumentResponse[];
+  rejectionReason: string | null;
+  reviewedAt: string | null;
+  reviewedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ApplyBadgeDocumentRequest {
+  documentTypeId: string;
+  imageUrl: string;
+  expiresAt: string;
+}
+
+export interface ApplyVerifiedBadgeRequest {
+  documents: ApplyBadgeDocumentRequest[];
+}
+
+export interface ApplyOfficialBadgeRequest {
+  brandId: string;
+  documents: ApplyBadgeDocumentRequest[];
+}
+
 // Admin Badge Types
 export type BadgeCode = 'preferred' | 'approved' | 'official';
 export type RequirementType = 'document' | 'attribute';
@@ -2031,6 +2093,58 @@ export class ApiClient {
 
   async getMyShop(): Promise<ShopInfoResponse | null> {
     return this.request<ShopInfoResponse | null>('/shop/my-shop', {
+      method: 'GET',
+    });
+  }
+
+  // ======================== SHOP BADGE APPLICATION ENDPOINTS ========================
+
+  async getVerifiedBadgeRequirements(): Promise<DocumentTypeResponse[]> {
+    return this.request<DocumentTypeResponse[]>('/shop/badge-applications/verified/requirements', {
+      method: 'GET',
+    });
+  }
+
+  async getOfficialBadgeRequirements(): Promise<DocumentTypeResponse[]> {
+    return this.request<DocumentTypeResponse[]>('/shop/badge-applications/official/requirements', {
+      method: 'GET',
+    });
+  }
+
+  async applyForVerifiedBadge(data: ApplyVerifiedBadgeRequest): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>('/shop/badge-applications/verified', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async applyForOfficialBadge(data: ApplyOfficialBadgeRequest): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>('/shop/badge-applications/official', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getMyBadgeApplications(): Promise<BadgeApplicationResponse[]> {
+    return this.request<BadgeApplicationResponse[]>('/shop/badge-applications', {
+      method: 'GET',
+    });
+  }
+
+  async cancelBadgeApplication(applicationId: string): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>(`/shop/badge-applications/${applicationId}/cancel`, {
+      method: 'POST',
+    });
+  }
+
+  async getMyShopBadges(): Promise<ShopBadgeAssignmentResponse[]> {
+    return this.request<ShopBadgeAssignmentResponse[]>('/shop/badges', {
+      method: 'GET',
+    });
+  }
+
+  async getMyOfficialBrands(): Promise<ShopOfficialBrandResponse[]> {
+    return this.request<ShopOfficialBrandResponse[]>('/shop/official-brands', {
       method: 'GET',
     });
   }
