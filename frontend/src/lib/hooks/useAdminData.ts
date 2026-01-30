@@ -12,6 +12,7 @@ import type {
   DocumentTypeResponse,
   RegistrationListResponse,
   ShopRegistrationStatus,
+  BrandDocumentRequirementResponse,
 } from '@/lib/api';
 
 // SWR fetcher functions - these return the actual data
@@ -142,6 +143,21 @@ export function useBrands() {
 
   return {
     brands: data ?? [],
+    isLoading,
+    error,
+    refresh: mutate,
+  };
+}
+
+export function useBrandDocumentRequirements(brandId: string | null) {
+  const { data, error, isLoading, mutate } = useSWR<BrandDocumentRequirementResponse[]>(
+    brandId ? `admin/brands/${brandId}/document-requirements` : null,
+    brandId ? () => apiClient.getBrandDocumentRequirements(brandId) : null,
+    swrConfig
+  );
+
+  return {
+    requirements: data ?? [],
     isLoading,
     error,
     refresh: mutate,

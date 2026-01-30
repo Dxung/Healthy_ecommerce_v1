@@ -696,6 +696,20 @@ export interface UpdateBrandRequest {
   isActive?: boolean;
 }
 
+// Brand Document Requirement Types (for Official badge)
+export interface BrandDocumentRequirementResponse {
+  id: string;
+  brandId: string;
+  documentTypeId: string;
+  isActive: boolean;
+  createdAt: string;
+  documentType?: DocumentTypeResponse;
+}
+
+export interface AddBrandDocumentRequirementRequest {
+  documentTypeId: string;
+}
+
 // Cart Types
 export interface CartItemResponse {
   id: string;
@@ -2320,6 +2334,35 @@ export class ApiClient {
     return this.request<void>(`/admin/brands/${id}`, {
       method: 'DELETE',
     });
+  }
+
+  // ===================== Brand Document Requirements =====================
+
+  async getBrandDocumentRequirements(brandId: string): Promise<BrandDocumentRequirementResponse[]> {
+    return this.request<BrandDocumentRequirementResponse[]>(
+      `/admin/brands/${brandId}/document-requirements`,
+      { method: 'GET' }
+    );
+  }
+
+  async addBrandDocumentRequirement(
+    brandId: string,
+    data: AddBrandDocumentRequirementRequest
+  ): Promise<BrandDocumentRequirementResponse> {
+    return this.request<BrandDocumentRequirementResponse>(
+      `/admin/brands/${brandId}/document-requirements`,
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }
+    );
+  }
+
+  async removeBrandDocumentRequirement(brandId: string, requirementId: string): Promise<void> {
+    return this.request<void>(
+      `/admin/brands/${brandId}/document-requirements/${requirementId}`,
+      { method: 'DELETE' }
+    );
   }
 
   // ===================== Cart Endpoints =====================
