@@ -225,7 +225,6 @@ export interface BadgeRequirementResponse {
   attributeCode: ShopAttributeCode | null;
   operator: ComparisonOperator | null;
   attributeValue: number | null;
-  isRequired: boolean;
   isActive: boolean;
 }
 
@@ -262,7 +261,14 @@ export interface AddRequirementRequest {
   attributeCode?: ShopAttributeCode;
   operator?: ComparisonOperator;
   attributeValue?: number;
-  isRequired?: boolean;
+}
+
+export interface UpdateBadgeRequest {
+  name?: string;
+  description?: string | null;
+  platformFeeDiscountPercent?: number | null;
+  searchBoostMultiplier?: number | null;
+  maxProductSlots?: number;
 }
 
 // Shop Registration Types
@@ -2069,6 +2075,13 @@ export class ApiClient {
     });
   }
 
+  async updateBadge(code: BadgeCode, data: UpdateBadgeRequest): Promise<BadgeResponse> {
+    return this.request<BadgeResponse>(`/admin/badges/${code}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
   async addBadgeRequirement(
     code: BadgeCode,
     data: AddRequirementRequest
@@ -2185,6 +2198,12 @@ export class ApiClient {
   async deactivateUnit(id: string): Promise<UnitResponse> {
     return this.request<UnitResponse>(`/admin/units/${id}/deactivate`, {
       method: 'PATCH',
+    });
+  }
+
+  async deleteUnit(id: string): Promise<void> {
+    return this.request<void>(`/admin/units/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -2810,6 +2829,17 @@ export class ApiClient {
     return this.request<PlatformFeeResponse>('/admin/system-config/platform-fee/update', {
       method: 'PUT',
       body: JSON.stringify({ platformFeePercent }),
+    });
+  }
+
+  async updateSystemConfig(
+    key: string,
+    value: string,
+    description?: string
+  ): Promise<SystemConfigResponse> {
+    return this.request<SystemConfigResponse>(`/admin/system-config/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value, description }),
     });
   }
 

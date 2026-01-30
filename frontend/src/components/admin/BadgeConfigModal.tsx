@@ -18,7 +18,6 @@ import {
   type BadgeDetailResponse,
   type BadgeRequirementResponse,
   type DocumentTypeResponse,
-  type RequirementType,
   type ShopAttributeCode,
   type ComparisonOperator,
   type ApiError,
@@ -29,6 +28,7 @@ import {
   Trash2,
   FileText,
   BarChart3,
+  Settings2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,6 +56,10 @@ const operatorLabels: Record<ComparisonOperator, string> = {
   eq: '=',
 };
 
+// Preferred badge uses attribute requirements (auto-granted)
+// Approved/Official badges use document requirements only
+const isPreferredBadge = (code: BadgeCode) => code === 'preferred';
+
 export function BadgeConfigModal({
   badgeCode,
   onClose,
@@ -66,6 +70,14 @@ export function BadgeConfigModal({
   const [loading, setLoading] = useState(true);
   const [addingType, setAddingType] = useState<'document' | 'attribute' | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [savingProperties, setSavingProperties] = useState(false);
+
+  // Form state for badge properties
+  const [editName, setEditName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editPlatformFeeDiscount, setEditPlatformFeeDiscount] = useState('');
+  const [editSearchBoost, setEditSearchBoost] = useState('');
+  const [editMaxProductSlots, setEditMaxProductSlots] = useState('');
 
   // Form state for adding requirements
   const [selectedDocTypeId, setSelectedDocTypeId] = useState<string>('');
@@ -86,11 +98,39 @@ export function BadgeConfigModal({
       ]);
       setBadge(badgeData);
       setDocumentTypes(docTypesData.filter((dt) => dt.isActive));
+
+      // Initialize form values
+      setEditName(badgeData.name);
+      setEditDescription(badgeData.description || '');
+      setEditPlatformFeeDiscount(badgeData.platformFeeDiscountPercent?.toString() || '');
+      setEditSearchBoost(badgeData.searchBoostMultiplier?.toString() || '');
+      setEditMaxProductSlots(badgeData.maxProductSlots?.toString() || '');
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Không thể tải dữ liệu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveProperties = async () => {
+    try {
+      setSavingProperties(true);
+      await apiClient.updateBadge(badgeCode, {
+        name: editName,
+        description: editDescription || null,
+        platformFeeDiscountPercent: editPlatformFeeDiscount ? parseFloat(editPlatformFeeDiscount) : null,
+        searchBoostMultiplier: editSearchBoost ? parseFloat(editSearchBoost) : null,
+        maxProductSlots: editMaxProductSlots ? parseInt(editMaxProductSlots) : undefined,
+      });
+      toast.success('Đã cập nhật thông tin badge');
+      fetchData();
+      onUpdated();
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(error.message || 'Không thể cập nhật badge');
+    } finally {
+      setSavingProperties(false);
     }
   };
 
@@ -176,13 +216,17 @@ export function BadgeConfigModal({
     (r) => r.requirementType === 'attribute'
   ) ?? [];
 
+  const isPreferred = isPreferredBadge(badgeCode);
+
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Cấu hình {badge?.name}</DialogTitle>
           <DialogDescription>
-            Quản lý các yêu cầu để đạt được badge này
+            {isPreferred
+              ? 'Badge này được tự động cấp/gỡ dựa trên chỉ số của shop (cronjob chạy hàng ngày)'
+              : 'Badge này yêu cầu shop nộp giấy tờ khi đăng ký'}
           </DialogDescription>
         </DialogHeader>
 
@@ -192,180 +236,265 @@ export function BadgeConfigModal({
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Document Requirements Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
-                  Yêu cầu tài liệu
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAddingType('document')}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Thêm
-                </Button>
+            {/* Badge Properties Section */}
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium flex items-center gap-2 mb-4">
+                <Settings2 className="w-4 h-4" />
+                Thuộc tính Badge
+              </h3>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                  <Label>Tên badge</Label>
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="col-span-2">
+                  <Label>Mô tả</Label>
+                  <Input
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="mt-1"
+                    placeholder="Mô tả về badge..."
+                  />
+                </div>
+
+                <div>
+                  <Label>Giảm phí nền tảng (%)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="100"
+                    value={editPlatformFeeDiscount}
+                    onChange={(e) => setEditPlatformFeeDiscount(e.target.value)}
+                    className="mt-1"
+                    placeholder="VD: 10"
+                  />
+                </div>
+
+                <div>
+                  <Label>Boost tìm kiếm (x)</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="1"
+                    value={editSearchBoost}
+                    onChange={(e) => setEditSearchBoost(e.target.value)}
+                    className="mt-1"
+                    placeholder="VD: 1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label>Giới hạn sản phẩm</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={editMaxProductSlots}
+                    onChange={(e) => setEditMaxProductSlots(e.target.value)}
+                    className="mt-1"
+                    placeholder="VD: 100"
+                  />
+                </div>
+
+                <div className="flex items-end">
+                  <Button
+                    onClick={handleSaveProperties}
+                    disabled={savingProperties}
+                  >
+                    {savingProperties && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Lưu thuộc tính
+                  </Button>
+                </div>
               </div>
-
-              {documentRequirements.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">
-                  Chưa có yêu cầu tài liệu nào
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {documentRequirements.map((req) => (
-                    <RequirementItem
-                      key={req.id}
-                      requirement={req}
-                      onToggle={() => handleToggleRequirement(req.id)}
-                      onRemove={() => handleRemoveRequirement(req.id)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {/* Add document form */}
-              {addingType === 'document' && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
-                  <div>
-                    <Label>Loại tài liệu</Label>
-                    <select
-                      value={selectedDocTypeId}
-                      onChange={(e) => setSelectedDocTypeId(e.target.value)}
-                      className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2"
-                    >
-                      <option value="">Chọn loại tài liệu...</option>
-                      {documentTypes.map((dt) => (
-                        <option key={dt.id} value={dt.id}>
-                          {dt.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleAddDocumentRequirement}
-                      disabled={submitting}
-                    >
-                      {submitting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                      Thêm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setAddingType(null)}
-                    >
-                      Hủy
-                    </Button>
-                  </div>
-                </div>
-              )}
             </div>
 
-            {/* Attribute Requirements Section */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Yêu cầu chỉ số
-                </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setAddingType('attribute')}
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  Thêm
-                </Button>
-              </div>
-
-              {attributeRequirements.length === 0 ? (
-                <p className="text-sm text-gray-500 py-2">
-                  Chưa có yêu cầu chỉ số nào
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {attributeRequirements.map((req) => (
-                    <RequirementItem
-                      key={req.id}
-                      requirement={req}
-                      onToggle={() => handleToggleRequirement(req.id)}
-                      onRemove={() => handleRemoveRequirement(req.id)}
-                    />
-                  ))}
+            {/* Requirements Section */}
+            {isPreferred ? (
+              // Preferred badge: Attribute requirements only
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4" />
+                    Yêu cầu chỉ số (Tự động kiểm tra)
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddingType('attribute')}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Thêm
+                  </Button>
                 </div>
-              )}
 
-              {/* Add attribute form */}
-              {addingType === 'attribute' && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <Label>Chỉ số</Label>
-                      <select
-                        value={selectedAttribute}
-                        onChange={(e) =>
-                          setSelectedAttribute(e.target.value as ShopAttributeCode)
-                        }
-                        className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      >
-                        {Object.entries(attributeLabels).map(([code, label]) => (
-                          <option key={code} value={code}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>Toán tử</Label>
-                      <select
-                        value={selectedOperator}
-                        onChange={(e) =>
-                          setSelectedOperator(e.target.value as ComparisonOperator)
-                        }
-                        className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
-                      >
-                        {Object.entries(operatorLabels).map(([code, label]) => (
-                          <option key={code} value={code}>
-                            {label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <Label>Giá trị</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={attributeValue}
-                        onChange={(e) => setAttributeValue(e.target.value)}
-                        className="mt-1"
+                <p className="text-sm text-gray-500 mb-3">
+                  Shop sẽ tự động được cấp/gỡ badge khi đạt/không đạt các yêu cầu này
+                </p>
+
+                {attributeRequirements.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">
+                    Chưa có yêu cầu chỉ số nào
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {attributeRequirements.map((req) => (
+                      <RequirementItem
+                        key={req.id}
+                        requirement={req}
+                        onToggle={() => handleToggleRequirement(req.id)}
+                        onRemove={() => handleRemoveRequirement(req.id)}
                       />
+                    ))}
+                  </div>
+                )}
+
+                {/* Add attribute form */}
+                {addingType === 'attribute' && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <Label>Chỉ số</Label>
+                        <select
+                          value={selectedAttribute}
+                          onChange={(e) =>
+                            setSelectedAttribute(e.target.value as ShopAttributeCode)
+                          }
+                          className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {Object.entries(attributeLabels).map(([code, label]) => (
+                            <option key={code} value={code}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Label>Toán tử</Label>
+                        <select
+                          value={selectedOperator}
+                          onChange={(e) =>
+                            setSelectedOperator(e.target.value as ComparisonOperator)
+                          }
+                          className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {Object.entries(operatorLabels).map(([code, label]) => (
+                            <option key={code} value={code}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <Label>Giá trị</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={attributeValue}
+                          onChange={(e) => setAttributeValue(e.target.value)}
+                          className="mt-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleAddAttributeRequirement}
+                        disabled={submitting}
+                      >
+                        {submitting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                        Thêm
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setAddingType(null)}
+                      >
+                        Hủy
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleAddAttributeRequirement}
-                      disabled={submitting}
-                    >
-                      {submitting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                      Thêm
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setAddingType(null)}
-                    >
-                      Hủy
-                    </Button>
-                  </div>
+                )}
+              </div>
+            ) : (
+              // Approved/Official badges: Document requirements only
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    Yêu cầu tài liệu (Shop nộp khi đăng ký)
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddingType('document')}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Thêm
+                  </Button>
                 </div>
-              )}
-            </div>
+
+                {documentRequirements.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">
+                    Chưa có yêu cầu tài liệu nào
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {documentRequirements.map((req) => (
+                      <RequirementItem
+                        key={req.id}
+                        requirement={req}
+                        onToggle={() => handleToggleRequirement(req.id)}
+                        onRemove={() => handleRemoveRequirement(req.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Add document form */}
+                {addingType === 'document' && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded-lg space-y-3">
+                    <div>
+                      <Label>Loại tài liệu</Label>
+                      <select
+                        value={selectedDocTypeId}
+                        onChange={(e) => setSelectedDocTypeId(e.target.value)}
+                        className="w-full mt-1 rounded-md border border-gray-300 px-3 py-2"
+                      >
+                        <option value="">Chọn loại tài liệu...</option>
+                        {documentTypes.map((dt) => (
+                          <option key={dt.id} value={dt.id}>
+                            {dt.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleAddDocumentRequirement}
+                        disabled={submitting}
+                      >
+                        {submitting && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+                        Thêm
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setAddingType(null)}
+                      >
+                        Hủy
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
@@ -405,11 +534,6 @@ function RequirementItem({
         <span className={requirement.isActive ? '' : 'text-gray-400 line-through'}>
           {getDescription()}
         </span>
-        {requirement.isRequired && (
-          <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 rounded">
-            Bắt buộc
-          </span>
-        )}
       </div>
       <div className="flex items-center gap-2">
         <Switch checked={requirement.isActive} onCheckedChange={onToggle} />

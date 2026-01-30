@@ -133,6 +133,13 @@ export class UnitService implements IUnitService {
     });
   }
 
+  @WithPosition()
+  deleteUnit(id: string): ResultAsync<void, DomainError> {
+    return this.getUnitById(id).andThen(() => {
+      return this.unitRepository.softDelete(id);
+    });
+  }
+
   // ======================== ADMIN CONVERSION OPERATIONS ========================
 
   @WithPosition()

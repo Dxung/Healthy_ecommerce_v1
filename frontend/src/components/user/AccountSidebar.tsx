@@ -11,7 +11,7 @@ import {
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface MenuItem {
@@ -45,7 +45,25 @@ const menuItems: MenuItem[] = [
 export function AccountSidebar() {
   const { user } = useAuth();
   const pathname = usePathname();
-  const [expandedItems, setExpandedItems] = useState<string[]>(['Tài khoản của tôi']);
+
+  // Only expand "Tài khoản của tôi" when on its child pages
+  const getInitialExpanded = () => {
+    if (pathname.startsWith('/user/account/')) {
+      return ['Tài khoản của tôi'];
+    }
+    return [];
+  };
+
+  const [expandedItems, setExpandedItems] = useState<string[]>(getInitialExpanded);
+
+  // Sync expanded state when pathname changes (client-side navigation)
+  useEffect(() => {
+    if (pathname.startsWith('/user/account/')) {
+      setExpandedItems(['Tài khoản của tôi']);
+    } else {
+      setExpandedItems([]);
+    }
+  }, [pathname]);
 
   const toggleExpanded = (label: string) => {
     setExpandedItems(prev =>

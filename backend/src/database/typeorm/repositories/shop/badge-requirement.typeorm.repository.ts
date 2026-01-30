@@ -113,7 +113,6 @@ export class OrmBadgeRequirementRepository
 
     return ResultAsync.fromPromise(
       repo.update(requirement.id, {
-        isRequired: requirement.isRequired,
         isActive: requirement.isActive,
         updatedAt: requirement.updatedAt,
       }),

@@ -65,6 +65,13 @@ export interface IUnitService {
    */
   deactivateUnit(id: string): ResultAsync<Unit, DomainError>;
 
+  /**
+   * Soft deletes a unit.
+   * @param id - The unit ID.
+   * @returns void on success.
+   */
+  deleteUnit(id: string): ResultAsync<void, DomainError>;
+
   // ======================== ADMIN CONVERSION OPERATIONS ========================
 
   /**

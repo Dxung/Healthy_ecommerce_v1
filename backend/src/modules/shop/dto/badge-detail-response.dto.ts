@@ -33,9 +33,6 @@ export class BadgeRequirementResponseDto {
   @ApiProperty({ description: 'Attribute value', nullable: true })
   attributeValue: number | null;
 
-  @ApiProperty({ description: 'Whether this requirement is required' })
-  isRequired: boolean;
-
   @ApiProperty({ description: 'Whether this requirement is active' })
   isActive: boolean;
 
@@ -47,7 +44,6 @@ export class BadgeRequirementResponseDto {
     this.attributeCode = requirement.attributeCode;
     this.operator = requirement.operator;
     this.attributeValue = requirement.attributeValue;
-    this.isRequired = requirement.isRequired;
     this.isActive = requirement.isActive;
   }
 }

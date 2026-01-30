@@ -24,7 +24,6 @@ export class ORMBadgeRequirementMapper {
       orm.attributeCode,
       orm.operator,
       orm.attributeValue ? Number(orm.attributeValue) : null,
-      orm.isRequired,
       orm.isActive,
       orm.createdAt,
       orm.updatedAt,
@@ -44,7 +43,6 @@ export class ORMBadgeRequirementMapper {
     orm.attributeCode = domain.attributeCode;
     orm.operator = domain.operator;
     orm.attributeValue = domain.attributeValue;
-    orm.isRequired = domain.isRequired;
     orm.isActive = domain.isActive;
     orm.createdAt = domain.createdAt;
     orm.updatedAt = domain.updatedAt;

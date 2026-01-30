@@ -108,6 +108,11 @@ export class OrmShopBadgeRepository implements IShopBadgeRepository {
 
     return ResultAsync.fromPromise(
       repo.update(badge.id, {
+        name: badge.name,
+        description: badge.description,
+        platformFeeDiscountPercent: badge.platformFeeDiscountPercent,
+        searchBoostMultiplier: badge.searchBoostMultiplier,
+        maxProductSlots: badge.maxProductSlots,
         isActive: badge.isActive,
         updatedAt: badge.updatedAt,
       }),

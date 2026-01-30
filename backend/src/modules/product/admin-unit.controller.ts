@@ -178,6 +178,25 @@ export class AdminUnitController {
     );
   }
 
+  @Delete(':id')
+  @Permissions('unit:delete')
+  @ApiOperation({ summary: 'Soft delete a unit' })
+  @ApiResponse({ status: 200, description: 'Unit deleted' })
+  @ApiResponse({ status: 404, description: 'Unit not found' })
+  deleteUnit(
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ message: string }> {
+    return this.unitService.deleteUnit(id).match(
+      () => ({ message: 'Unit deleted successfully' }),
+      (error) => {
+        throw ProductErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
+      },
+    );
+  }
+
   // ======================== CONVERSION ENDPOINTS ========================
 
   @Get('conversions/all')

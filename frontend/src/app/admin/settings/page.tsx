@@ -2,16 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { apiClient, SystemConfigResponse } from '@/lib/api';
-import { Settings, Percent, Save, AlertCircle, CheckCircle } from 'lucide-react';
+import { Settings, Save, AlertCircle, CheckCircle, Pencil, X, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+
+// Config key to Vietnamese label mapping
+const CONFIG_LABELS: Record<string, string> = {
+  platform_fee_percent: 'Phí nền tảng (%)',
+  review_window_days: 'Số ngày đánh giá',
+  escrow_hold_days: 'Số ngày giữ tiền',
+  coin_earn_rate_percent: 'Tỷ lệ tích xu (%)',
+  coin_max_usage_percent: 'Giới hạn dùng xu (%)',
+  default_max_product_slots: 'Số sản phẩm tối đa (shop chưa badge)',
+};
+
+// Config key to unit/suffix mapping
+const CONFIG_UNITS: Record<string, string> = {
+  platform_fee_percent: '%',
+  review_window_days: 'ngày',
+  escrow_hold_days: 'ngày',
+  coin_earn_rate_percent: '%',
+  coin_max_usage_percent: '%',
+  default_max_product_slots: 'sản phẩm',
+};
+
+interface EditingState {
+  key: string;
+  value: string;
+}
 
 export default function AdminSettingsPage() {
   const [configs, setConfigs] = useState<SystemConfigResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-
-  // Platform fee state
-  const [platformFeePercent, setPlatformFeePercent] = useState<number>(5);
+  const [editing, setEditing] = useState<EditingState | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -22,12 +47,8 @@ export default function AdminSettingsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [configsData, feeData] = await Promise.all([
-        apiClient.getSystemConfigs(),
-        apiClient.getPlatformFee(),
-      ]);
+      const configsData = await apiClient.getSystemConfigs();
       setConfigs(configsData);
-      setPlatformFeePercent(feeData.platformFeePercent);
     } catch (err) {
       console.error('Failed to fetch configs:', err);
       setError('Không thể tải cấu hình hệ thống');
@@ -36,9 +57,54 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleSavePlatformFee = async () => {
-    if (platformFeePercent < 0 || platformFeePercent > 100) {
-      setError('Phí nền tảng phải từ 0% đến 100%');
+  const handleEdit = (config: SystemConfigResponse) => {
+    setEditing({
+      key: config.key,
+      value: config.value,
+    });
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditing(null);
+  };
+
+  const validateValue = (key: string, value: string): string | null => {
+    const numValue = parseFloat(value);
+
+    if (isNaN(numValue)) {
+      return 'Giá trị phải là số';
+    }
+
+    if (numValue < 0) {
+      return 'Giá trị không được âm';
+    }
+
+    // Percentage configs must be between 0-100
+    if (key.includes('percent') && (numValue < 0 || numValue > 100)) {
+      return 'Giá trị phần trăm phải từ 0 đến 100';
+    }
+
+    // Days configs must be integers
+    if (key.includes('days') && !Number.isInteger(numValue)) {
+      return 'Số ngày phải là số nguyên';
+    }
+
+    // Product slots must be positive integer
+    if (key === 'default_max_product_slots' && (!Number.isInteger(numValue) || numValue < 1)) {
+      return 'Số sản phẩm phải là số nguyên dương';
+    }
+
+    return null;
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+
+    const validationError = validateValue(editing.key, editing.value);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
@@ -47,12 +113,13 @@ export default function AdminSettingsPage() {
     setSuccess(null);
 
     try {
-      await apiClient.updatePlatformFee(platformFeePercent);
-      setSuccess('Cập nhật phí nền tảng thành công');
+      await apiClient.updateSystemConfig(editing.key, editing.value);
+      setSuccess(`Đã cập nhật ${CONFIG_LABELS[editing.key] || editing.key}`);
+      setEditing(null);
       fetchConfigs();
     } catch (err) {
-      console.error('Failed to update platform fee:', err);
-      setError('Không thể cập nhật phí nền tảng');
+      console.error('Failed to update config:', err);
+      setError('Không thể cập nhật cấu hình');
     } finally {
       setSaving(false);
     }
@@ -68,10 +135,18 @@ export default function AdminSettingsPage() {
     });
   };
 
+  const getConfigLabel = (key: string): string => {
+    return CONFIG_LABELS[key] || key;
+  };
+
+  const getConfigUnit = (key: string): string => {
+    return CONFIG_UNITS[key] || '';
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -103,113 +178,122 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      {/* Platform Fee Config */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Percent className="w-5 h-5" />
-            Phí nền tảng
-          </h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Phần trăm phí mà nền tảng thu từ mỗi đơn hàng
-          </p>
-        </div>
-        <div className="p-6">
-          <div className="max-w-md">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phí nền tảng (%)
-            </label>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={platformFeePercent}
-                  onChange={(e) => setPlatformFeePercent(parseFloat(e.target.value) || 0)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-lg"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500">
-                  %
-                </span>
-              </div>
-              <button
-                onClick={handleSavePlatformFee}
-                disabled={saving}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Đang lưu...' : 'Lưu'}
-              </button>
-            </div>
-            <p className="mt-2 text-sm text-gray-500">
-              Ví dụ: Nếu đặt 5%, một đơn hàng 100.000đ sẽ thu phí 5.000đ từ shop.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* All Configs Table */}
+      {/* Configs List */}
       <div className="bg-white rounded-lg shadow">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            Tất cả cấu hình
+            Cấu hình hệ thống
           </h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Key
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Giá trị
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Mô tả
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cập nhật lần cuối
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {configs.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    Chưa có cấu hình nào
-                  </td>
-                </tr>
-              ) : (
-                configs.map((config) => (
-                  <tr key={config.key} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <code className="px-2 py-1 bg-gray-100 rounded text-sm text-gray-800">
+        <div className="divide-y divide-gray-200">
+          {configs.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500">
+              Chưa có cấu hình nào
+            </div>
+          ) : (
+            configs.map((config) => (
+              <div key={config.key} className="px-6 py-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-medium text-gray-900">
+                        {getConfigLabel(config.key)}
+                      </h3>
+                      <code className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
                         {config.key}
                       </code>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-900">
-                        {config.value}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-gray-500">
-                        {config.description || '-'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(config.updatedAt)}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                    </div>
+                    {config.description && (
+                      <p className="text-sm text-gray-500 mb-2">
+                        {config.description}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-400">
+                      Cập nhật: {formatDate(config.updatedAt)}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {editing?.key === config.key ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            value={editing.value}
+                            onChange={(e) =>
+                              setEditing({ ...editing, value: e.target.value })
+                            }
+                            className="w-24 text-right"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSave();
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <span className="text-sm text-gray-500 min-w-[60px]">
+                            {getConfigUnit(config.key)}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={saving}
+                        >
+                          {saving ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Save className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={handleCancelEdit}
+                          disabled={saving}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-right">
+                          <span className="text-lg font-semibold text-gray-900">
+                            {config.value}
+                          </span>
+                          <span className="text-sm text-gray-500 ml-1">
+                            {getConfigUnit(config.key)}
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEdit(config)}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
+      </div>
+
+      {/* Info */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-medium text-blue-900 mb-2">Lưu ý</h3>
+        <ul className="text-sm text-blue-700 space-y-1 list-disc list-inside">
+          <li>Các thay đổi sẽ có hiệu lực ngay lập tức</li>
+          <li>Phí nền tảng: Phần trăm thu từ mỗi đơn hàng khi shop nhận tiền</li>
+          <li>Số ngày đánh giá: Thời gian buyer có thể đánh giá sau khi đơn hoàn thành</li>
+          <li>Số ngày giữ tiền: Thời gian chờ trước khi chuyển tiền cho shop sau khi đơn hoàn thành</li>
+          <li>Tỷ lệ tích xu: Phần trăm giá trị đơn hàng được quy đổi thành xu</li>
+          <li>Giới hạn dùng xu: Phần trăm tối đa giá trị đơn có thể thanh toán bằng xu</li>
+          <li>Số sản phẩm tối đa: Giới hạn số sản phẩm shop chưa có badge có thể đăng bán</li>
+        </ul>
       </div>
     </div>
   );

@@ -153,6 +153,7 @@ export function UnitFormModal({ unit, onClose, onUpdated }: UnitFormModalProps) 
                 setCategory(e.target.value as UnitCategory);
                 if (e.target.value === UnitCategory.SELLING) {
                   setType('');
+                  setIsBase(false); // Đơn vị bán không thể là đơn vị gốc
                 }
               }}
               className="w-full h-10 px-3 rounded-md border border-gray-300 text-sm"
@@ -179,8 +180,8 @@ export function UnitFormModal({ unit, onClose, onUpdated }: UnitFormModalProps) 
             </div>
           )}
 
-          {/* Is Base (only for creating) */}
-          {isCreating && (
+          {/* Is Base (only for creating + measurement category) */}
+          {isCreating && category === UnitCategory.MEASUREMENT && (
             <div className="flex items-center gap-3 pt-2">
               <input
                 type="checkbox"

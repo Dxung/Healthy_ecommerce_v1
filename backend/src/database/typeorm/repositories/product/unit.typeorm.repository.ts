@@ -112,7 +112,7 @@ export class OrmUnitRepository implements IUnitRepository {
     return ResultAsync.fromPromise(
       repo
         .createQueryBuilder('unit')
-        .withDeleted() // Include soft-deleted to ensure symbol uniqueness
+        // Don't include soft-deleted - allow recreating units with same symbol
         .where('unit.symbol = :symbol', { symbol })
         .andWhere(excludeId ? 'unit.id != :excludeId' : '1=1', { excludeId })
         .getExists(),

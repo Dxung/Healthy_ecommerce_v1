@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ShopController } from './shop.controller';
 import { AdminShopRegistrationController } from './admin-shop-registration.controller';
 import { AdminShopController } from './admin-shop.controller';
@@ -10,6 +11,7 @@ import { ShopService } from './shop.service';
 import { AdminBadgeService } from './admin-badge.service';
 import { AdminShopService } from './admin-shop.service';
 import { ShopBadgeBenefitsService } from './shop-badge-benefits.service';
+import { BadgeEligibilityCronjob } from './cronjobs/badge-eligibility.cronjob';
 import {
   SHOP_SERVICE,
   ADMIN_BADGE_SERVICE,
@@ -35,6 +37,7 @@ import { UserModule } from '../user/user.module';
     VerificationModule,
     UoWModule,
     UserModule,
+    ScheduleModule.forRoot(),
   ],
   providers: [
     {
@@ -53,6 +56,8 @@ import { UserModule } from '../user/user.module';
       provide: SHOP_BADGE_BENEFITS_SERVICE,
       useClass: ShopBadgeBenefitsService,
     },
+    // Cronjobs
+    BadgeEligibilityCronjob,
   ],
   controllers: [
     ShopController,

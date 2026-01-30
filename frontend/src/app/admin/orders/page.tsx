@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   apiClient,
   AdminOrderResponse,
@@ -141,12 +142,17 @@ const formatDate = (dateString: string): string => {
 };
 
 export default function AdminOrdersPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const buyerIdParam = searchParams.get('buyerId');
+
   const [orders, setOrders] = useState<AdminOrderResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<AdminOrderResponse | null>(
     null
   );
+  const [buyerName, setBuyerName] = useState<string | null>(null);
 
   // Status change
   const [showStatusDialog, setShowStatusDialog] = useState(false);
@@ -178,18 +184,24 @@ export default function AdminOrdersPage() {
       if (statusFilter) params.status = statusFilter;
       if (fromDate) params.fromDate = fromDate;
       if (toDate) params.toDate = toDate;
+      if (buyerIdParam) params.buyerId = buyerIdParam;
 
       const response = await apiClient.getAdminOrders(params);
       setOrders(response.items);
       setTotalPages(response.totalPages);
       setTotal(response.total);
+
+      // Set buyer name from first order if filtering by buyer
+      if (buyerIdParam && response.items.length > 0) {
+        setBuyerName(response.items[0].buyer.fullName || response.items[0].buyer.phone || 'Khách hàng');
+      }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
       setError('Không thể tải danh sách đơn hàng');
     } finally {
       setLoading(false);
     }
-  }, [page, search, statusFilter, fromDate, toDate]);
+  }, [page, search, statusFilter, fromDate, toDate, buyerIdParam]);
 
   useEffect(() => {
     fetchOrders();
@@ -256,6 +268,25 @@ export default function AdminOrdersPage() {
           </p>
         </div>
       </div>
+
+      {/* Buyer Filter Banner */}
+      {buyerIdParam && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <User className="w-4 h-4 text-blue-600" />
+            <span className="text-sm text-blue-700">
+              Đang lọc đơn hàng của: <strong>{buyerName || 'Đang tải...'}</strong>
+            </span>
+          </div>
+          <button
+            onClick={() => router.push('/admin/orders')}
+            className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            <X className="w-4 h-4" />
+            Xóa bộ lọc
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow p-4">

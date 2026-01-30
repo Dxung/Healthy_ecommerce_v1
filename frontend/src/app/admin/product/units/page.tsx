@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { apiClient, type UnitResponse, type ApiError, UnitCategory } from '@/lib/api';
-import { Loader2, Plus, Pencil, Scale, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Loader2, Plus, Pencil, Scale, ToggleLeft, ToggleRight, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { UnitFormModal } from '@/components/admin/UnitFormModal';
@@ -15,6 +15,7 @@ export default function UnitManagementPage() {
   const [editingUnit, setEditingUnit] = useState<UnitResponse | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [togglingUnit, setTogglingUnit] = useState<UnitResponse | null>(null);
+  const [deletingUnit, setDeletingUnit] = useState<UnitResponse | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleToggleActive = async () => {
@@ -34,6 +35,23 @@ export default function UnitManagementPage() {
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Không thể thay đổi trạng thái đơn vị');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeleteUnit = async () => {
+    if (!deletingUnit) return;
+
+    try {
+      setIsProcessing(true);
+      await apiClient.deleteUnit(deletingUnit.id);
+      toast.success(`Đã xóa đơn vị "${deletingUnit.name}"`);
+      refreshUnits();
+      setDeletingUnit(null);
+    } catch (err) {
+      const error = err as ApiError;
+      toast.error(error.message || 'Không thể xóa đơn vị');
     } finally {
       setIsProcessing(false);
     }
@@ -62,7 +80,7 @@ export default function UnitManagementPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Cấu hình Unit sản phẩm</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Quản lý đơn vị đo lường</h1>
           <p className="text-sm text-gray-500 mt-1">
             Quản lý đơn vị đo lường cho sản phẩm (gram, kg, lít, ml...)
           </p>
@@ -184,6 +202,14 @@ export default function UnitManagementPage() {
                           <ToggleLeft className="w-4 h-4 text-yellow-500" />
                         )}
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDeletingUnit(unit)}
+                        title="Xóa đơn vị"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
@@ -239,6 +265,24 @@ export default function UnitManagementPage() {
         variant="warning"
         confirmText={togglingUnit?.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'}
         onConfirm={handleToggleActive}
+        loading={isProcessing}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deletingUnit !== null}
+        onOpenChange={(open) => !open && setDeletingUnit(null)}
+        title={deletingUnit ? `Xóa đơn vị "${deletingUnit.name}"?` : ''}
+        description={
+          <ul className="list-disc list-inside space-y-1 text-gray-600">
+            <li>Đơn vị sẽ bị xóa khỏi hệ thống</li>
+            <li>Sản phẩm đang sử dụng đơn vị này có thể bị ảnh hưởng</li>
+            <li>Bạn có thể tạo lại đơn vị với ký hiệu tương tự sau này</li>
+          </ul>
+        }
+        variant="destructive"
+        confirmText="Xóa đơn vị"
+        onConfirm={handleDeleteUnit}
         loading={isProcessing}
       />
     </div>

@@ -3,9 +3,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   IsString,
-  IsBoolean,
   ValidateIf,
 } from 'class-validator';
 import { RequirementType } from 'src/database/typeorm/entities/shop/enums/requirement-type.enum';
@@ -60,12 +58,4 @@ export class AddRequirementArgumentDto {
   @IsNotEmpty()
   @IsNumber()
   attributeValue?: number;
-
-  @ApiPropertyOptional({
-    description: 'Whether this requirement is required (default: true)',
-    default: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isRequired?: boolean;
 }

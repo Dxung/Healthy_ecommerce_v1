@@ -34,23 +34,49 @@ export class SystemConfigService implements ISystemConfigService, OnModuleInit {
   }
 
   private async initializeDefaults(): Promise<void> {
-    // Check if platform_fee_percent exists, if not create it
-    const result = await this.configRepository.findByKey(
-      CONFIG_KEYS.PLATFORM_FEE_PERCENT,
-    );
-
-    if (result.isOk() && result.value === null) {
-      const defaultValue =
-        process.env.PLATFORM_FEE_PERCENT ??
-        String(DEFAULT_CONFIG[CONFIG_KEYS.PLATFORM_FEE_PERCENT]);
-
-      const config = SystemConfig.create({
+    const configDefinitions = [
+      {
         key: CONFIG_KEYS.PLATFORM_FEE_PERCENT,
-        value: defaultValue,
         description: 'Phí nền tảng tính trên mỗi đơn hàng (%)',
-      });
+      },
+      {
+        key: CONFIG_KEYS.REVIEW_WINDOW_DAYS,
+        description: 'Số ngày cho phép đánh giá sau khi đơn hàng hoàn thành',
+      },
+      {
+        key: CONFIG_KEYS.ESCROW_HOLD_DAYS,
+        description: 'Số ngày giữ tiền sau khi đơn hàng hoàn thành trước khi chuyển cho shop',
+      },
+      {
+        key: CONFIG_KEYS.COIN_EARN_RATE_PERCENT,
+        description: 'Tỷ lệ tích xu (% giá trị đơn hàng)',
+      },
+      {
+        key: CONFIG_KEYS.COIN_MAX_USAGE_PERCENT,
+        description: 'Phần trăm tối đa giá trị đơn hàng có thể thanh toán bằng xu',
+      },
+      {
+        key: CONFIG_KEYS.DEFAULT_MAX_PRODUCT_SLOTS,
+        description: 'Số lượng sản phẩm tối đa mà shop chưa có badge có thể đăng bán',
+      },
+    ];
 
-      await this.configRepository.save(config);
+    for (const def of configDefinitions) {
+      const result = await this.configRepository.findByKey(def.key);
+
+      if (result.isOk() && result.value === null) {
+        const defaultValue = String(
+          DEFAULT_CONFIG[def.key as keyof typeof DEFAULT_CONFIG],
+        );
+
+        const config = SystemConfig.create({
+          key: def.key,
+          value: defaultValue,
+          description: def.description,
+        });
+
+        await this.configRepository.save(config);
+      }
     }
   }
 

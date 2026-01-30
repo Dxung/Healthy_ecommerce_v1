@@ -23,6 +23,7 @@ import {
   CreateDocumentTypeArgumentDto,
   UpdateDocumentTypeArgumentDto,
   AddRequirementArgumentDto,
+  UpdateBadgeArgumentDto,
 } from './dto';
 import { ExceptionSource } from 'src/common/exception filters/exception-source';
 import { ShopErrorHttpMapper } from './errors/shop-errors-http.mapper';
@@ -93,6 +94,27 @@ export class AdminBadgeController {
     @Param('code') code: ShopBadgeCode,
   ): Promise<BadgeResponseDto> {
     return this.adminBadgeService.toggleBadgeActive(code).match(
+      (badge) => new BadgeResponseDto(badge),
+      (error) => {
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
+      },
+    );
+  }
+
+  /**
+   * Updates a badge's properties.
+   */
+  @Patch(':code')
+  @Permissions('badge:manage')
+  @HttpCode(HttpStatus.OK)
+  async updateBadge(
+    @Param('code') code: ShopBadgeCode,
+    @Body() dto: UpdateBadgeArgumentDto,
+  ): Promise<BadgeResponseDto> {
+    return this.adminBadgeService.updateBadge(code, dto).match(
       (badge) => new BadgeResponseDto(badge),
       (error) => {
         throw ShopErrorHttpMapper.toHttpException(

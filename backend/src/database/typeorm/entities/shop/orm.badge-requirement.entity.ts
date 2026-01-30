@@ -74,9 +74,6 @@ export class ORMBadgeRequirement {
   })
   attributeValue: number | null;
 
-  @Column({ name: 'is_required', type: 'boolean', default: true })
-  isRequired: boolean;
-
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 

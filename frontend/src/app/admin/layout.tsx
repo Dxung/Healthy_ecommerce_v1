@@ -76,7 +76,7 @@ const navItems: NavItem[] = [
     label: 'Quản lý sản phẩm',
     icon: <Package className="w-5 h-5" />,
     children: [
-      { label: 'Cấu hình Unit sản phẩm', href: '/admin/product/units' },
+      { label: 'Đơn vị đo lường', href: '/admin/product/units' },
       { label: 'Quản lý nhãn dị ứng', href: '/admin/product/allergens' },
       { label: 'Quản lý nhãn chế độ ăn', href: '/admin/product/diet-tags' },
       { label: 'Quản lý danh mục', href: '/admin/product/categories' },

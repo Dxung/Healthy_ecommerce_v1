@@ -20,7 +20,6 @@ export class BadgeRequirement {
     private readonly _attributeCode: ShopAttributeCode | null,
     private readonly _operator: ComparisonOperator | null,
     private readonly _attributeValue: number | null,
-    private _isRequired: boolean,
     private _isActive: boolean,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -37,7 +36,6 @@ export class BadgeRequirement {
   static createDocumentRequirement(data: {
     badgeCode: ShopBadgeCode;
     documentTypeId: string;
-    isRequired?: boolean;
   }): BadgeRequirement {
     const now = new Date();
     return new BadgeRequirement(
@@ -48,7 +46,6 @@ export class BadgeRequirement {
       null, // attributeCode
       null, // operator
       null, // attributeValue
-      data.isRequired ?? true,
       true, // isActive
       now,
       now,
@@ -63,7 +60,6 @@ export class BadgeRequirement {
     attributeCode: ShopAttributeCode;
     operator: ComparisonOperator;
     attributeValue: number;
-    isRequired?: boolean;
   }): BadgeRequirement {
     const now = new Date();
     return new BadgeRequirement(
@@ -74,7 +70,6 @@ export class BadgeRequirement {
       data.attributeCode,
       data.operator,
       data.attributeValue,
-      data.isRequired ?? true,
       true, // isActive
       now,
       now,
@@ -117,14 +112,6 @@ export class BadgeRequirement {
    */
   public setActive(active: boolean): void {
     this._isActive = active;
-    this._updatedAt = new Date();
-  }
-
-  /**
-   * Sets the required status.
-   */
-  public setRequired(required: boolean): void {
-    this._isRequired = required;
     this._updatedAt = new Date();
   }
 
@@ -175,10 +162,6 @@ export class BadgeRequirement {
 
   public get attributeValue(): number | null {
     return this._attributeValue;
-  }
-
-  public get isRequired(): boolean {
-    return this._isRequired;
   }
 
   public get isActive(): boolean {

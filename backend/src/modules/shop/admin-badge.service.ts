@@ -24,6 +24,7 @@ import type {
   CreateDocumentTypeArgumentDto,
   UpdateDocumentTypeArgumentDto,
   AddRequirementArgumentDto,
+  UpdateBadgeArgumentDto,
 } from './dto';
 
 @Injectable()
@@ -62,6 +63,23 @@ export class AdminBadgeService implements IAdminBadgeService {
   toggleBadgeActive(code: ShopBadgeCode): ResultAsync<ShopBadge, DomainError> {
     return this.getBadgeByCode(code).andThen((badge) => {
       badge.toggleActive();
+      return this.badgeRepository.update(badge);
+    });
+  }
+
+  @WithPosition()
+  updateBadge(
+    code: ShopBadgeCode,
+    dto: UpdateBadgeArgumentDto,
+  ): ResultAsync<ShopBadge, DomainError> {
+    return this.getBadgeByCode(code).andThen((badge) => {
+      badge.update({
+        name: dto.name,
+        description: dto.description,
+        platformFeeDiscountPercent: dto.platformFeeDiscountPercent,
+        searchBoostMultiplier: dto.searchBoostMultiplier,
+        maxProductSlots: dto.maxProductSlots,
+      });
       return this.badgeRepository.update(badge);
     });
   }
@@ -150,7 +168,6 @@ export class AdminBadgeService implements IAdminBadgeService {
             requirement = BadgeRequirement.createDocumentRequirement({
               badgeCode,
               documentTypeId: dto.documentTypeId!,
-              isRequired: dto.isRequired,
             });
 
             return this.requirementRepository.create(requirement);
@@ -161,7 +178,6 @@ export class AdminBadgeService implements IAdminBadgeService {
           attributeCode: dto.attributeCode!,
           operator: dto.operator!,
           attributeValue: dto.attributeValue!,
-          isRequired: dto.isRequired,
         });
 
         return this.requirementRepository.create(requirement);

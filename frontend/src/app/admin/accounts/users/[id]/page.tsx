@@ -13,7 +13,6 @@ import {
   UserCheck,
   UserX,
   Trash2,
-  ShoppingBag,
   Loader2,
 } from 'lucide-react';
 import {
@@ -165,15 +164,6 @@ export default function AdminUserDetailPage() {
             <h1 className="text-2xl font-bold text-gray-900">Chi tiết người dùng</h1>
             <p className="text-gray-600 mt-1">{user.username}</p>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => router.push(`/admin/orders?buyerId=${user.id}`)}
-            className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-          >
-            <ShoppingBag className="w-4 h-4" />
-            Xem đơn hàng
-          </button>
         </div>
       </div>
 

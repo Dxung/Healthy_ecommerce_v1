@@ -2,6 +2,17 @@ import { ShopBadgeCode } from 'src/database/typeorm/entities/shop/enums/shop-bad
 import type { BadgeRequirement } from './badge-requirement.model';
 
 /**
+ * Data for updating a badge's properties.
+ */
+export interface UpdateBadgeData {
+  name?: string;
+  description?: string | null;
+  platformFeeDiscountPercent?: number | null;
+  searchBoostMultiplier?: number | null;
+  maxProductSlots?: number;
+}
+
+/**
  * Domain model for ShopBadge.
  * Represents a badge type configuration (e.g., preferred, approved, official).
  * Badges are hardcoded - admin can only toggle is_active, not add/delete.
@@ -12,11 +23,11 @@ export class ShopBadge {
   constructor(
     private readonly _id: string,
     private readonly _code: ShopBadgeCode,
-    private readonly _name: string,
-    private readonly _description: string | null,
-    private readonly _platformFeeDiscountPercent: number | null,
-    private readonly _searchBoostMultiplier: number | null,
-    private readonly _maxProductSlots: number,
+    private _name: string,
+    private _description: string | null,
+    private _platformFeeDiscountPercent: number | null,
+    private _searchBoostMultiplier: number | null,
+    private _maxProductSlots: number,
     private _isActive: boolean,
     private _updatedAt: Date,
     private readonly _deletedAt: Date | null,
@@ -40,6 +51,28 @@ export class ShopBadge {
    */
   public setActive(active: boolean): void {
     this._isActive = active;
+    this._updatedAt = new Date();
+  }
+
+  /**
+   * Updates badge properties.
+   */
+  public update(data: UpdateBadgeData): void {
+    if (data.name !== undefined) {
+      this._name = data.name;
+    }
+    if (data.description !== undefined) {
+      this._description = data.description;
+    }
+    if (data.platformFeeDiscountPercent !== undefined) {
+      this._platformFeeDiscountPercent = data.platformFeeDiscountPercent;
+    }
+    if (data.searchBoostMultiplier !== undefined) {
+      this._searchBoostMultiplier = data.searchBoostMultiplier;
+    }
+    if (data.maxProductSlots !== undefined) {
+      this._maxProductSlots = data.maxProductSlots;
+    }
     this._updatedAt = new Date();
   }
 

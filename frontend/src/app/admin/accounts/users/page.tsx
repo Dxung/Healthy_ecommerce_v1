@@ -218,7 +218,7 @@ export default function AdminUsersPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow overflow-visible">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -229,7 +229,7 @@ export default function AdminUsersPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-t-lg">
+            <div className="overflow-x-auto rounded-t-lg overflow-y-visible">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50 rounded-t-lg">
                   <tr>
@@ -322,7 +322,7 @@ export default function AdminUsersPage() {
 
                           {activeDropdown === user.id && (
                             <div
-                              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-10"
+                              className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
                               data-dropdown
                             >
                               <button

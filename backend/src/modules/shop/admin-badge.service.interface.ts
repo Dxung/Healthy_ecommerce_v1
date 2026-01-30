@@ -8,6 +8,7 @@ import type {
   CreateDocumentTypeArgumentDto,
   UpdateDocumentTypeArgumentDto,
   AddRequirementArgumentDto,
+  UpdateBadgeArgumentDto,
 } from './dto';
 
 /**
@@ -30,6 +31,14 @@ export interface IAdminBadgeService {
    * Toggles a badge's active status.
    */
   toggleBadgeActive(code: ShopBadgeCode): ResultAsync<ShopBadge, DomainError>;
+
+  /**
+   * Updates a badge's properties.
+   */
+  updateBadge(
+    code: ShopBadgeCode,
+    dto: UpdateBadgeArgumentDto,
+  ): ResultAsync<ShopBadge, DomainError>;
 
   // ======================== DOCUMENT TYPE OPERATIONS ========================
 

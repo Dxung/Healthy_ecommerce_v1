@@ -7,6 +7,7 @@ export * from './complete-shop-registration-argument.dto';
 export * from './create-document-type-argument.dto';
 export * from './update-document-type-argument.dto';
 export * from './add-requirement-argument.dto';
+export * from './update-badge-argument.dto';
 
 // Response DTOs
 export * from './registration-status-response.dto';
