@@ -10,7 +10,6 @@ import { OrmLocationRepository } from './typeorm/repositories/location/location.
 import { OrmAuthorizationRepository } from './typeorm/repositories/authorization/authorization.typeorm.repository';
 import { OrmRoleRepository } from './typeorm/repositories/authorization/role.typeorm.repository';
 import { OrmPermissionRepository } from './typeorm/repositories/authorization/permission.typeorm.repository';
-import { OrmShopRegistrationRequestRepository } from './typeorm/repositories/shop/shop-registration-request.typeorm.repository';
 import { OrmShopRepository } from './typeorm/repositories/shop/shop.typeorm.repository';
 import { OrmShopBadgeRepository } from './typeorm/repositories/shop/shop-badge.typeorm.repository';
 import { OrmDocumentTypeRepository } from './typeorm/repositories/shop/document-type.typeorm.repository';
@@ -56,7 +55,6 @@ import {
   AUTHORIZATION_REPOSITORY,
   ROLE_REPOSITORY,
   PERMISSION_REPOSITORY,
-  SHOP_REGISTRATION_REQUEST_REPOSITORY,
   SHOP_REPOSITORY,
   SHOP_BADGE_REPOSITORY,
   DOCUMENT_TYPE_REPOSITORY,
@@ -139,10 +137,6 @@ import { AlsModule } from 'src/shared/als/als.module';
     {
       provide: PERMISSION_REPOSITORY,
       useClass: OrmPermissionRepository,
-    },
-    {
-      provide: SHOP_REGISTRATION_REQUEST_REPOSITORY,
-      useClass: OrmShopRegistrationRequestRepository,
     },
     {
       provide: SHOP_REPOSITORY,
@@ -290,7 +284,6 @@ import { AlsModule } from 'src/shared/als/als.module';
     AUTHORIZATION_REPOSITORY,
     ROLE_REPOSITORY,
     PERMISSION_REPOSITORY,
-    SHOP_REGISTRATION_REQUEST_REPOSITORY,
     SHOP_REPOSITORY,
     SHOP_BADGE_REPOSITORY,
     DOCUMENT_TYPE_REPOSITORY,

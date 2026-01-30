@@ -7,10 +7,10 @@ import { isValidPhone, formatPhoneForDisplay, normalizePhone, getPhoneErrorMessa
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Check, ArrowLeft, Loader2 } from 'lucide-react';
-import { apiClient, type ApiError, type Province, type District, type Ward } from '@/lib/api';
+import { apiClient, type ApiError, type Province, type District, type Ward, type ShopInfoResponse } from '@/lib/api';
 
 interface ShopInfoStepProps {
-  onSuccess: (token: string, shopName: string) => void;
+  onSuccess: (shop: ShopInfoResponse) => void;
   userPhone: string | null; // User's existing phone number from profile
 }
 
@@ -202,7 +202,7 @@ export function ShopInfoStep({ onSuccess, userPhone }: ShopInfoStepProps) {
       try {
         // Don't send phone - backend will use user's phone from database
         // (userPhone from frontend is masked, so we can't use it)
-        const response = await apiClient.initShopRegistration({
+        const shop = await apiClient.registerShop({
           name: shopName.trim(),
           email: email.trim(),
           // phone not sent - backend uses user's phone from DB
@@ -213,8 +213,8 @@ export function ShopInfoStep({ onSuccess, userPhone }: ShopInfoStepProps) {
           // No firebaseOtpToken - user already has phone verified
         });
 
-        // Success - pass token to parent
-        onSuccess(response.token, shopName.trim());
+        // Success - pass shop to parent
+        onSuccess(shop);
       } catch (err: any) {
         console.error('Error submitting registration:', err);
         const apiError = err as ApiError;
@@ -316,9 +316,9 @@ export function ShopInfoStep({ onSuccess, userPhone }: ShopInfoStepProps) {
       // Step 2: Get Firebase ID token
       const firebaseToken = await credential.user.getIdToken();
 
-      // Step 3: Call backend to init shop registration
+      // Step 3: Call backend to register shop
       const normalizedPhone = normalizePhone(phone)!;
-      const response = await apiClient.initShopRegistration({
+      const shop = await apiClient.registerShop({
         name: shopName.trim(),
         email: email.trim(),
         phone: normalizedPhone,
@@ -329,8 +329,8 @@ export function ShopInfoStep({ onSuccess, userPhone }: ShopInfoStepProps) {
         firebaseOtpToken: firebaseToken,
       });
 
-      // Success - pass token to parent
-      onSuccess(response.token, shopName.trim());
+      // Success - pass shop to parent
+      onSuccess(shop);
     } catch (err: any) {
       console.error('Error verifying OTP:', err);
 

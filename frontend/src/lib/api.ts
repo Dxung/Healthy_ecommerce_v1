@@ -123,7 +123,7 @@ export interface SessionInfo {
 }
 
 // Shop Registration Types
-export interface InitShopRegistrationRequest {
+export interface RegisterShopRequest {
   name: string;
   phone?: string; // Optional: only required if user has no phone number
   email: string;
@@ -134,35 +134,10 @@ export interface InitShopRegistrationRequest {
   firebaseOtpToken?: string; // Optional: only required if user has no phone number
 }
 
-export interface InitShopRegistrationResponse {
-  token: string;
-  message: string;
-}
-
 export interface RegistrationDocument {
   documentTypeId: string;
   imageUrl: string;
   expiresAt?: string;
-}
-
-export interface CompleteShopRegistrationRequest {
-  token: string;
-  requestedBrandId?: string;
-  documents?: RegistrationDocument[];
-  brandDocuments?: RegistrationDocument[];
-}
-
-export interface ShopRegistrationStatusResponse {
-  id: string;
-  name: string;
-  slug: string;
-  status: 'pending' | 'approved' | 'rejected';
-  rejectionReason: string | null;
-  requestedBrandId: string | null;
-  documentsCount: number;
-  brandDocumentsCount: number;
-  createdAt: string;
-  reviewedAt: string | null;
 }
 
 export interface ShopInfoResponse {
@@ -2033,27 +2008,10 @@ export class ApiClient {
   }
 
   // Shop Registration endpoints
-  async initShopRegistration(
-    data: InitShopRegistrationRequest
-  ): Promise<InitShopRegistrationResponse> {
-    return this.request<InitShopRegistrationResponse>('/shop/register/init', {
+  async registerShop(data: RegisterShopRequest): Promise<ShopInfoResponse> {
+    return this.request<ShopInfoResponse>('/shop/register', {
       method: 'POST',
       body: JSON.stringify(data),
-    });
-  }
-
-  async completeShopRegistration(
-    data: CompleteShopRegistrationRequest
-  ): Promise<ShopRegistrationStatusResponse> {
-    return this.request<ShopRegistrationStatusResponse>('/shop/register/complete', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getMyShopRegistration(): Promise<ShopRegistrationStatusResponse | null> {
-    return this.request<ShopRegistrationStatusResponse | null>('/shop/my-registration', {
-      method: 'GET',
     });
   }
 

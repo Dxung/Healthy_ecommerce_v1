@@ -3,16 +3,14 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiClient, type ShopRegistrationStatusResponse, type ShopInfoResponse, type ApiError } from "@/lib/api";
+import { apiClient, type ShopInfoResponse, type ApiError } from "@/lib/api";
 import { NoShopPlaceholder } from "@/components/shop/NoShopPlaceholder";
-import { PendingRegistration } from "@/components/shop/PendingRegistration";
 import { Loader2 } from "lucide-react";
 
 type ShopState =
   | { status: "loading" }
   | { status: "no-shop" }
   | { status: "has-shop"; shop: ShopInfoResponse }
-  | { status: "has-registration"; registration: ShopRegistrationStatusResponse }
   | { status: "error"; message: string };
 
 export default function ShopPage() {
@@ -34,26 +32,16 @@ export default function ShopPage() {
 
     const checkShopStatus = async () => {
       try {
-        // Step 1: Check if user has a shop
+        // Check if user has a shop
         const shop = await apiClient.getMyShop();
 
         if (shop) {
           // User has a shop - show shop management
           setState({ status: "has-shop", shop });
-          return;
-        }
-
-        // Step 2: If no shop, check registration status
-        const registration = await apiClient.getMyShopRegistration();
-
-        if (!registration) {
-          // No registration - show "no shop" placeholder
+        } else {
+          // No shop - show "no shop" placeholder
           setState({ status: "no-shop" });
-          return;
         }
-
-        // Registration exists - show pending/rejected status
-        setState({ status: "has-registration", registration });
       } catch (error) {
         const apiError = error as ApiError;
         setState({ status: "error", message: apiError.message || "Có lỗi xảy ra" });
@@ -95,11 +83,6 @@ export default function ShopPage() {
   // No shop - show placeholder
   if (state.status === "no-shop") {
     return <NoShopPlaceholder />;
-  }
-
-  // Has registration (pending or rejected)
-  if (state.status === "has-registration") {
-    return <PendingRegistration registration={state.registration} />;
   }
 
   // Has shop - show dashboard (placeholder for now)

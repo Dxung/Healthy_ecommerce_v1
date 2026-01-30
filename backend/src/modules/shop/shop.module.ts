@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ShopController } from './shop.controller';
 import { BadgeApplicationController } from './badge-application.controller';
-import { AdminShopRegistrationController } from './admin-shop-registration.controller';
 import { AdminShopController } from './admin-shop.controller';
 import { AdminBadgeApplicationController } from './admin-badge-application.controller';
 import {
@@ -72,7 +71,6 @@ import { UserModule } from '../user/user.module';
   controllers: [
     ShopController,
     BadgeApplicationController,
-    AdminShopRegistrationController,
     AdminShopController,
     AdminBadgeApplicationController,
     AdminBadgeController,

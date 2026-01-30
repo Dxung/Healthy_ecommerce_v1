@@ -3,7 +3,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   EXTERNAL_TOKEN_VERIFICATION_SERVICE,
   INTERNAL_TOKEN_VERIFICATION_SERVICE,
-  SHOP_REGISTRATION_TOKEN_SERVICE,
   PASSWORD_RESET_TOKEN_SERVICE,
 } from './tokens/verification.token';
 import { FIREBASE_APP } from './external-token-verification/firebase-otp-verification/firebase-otp-verification.token';
@@ -11,7 +10,6 @@ import { getFirebaseOTPConfig } from './external-token-verification/firebase-otp
 import * as firebaseAdmin from 'firebase-admin';
 import { FirebaseOtpVerificationService } from './external-token-verification/firebase-otp-verification/firebase-otp-verification.service';
 import { RegistrationVerificationService } from './internal-token-verification/in-memory-token-verification/in-memory-verification.service';
-import { ShopRegistrationTokenService } from './internal-token-verification/shop-registration-token/shop-registration-token.service';
 import { PasswordResetTokenService } from './internal-token-verification/password-reset-token/password-reset-token.service';
 
 /**
@@ -40,10 +38,6 @@ import { PasswordResetTokenService } from './internal-token-verification/passwor
       useClass: RegistrationVerificationService,
     },
     {
-      provide: SHOP_REGISTRATION_TOKEN_SERVICE,
-      useClass: ShopRegistrationTokenService,
-    },
-    {
       provide: PASSWORD_RESET_TOKEN_SERVICE,
       useClass: PasswordResetTokenService,
     },
@@ -51,7 +45,6 @@ import { PasswordResetTokenService } from './internal-token-verification/passwor
   exports: [
     EXTERNAL_TOKEN_VERIFICATION_SERVICE,
     INTERNAL_TOKEN_VERIFICATION_SERVICE,
-    SHOP_REGISTRATION_TOKEN_SERVICE,
     PASSWORD_RESET_TOKEN_SERVICE,
   ],
 })

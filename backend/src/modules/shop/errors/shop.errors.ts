@@ -3,21 +3,9 @@
  * Provides standardized error codes and messages for shop-related errors.
  */
 export const SHOP_ERRORS = {
-  REGISTRATION_NOT_FOUND: {
-    code: 'SHOP_REGISTRATION_NOT_FOUND',
-    message: 'Không tìm thấy yêu cầu đăng ký cửa hàng.',
-  },
-  ALREADY_HAS_PENDING_REQUEST: {
-    code: 'SHOP_ALREADY_HAS_PENDING_REQUEST',
-    message: 'Bạn đã có yêu cầu đăng ký cửa hàng đang chờ xử lý.',
-  },
   ALREADY_HAS_SHOP: {
     code: 'SHOP_ALREADY_HAS_SHOP',
     message: 'Bạn đã sở hữu một cửa hàng.',
-  },
-  REGISTRATION_ALREADY_PROCESSED: {
-    code: 'SHOP_REGISTRATION_ALREADY_PROCESSED',
-    message: 'Yêu cầu đăng ký này đã được xử lý.',
   },
   SLUG_ALREADY_EXISTS: {
     code: 'SHOP_SLUG_ALREADY_EXISTS',
@@ -26,22 +14,6 @@ export const SHOP_ERRORS = {
   SHOP_NAME_ALREADY_EXISTS: {
     code: 'SHOP_NAME_ALREADY_EXISTS',
     message: 'Tên cửa hàng đã được sử dụng. Vui lòng chọn tên khác.',
-  },
-  MISSING_REQUIRED_DOCUMENTS: {
-    code: 'SHOP_MISSING_REQUIRED_DOCUMENTS',
-    message: 'Thiếu tài liệu bắt buộc để đăng ký.',
-  },
-  INVALID_BRAND_FOR_OFFICIAL_BADGE: {
-    code: 'SHOP_INVALID_BRAND_FOR_OFFICIAL_BADGE',
-    message: 'Thương hiệu không hợp lệ để đăng ký badge chính hãng.',
-  },
-  MISSING_BRAND_DOCUMENTS: {
-    code: 'SHOP_MISSING_BRAND_DOCUMENTS',
-    message: 'Thiếu tài liệu thương hiệu để đăng ký badge chính hãng.',
-  },
-  INVALID_REGISTRATION_TOKEN: {
-    code: 'SHOP_INVALID_REGISTRATION_TOKEN',
-    message: 'Mã xác thực đăng ký không hợp lệ hoặc đã hết hạn.',
   },
   USER_ALREADY_HAS_PHONE: {
     code: 'SHOP_USER_ALREADY_HAS_PHONE',

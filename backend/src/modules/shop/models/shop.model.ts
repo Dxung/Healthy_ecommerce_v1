@@ -6,7 +6,6 @@ import {
   type DomainError,
 } from 'src/shared/types/domain-error.type';
 import { SHOP_ERRORS } from '../errors/shop.errors';
-import type { ShopRegistrationRequest } from './shop-registration-request.model';
 import type { ShopBadgeAssignment } from './shop-badge-assignment.model';
 
 /**
@@ -52,46 +51,6 @@ export class Shop {
   }
 
   // ======================== FACTORY METHODS ========================
-
-  /**
-   * Creates a new Shop from an approved registration request.
-   * Initializes with default values for statistics and status.
-   */
-  static createFromRegistration(registration: ShopRegistrationRequest): Shop {
-    const now = new Date();
-    return new Shop(
-      uuidv7(),
-      registration.id, // registrationId
-      registration.userId,
-      registration.name,
-      registration.slug,
-      registration.logoUrl,
-      registration.coverUrl,
-      registration.phone,
-      registration.email,
-      registration.addressLine,
-      registration.wardId,
-      registration.districtId,
-      registration.provinceId,
-      0, // averageRating
-      0, // totalRatings
-      0, // totalProducts
-      0, // totalOrders
-      0, // orderSuccessRate
-      0, // responseTimeHours
-      0, // returnRate
-      ShopStatus.ACTIVE,
-      false, // isRefundDebt
-      false, // isAdminSuspended
-      null, // statusReason
-      null, // statusChangedAt
-      null, // statusChangedBy
-      now, // createdAt
-      now, // updatedAt
-      null, // deletedAt
-      [], // badgeAssignments
-    );
-  }
 
   /**
    * Creates a new Shop directly (for immediate registration without admin approval).

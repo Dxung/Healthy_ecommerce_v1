@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle, Clock, ArrowRight } from 'lucide-react';
+import { CheckCircle, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { ShopRegistrationStatusResponse } from '@/lib/api';
+import type { ShopInfoResponse } from '@/lib/api';
 
 interface ShopRegistrationSuccessStepProps {
-  registration: ShopRegistrationStatusResponse;
+  shop: ShopInfoResponse;
 }
 
-export function ShopRegistrationSuccessStep({ registration }: ShopRegistrationSuccessStepProps) {
+export function ShopRegistrationSuccessStep({ shop }: ShopRegistrationSuccessStepProps) {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
 
@@ -43,38 +43,36 @@ export function ShopRegistrationSuccessStep({ registration }: ShopRegistrationSu
       </h1>
 
       {/* Status Message */}
-      <div className="flex items-center justify-center gap-2 text-yellow-600 mb-6">
-        <Clock className="w-5 h-5" />
-        <span>Đang chờ duyệt</span>
-      </div>
+      <p className="text-green-600 mb-6">
+        Cửa hàng của bạn đã được tạo thành công
+      </p>
 
-      {/* Registration Info */}
+      {/* Shop Info */}
       <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
         <div className="space-y-2">
           <div className="flex justify-between">
             <span className="text-gray-500">Tên cửa hàng</span>
-            <span className="font-medium">{registration.name}</span>
+            <span className="font-medium">{shop.name}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">URL cửa hàng</span>
-            <span className="font-medium text-primary">/{registration.slug}</span>
+            <span className="font-medium text-primary">/{shop.slug}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Trạng thái</span>
-            <span className="font-medium text-yellow-600">Chờ duyệt</span>
+            <span className="font-medium text-green-600">Hoạt động</span>
           </div>
         </div>
       </div>
 
       {/* Info Text */}
       <p className="text-sm text-gray-500 mb-6">
-        Yêu cầu đăng ký cửa hàng của bạn đã được gửi thành công.
-        Chúng tôi sẽ xem xét và phản hồi trong thời gian sớm nhất.
+        Bạn có thể bắt đầu quản lý cửa hàng và đăng sản phẩm ngay bây giờ.
       </p>
 
       {/* Action Button */}
       <Button onClick={handleGoToShop} className="w-full gap-2">
-        Xem trạng thái đăng ký
+        Đi đến trang quản lý cửa hàng
         <ArrowRight className="w-4 h-4" />
       </Button>
 
