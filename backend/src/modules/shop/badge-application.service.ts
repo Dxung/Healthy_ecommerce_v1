@@ -7,6 +7,7 @@ import {
   BRAND_DOCUMENT_REQUIREMENT_REPOSITORY,
   BADGE_REQUIREMENT_REPOSITORY,
   BRAND_REPOSITORY,
+  PRODUCT_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import type { IShopRepository } from './repository/shop.repository.interface';
 import type { IBadgeApplicationRepository, BadgeApplicationFilters } from './repository/badge-application.repository.interface';
@@ -14,6 +15,7 @@ import type { IShopOfficialBrandRepository } from './repository/shop-official-br
 import type { IBrandDocumentRequirementRepository } from './repository/brand-document-requirement.repository.interface';
 import type { IBadgeRequirementRepository } from './repository/badge-requirement.repository.interface';
 import type { IBrandRepository } from '../product/repository/brand.repository.interface';
+import type { IProductRepository } from '../product/repository/product.repository.interface';
 import type { IUow } from 'src/shared/unitOfWork/interfaces/uow.interface';
 import { UOW_TOKEN } from 'src/shared/unitOfWork/tokens/uow.token';
 import { BadgeApplication, CreateBadgeApplicationDocumentData } from './models/badge-application.model';
@@ -56,6 +58,8 @@ export class BadgeApplicationService implements IBadgeApplicationService {
     private readonly badgeRequirementRepository: IBadgeRequirementRepository,
     @Inject(BRAND_REPOSITORY)
     private readonly brandRepository: IBrandRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
     @Inject(UOW_TOKEN)
     private readonly uow: IUow,
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
@@ -276,32 +280,37 @@ export class BadgeApplicationService implements IBadgeApplicationService {
             );
 
             return this.officialBrandRepository.create(officialBrand).andThen(() => {
-              // Check if shop already has OFFICIAL badge
-              return this.shopRepository.findById(application.shopId).andThen((shop) => {
-                if (!shop) {
-                  return errAsync(
-                    createDomainError(SHOP_ERRORS.SHOP_NOT_FOUND, {
-                      cause: 'Shop not found',
-                    }),
-                  );
-                }
+              // Update all products of this brand in this shop to be official
+              return this.productRepository
+                .updateOfficialStatus(application.shopId, application.brandId!, true)
+                .andThen(() => {
+                  // Check if shop already has OFFICIAL badge
+                  return this.shopRepository.findById(application.shopId).andThen((shop) => {
+                    if (!shop) {
+                      return errAsync(
+                        createDomainError(SHOP_ERRORS.SHOP_NOT_FOUND, {
+                          cause: 'Shop not found',
+                        }),
+                      );
+                    }
 
-                const hasOfficialBadge = shop.badgeAssignments.some(
-                  (b) => b.badgeCode === ShopBadgeCode.OFFICIAL && b.isActive(),
-                );
+                    const hasOfficialBadge = shop.badgeAssignments.some(
+                      (b) => b.badgeCode === ShopBadgeCode.OFFICIAL && b.isActive(),
+                    );
 
-                if (!hasOfficialBadge) {
-                  // Create OFFICIAL badge assignment (first official brand for this shop)
-                  const badge = ShopBadgeAssignment.createOfficial(
-                    application.shopId,
-                    application.brandId!,
-                    expiresAt,
-                  );
-                  return this.shopRepository.createBadgeAssignment(badge).map(() => updatedApp);
-                }
+                    if (!hasOfficialBadge) {
+                      // Create OFFICIAL badge assignment (first official brand for this shop)
+                      const badge = ShopBadgeAssignment.createOfficial(
+                        application.shopId,
+                        application.brandId!,
+                        expiresAt,
+                      );
+                      return this.shopRepository.createBadgeAssignment(badge).map(() => updatedApp);
+                    }
 
-                return okAsync(updatedApp);
-              });
+                    return okAsync(updatedApp);
+                  });
+                });
             });
           }
         });

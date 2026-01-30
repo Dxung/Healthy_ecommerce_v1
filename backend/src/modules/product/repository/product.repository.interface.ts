@@ -167,4 +167,18 @@ export interface IProductRepository {
     averageRating: number,
     totalRatings: number,
   ): ResultAsync<void, DomainError>;
+
+  /**
+   * Updates the official approved status for all products of a shop with a specific brand.
+   * Used when shop becomes official for a brand or when brand authorization expires.
+   * @param shopId - The shop ID.
+   * @param brandId - The brand ID.
+   * @param isOfficialApproved - The new official approved status.
+   * @returns The number of products updated.
+   */
+  updateOfficialStatus(
+    shopId: string,
+    brandId: string,
+    isOfficialApproved: boolean,
+  ): ResultAsync<number, DomainError>;
 }

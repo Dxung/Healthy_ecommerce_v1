@@ -384,6 +384,25 @@ export class OrmProductRepository implements IProductRepository {
     ).map(() => undefined);
   }
 
+  @WithPosition()
+  updateOfficialStatus(
+    shopId: string,
+    brandId: string,
+    isOfficialApproved: boolean,
+  ): ResultAsync<number, DomainError> {
+    const repo = this.getProductRepository();
+    return ResultAsync.fromPromise(
+      repo.update(
+        { shopId, brandId },
+        {
+          isOfficialApproved,
+          updatedAt: new Date(),
+        },
+      ),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((result) => result.affected ?? 0);
+  }
+
   // ======================== PRIVATE HELPERS ========================
 
   private buildRelations(options?: ProductLoadOptions): string[] {

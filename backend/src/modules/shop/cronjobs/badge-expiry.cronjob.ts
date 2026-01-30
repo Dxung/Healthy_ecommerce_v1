@@ -4,6 +4,7 @@ import { DataSource, LessThan, IsNull } from 'typeorm';
 import { ShopBadgeCode } from 'src/database/typeorm/entities/shop/enums/shop-badge-code.enum';
 import { ShopBadgeStatus } from 'src/database/typeorm/entities/shop/enums/shop-badge-status.enum';
 import { ORMShopBadgeAssignment, ORMShopOfficialBrand, ORMShop } from 'src/database/typeorm/entities/shop';
+import { ORMProduct } from 'src/database/typeorm/entities/product';
 
 /**
  * BadgeExpiryCronjob - Handles badge and official brand expiration
@@ -107,9 +108,8 @@ export class BadgeExpiryCronjob {
         `Revoked expired official brand ${brand.brandId} for shop: ${brand.shopId}`,
       );
 
-      // Note: Product isOfficialApproved update would need to be done here
-      // This would require ProductRepository access or direct SQL update
-      // await this.updateProductOfficialStatus(brand.shopId, brand.brandId, false);
+      // Update all products of this brand in this shop to not be official
+      await this.updateProductOfficialStatus(brand.shopId, brand.brandId, false);
     }
 
     // For each affected shop, check if they still have any active official brands
@@ -173,16 +173,27 @@ export class BadgeExpiryCronjob {
   }
 
   /**
-   * Updates product official status when brand expires.
-   * Note: This method would need ProductRepository or direct query.
+   * Updates product official status when brand authorization changes.
+   * Sets isOfficialApproved for all products of a specific brand in a shop.
    */
-  // private async updateProductOfficialStatus(
-  //   shopId: string,
-  //   brandId: string,
-  //   isOfficialApproved: boolean,
-  // ): Promise<void> {
-  //   // This would update all products of this brand in this shop
-  //   // to set isOfficialApproved = false
-  //   // Implementation depends on product module structure
-  // }
+  private async updateProductOfficialStatus(
+    shopId: string,
+    brandId: string,
+    isOfficialApproved: boolean,
+  ): Promise<void> {
+    const productRepo = this.dataSource.getRepository(ORMProduct);
+    const now = new Date();
+
+    const result = await productRepo.update(
+      { shopId, brandId },
+      {
+        isOfficialApproved,
+        updatedAt: now,
+      },
+    );
+
+    this.logger.log(
+      `Updated ${result.affected ?? 0} products for shop ${shopId}, brand ${brandId}: isOfficialApproved = ${isOfficialApproved}`,
+    );
+  }
 }
