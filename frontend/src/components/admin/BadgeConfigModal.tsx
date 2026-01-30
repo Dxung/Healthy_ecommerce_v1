@@ -57,10 +57,8 @@ const operatorLabels: Record<ComparisonOperator, string> = {
 };
 
 // Preferred badge uses attribute requirements (auto-granted)
-// Approved badge uses document requirements
-// Official badge uses brand-specific document requirements (configured in brand management)
+// Approved/Official badges use document requirements
 const isPreferredBadge = (code: BadgeCode) => code === 'preferred';
-const isOfficialBadge = (code: BadgeCode) => code === 'official';
 
 export function BadgeConfigModal({
   badgeCode,
@@ -423,45 +421,8 @@ export function BadgeConfigModal({
                   </div>
                 )}
               </div>
-            ) : isOfficialBadge(badgeCode) ? (
-              // Official badge: Brand-specific document requirements (configured in brand management)
-              <div>
-                <div className="flex items-center gap-2 mb-3">
-                  <FileText className="w-4 h-4" />
-                  <h3 className="font-medium">Yêu cầu tài liệu</h3>
-                </div>
-
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-800 mb-2">
-                    Badge "Shop Chính hãng" sử dụng yêu cầu giấy tờ riêng cho từng thương hiệu.
-                  </p>
-                  <p className="text-sm text-blue-700">
-                    Khi shop đăng ký làm đại lý chính hãng, họ sẽ chọn thương hiệu và hệ thống sẽ hiển thị các giấy tờ cần thiết theo thương hiệu đó.
-                  </p>
-                  <p className="text-sm text-blue-600 mt-3">
-                    Vui lòng cấu hình yêu cầu giấy tờ trong phần <strong>Quản lý thương hiệu</strong>.
-                  </p>
-                </div>
-
-                {/* Show existing document requirements as read-only (if any legacy data exists) */}
-                {documentRequirements.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-500 mb-2">Yêu cầu cũ (không còn sử dụng):</p>
-                    <div className="space-y-2 opacity-60">
-                      {documentRequirements.map((req) => (
-                        <RequirementItem
-                          key={req.id}
-                          requirement={req}
-                          onToggle={() => handleToggleRequirement(req.id)}
-                          onRemove={() => handleRemoveRequirement(req.id)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
             ) : (
-              // Approved badge: Document requirements
+              // Approved/Official badges: Document requirements only
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium flex items-center gap-2">

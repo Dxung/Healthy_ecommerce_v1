@@ -403,6 +403,35 @@ export class OrmProductRepository implements IProductRepository {
     ).map((result) => result.affected ?? 0);
   }
 
+  @WithPosition()
+  hideNonOfficialBrandProducts(
+    shopId: string,
+    officialBrandIds: string[],
+  ): ResultAsync<number, DomainError> {
+    const repo = this.getProductRepository();
+    const qb = repo
+      .createQueryBuilder()
+      .update(ORMProduct)
+      .set({
+        isVisible: false,
+        updatedAt: new Date(),
+      })
+      .where('shop_id = :shopId', { shopId });
+
+    // Hide products where brand is NOT in official list OR brand is NULL
+    if (officialBrandIds.length > 0) {
+      qb.andWhere(
+        '(brand_id NOT IN (:...officialBrandIds) OR brand_id IS NULL)',
+        { officialBrandIds },
+      );
+    }
+    // If no official brands, hide all products (shouldn't happen but safety)
+
+    return ResultAsync.fromPromise(qb.execute(), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((result) => result.affected ?? 0);
+  }
+
   // ======================== PRIVATE HELPERS ========================
 
   private buildRelations(options?: ProductLoadOptions): string[] {

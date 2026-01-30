@@ -152,6 +152,18 @@ export const PRODUCT_ERRORS = {
     code: 'PRODUCT_SLOT_LIMIT_REACHED',
     message: 'Đã đạt giới hạn số lượng sản phẩm cho phép của cửa hàng.',
   },
+  OFFICIAL_SHOP_BRAND_REQUIRED: {
+    code: 'OFFICIAL_SHOP_BRAND_REQUIRED',
+    message: 'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm.',
+  },
+  OFFICIAL_SHOP_UNAUTHORIZED_BRAND: {
+    code: 'OFFICIAL_SHOP_UNAUTHORIZED_BRAND',
+    message: 'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký.',
+  },
+  OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT: {
+    code: 'OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT',
+    message: 'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng.',
+  },
 
   // ======================== ALLERGEN TAG ERRORS ========================
   ALLERGEN_TAG_NOT_FOUND: {

@@ -13,6 +13,7 @@ import {
   PRODUCT_OPTION_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
   UNIT_REPOSITORY,
+  SHOP_OFFICIAL_BRAND_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import { IProductRepository } from './repository/product.repository.interface';
 import { IProductImageRepository } from './repository/product-image.repository.interface';
@@ -41,6 +42,7 @@ import {
 } from '../shop/tokens/shop.token';
 import { IShopService } from '../shop/shop.service.interface';
 import { IShopBadgeBenefitsService } from '../shop/shop-badge-benefits.service.interface';
+import type { IShopOfficialBrandRepository } from '../shop/repository/shop-official-brand.repository.interface';
 import { IMAGE_PROCESSING_SERVICE } from 'src/shared/image-processing/tokens/image-processing.token';
 import type { IImageProcessingService } from 'src/shared/image-processing/interfaces/image-processing.service.interface';
 import type { CreateProductArgumentDto } from './dto/product/create-product-argument.dto';
@@ -68,6 +70,8 @@ export class ShopProductService implements IShopProductService {
     private readonly variantRepository: IProductVariantRepository,
     @Inject(UNIT_REPOSITORY)
     private readonly unitRepository: IUnitRepository,
+    @Inject(SHOP_OFFICIAL_BRAND_REPOSITORY)
+    private readonly officialBrandRepository: IShopOfficialBrandRepository,
     @Inject(SHOP_SERVICE)
     private readonly shopService: IShopService,
     @Inject(SHOP_BADGE_BENEFITS_SERVICE)
@@ -316,6 +320,12 @@ export class ShopProductService implements IShopProductService {
           }
           return okAsync(shopId);
         })
+        // Check official shop brand restriction
+        .andThen((shopId) =>
+          this.checkOfficialBrandRestriction(shopId, dto.brandId).map(
+            () => shopId,
+          ),
+        )
         // Validate units
         .andThen((shopId) =>
           this.validateServingUnit(dto.servingUnitId).map(() => shopId),
@@ -362,6 +372,50 @@ export class ShopProductService implements IShopProductService {
 
       return okAsync(undefined);
     });
+  }
+
+  /**
+   * Checks if official shop can create product for the given brand.
+   * If shop is official, they can only create products for brands they're official for.
+   * Non-official shops can create products for any brand.
+   */
+  private checkOfficialBrandRestriction(
+    shopId: string,
+    brandId: string | null | undefined,
+  ): ResultAsync<void, DomainError> {
+    // First check if shop has any official brands
+    return this.officialBrandRepository
+      .hasAnyActiveOfficialBrand(shopId)
+      .andThen((isOfficialShop) => {
+        // If shop is not official, no restriction
+        if (!isOfficialShop) {
+          return okAsync(undefined);
+        }
+
+        // Shop is official - must create products only for official brands
+        if (!brandId) {
+          // No brand specified but shop is official - block
+          return errAsync(
+            createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_BRAND_REQUIRED, {
+              cause: 'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm',
+            }),
+          );
+        }
+
+        // Check if brand is in official list
+        return this.officialBrandRepository
+          .isOfficialForBrand(shopId, brandId)
+          .andThen((isOfficialForBrand) => {
+            if (!isOfficialForBrand) {
+              return errAsync(
+                createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_UNAUTHORIZED_BRAND, {
+                  cause: 'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký',
+                }),
+              );
+            }
+            return okAsync(undefined);
+          });
+      });
   }
 
   /**
@@ -537,6 +591,13 @@ export class ShopProductService implements IShopProductService {
           return okAsync(undefined);
         })
         .andThen(() => {
+          // If trying to show the product, check if it's allowed for official shops
+          if (dto.isVisible === true && !product.isVisible) {
+            return this.checkCanShowProduct(product);
+          }
+          return okAsync(undefined);
+        })
+        .andThen(() => {
           const updateResult = product.updateInfo({
             categoryId: dto.categoryId,
             brandId: dto.brandId,
@@ -556,6 +617,44 @@ export class ShopProductService implements IShopProductService {
           return this.productRepository.update(product);
         });
     });
+  }
+
+  /**
+   * Checks if a hidden product can be shown.
+   * Official shops cannot show products of non-official brands.
+   */
+  private checkCanShowProduct(product: Product): ResultAsync<void, DomainError> {
+    return this.officialBrandRepository
+      .hasAnyActiveOfficialBrand(product.shopId)
+      .andThen((isOfficialShop) => {
+        // Non-official shops can show any product
+        if (!isOfficialShop) {
+          return okAsync(undefined);
+        }
+
+        // Official shop - check if product's brand is official
+        if (!product.brandId) {
+          // Product has no brand but shop is official - cannot show
+          return errAsync(
+            createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT, {
+              cause: 'Shop chính hãng không thể hiện sản phẩm không có thương hiệu',
+            }),
+          );
+        }
+
+        return this.officialBrandRepository
+          .isOfficialForBrand(product.shopId, product.brandId)
+          .andThen((isOfficialForBrand) => {
+            if (!isOfficialForBrand) {
+              return errAsync(
+                createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT, {
+                  cause: 'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng',
+                }),
+              );
+            }
+            return okAsync(undefined);
+          });
+      });
   }
 
   @WithPosition()

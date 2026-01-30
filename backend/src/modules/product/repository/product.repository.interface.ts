@@ -181,4 +181,16 @@ export interface IProductRepository {
     brandId: string,
     isOfficialApproved: boolean,
   ): ResultAsync<number, DomainError>;
+
+  /**
+   * Hides products of non-official brands for a shop.
+   * When shop becomes official, products of other brands (not official) should be hidden.
+   * @param shopId - The shop ID.
+   * @param officialBrandIds - List of brand IDs that the shop is official for.
+   * @returns The number of products hidden.
+   */
+  hideNonOfficialBrandProducts(
+    shopId: string,
+    officialBrandIds: string[],
+  ): ResultAsync<number, DomainError>;
 }

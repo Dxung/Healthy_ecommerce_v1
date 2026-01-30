@@ -76,8 +76,11 @@ export class BadgeApplicationService implements IBadgeApplicationService {
   }
 
   @WithPosition()
-  getOfficialRequirements(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError> {
-    return this.brandRequirementRepository.findActiveByBrand(brandId);
+  getOfficialRequirements(): ResultAsync<DocumentType[], DomainError> {
+    // Get requirements for OFFICIAL badge - same for all brands
+    return this.badgeRequirementRepository
+      .findByBadgeCode(ShopBadgeCode.OFFICIAL)
+      .map((requirements) => requirements.map((r) => r.documentType).filter((d): d is DocumentType => d !== undefined));
   }
 
   @WithPosition()
@@ -284,32 +287,42 @@ export class BadgeApplicationService implements IBadgeApplicationService {
               return this.productRepository
                 .updateOfficialStatus(application.shopId, application.brandId!, true)
                 .andThen(() => {
-                  // Check if shop already has OFFICIAL badge
-                  return this.shopRepository.findById(application.shopId).andThen((shop) => {
-                    if (!shop) {
-                      return errAsync(
-                        createDomainError(SHOP_ERRORS.SHOP_NOT_FOUND, {
-                          cause: 'Shop not found',
-                        }),
-                      );
-                    }
+                  // Get all official brand IDs for this shop to hide non-official products
+                  return this.officialBrandRepository
+                    .findActiveBrandIdsByShop(application.shopId)
+                    .andThen((officialBrandIds) => {
+                      // Hide products of non-official brands
+                      return this.productRepository
+                        .hideNonOfficialBrandProducts(application.shopId, officialBrandIds)
+                        .andThen(() => {
+                          // Check if shop already has OFFICIAL badge
+                          return this.shopRepository.findById(application.shopId).andThen((shop) => {
+                            if (!shop) {
+                              return errAsync(
+                                createDomainError(SHOP_ERRORS.SHOP_NOT_FOUND, {
+                                  cause: 'Shop not found',
+                                }),
+                              );
+                            }
 
-                    const hasOfficialBadge = shop.badgeAssignments.some(
-                      (b) => b.badgeCode === ShopBadgeCode.OFFICIAL && b.isActive(),
-                    );
+                            const hasOfficialBadge = shop.badgeAssignments.some(
+                              (b) => b.badgeCode === ShopBadgeCode.OFFICIAL && b.isActive(),
+                            );
 
-                    if (!hasOfficialBadge) {
-                      // Create OFFICIAL badge assignment (first official brand for this shop)
-                      const badge = ShopBadgeAssignment.createOfficial(
-                        application.shopId,
-                        application.brandId!,
-                        expiresAt,
-                      );
-                      return this.shopRepository.createBadgeAssignment(badge).map(() => updatedApp);
-                    }
+                            if (!hasOfficialBadge) {
+                              // Create OFFICIAL badge assignment (first official brand for this shop)
+                              const badge = ShopBadgeAssignment.createOfficial(
+                                application.shopId,
+                                application.brandId!,
+                                expiresAt,
+                              );
+                              return this.shopRepository.createBadgeAssignment(badge).map(() => updatedApp);
+                            }
 
-                    return okAsync(updatedApp);
-                  });
+                            return okAsync(updatedApp);
+                          });
+                        });
+                    });
                 });
             });
           }

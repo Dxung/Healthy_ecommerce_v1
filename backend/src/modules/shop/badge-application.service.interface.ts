@@ -25,9 +25,10 @@ export interface IBadgeApplicationService {
   getVerifiedRequirements(): ResultAsync<DocumentType[], DomainError>;
 
   /**
-   * Gets document requirements for Official badge for a specific brand.
+   * Gets document requirements for Official badge.
+   * Same requirements for all brands.
    */
-  getOfficialRequirements(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError>;
+  getOfficialRequirements(): ResultAsync<DocumentType[], DomainError>;
 
   /**
    * Applies for Verified badge.

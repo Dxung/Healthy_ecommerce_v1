@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { apiClient, type BrandResponse, type ApiError } from '@/lib/api';
-import { Loader2, Plus, Pencil, Trash2, Building2, Package, ToggleLeft, ToggleRight, FileText } from 'lucide-react';
+import { Loader2, Plus, Pencil, Trash2, Building2, Package, ToggleLeft, ToggleRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { BrandFormModal } from '@/components/admin/BrandFormModal';
-import { BrandDocumentRequirementsModal } from '@/components/admin/BrandDocumentRequirementsModal';
 import { useBrands } from '@/lib/hooks/useAdminData';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -21,7 +20,6 @@ export default function BrandManagementPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [dialogAction, setDialogAction] = useState<DialogAction>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [docRequirementsBrand, setDocRequirementsBrand] = useState<BrandResponse | null>(null);
 
   const handleDelete = async () => {
     if (dialogAction?.type !== 'delete') return;
@@ -184,14 +182,6 @@ export default function BrandManagementPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => setDocRequirementsBrand(brand)}
-                        title="Yêu cầu giấy tờ Official"
-                      >
-                        <FileText className="w-4 h-4 text-blue-500" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
                         onClick={() => setEditingBrand(brand)}
                         title="Chỉnh sửa"
                       >
@@ -289,14 +279,6 @@ export default function BrandManagementPage() {
         onConfirm={handleToggleActive}
         loading={isProcessing}
       />
-
-      {/* Document Requirements Modal */}
-      {docRequirementsBrand && (
-        <BrandDocumentRequirementsModal
-          brand={docRequirementsBrand}
-          onClose={() => setDocRequirementsBrand(null)}
-        />
-      )}
     </div>
   );
 }

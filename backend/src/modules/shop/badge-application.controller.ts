@@ -103,14 +103,15 @@ export class BadgeApplicationController {
   }
 
   /**
-   * Gets document requirements for Official badge application for a specific brand.
+   * Gets document requirements for Official badge application.
+   * Same requirements for all brands.
    */
-  @Get('badge-applications/official/:brandId/requirements')
+  @Get('badge-applications/official/requirements')
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Get Official badge requirements for a brand' })
-  async getOfficialRequirements(@Param('brandId') brandId: string) {
-    return this.badgeApplicationService.getOfficialRequirements(brandId).match(
+  @ApiOperation({ summary: 'Get Official badge requirements' })
+  async getOfficialRequirements() {
+    return this.badgeApplicationService.getOfficialRequirements().match(
       (requirements) => requirements,
       (error) => {
         throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
