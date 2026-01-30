@@ -895,6 +895,14 @@ export interface CreateOrderRequest {
   shopNotes?: ShopNoteInput[];
 }
 
+export interface CreateOrderResponse {
+  orders: OrderResponse[];
+  paymentUrl?: string;
+  txnRef?: string;
+  walletAmountUsed?: number;
+  vnpayAmount?: number;
+}
+
 // Review Types
 export type ReviewStatus = 'active' | 'hidden_due_to_refund' | 'deleted';
 
@@ -2441,8 +2449,8 @@ export class ApiClient {
 
   // ===================== Order Endpoints =====================
 
-  async createOrder(data: CreateOrderRequest): Promise<OrderResponse[]> {
-    return this.request<OrderResponse[]>('/orders', {
+  async createOrder(data: CreateOrderRequest): Promise<CreateOrderResponse> {
+    return this.request<CreateOrderResponse>('/orders', {
       method: 'POST',
       body: JSON.stringify(data),
     });

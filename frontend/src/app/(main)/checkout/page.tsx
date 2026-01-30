@@ -91,7 +91,7 @@ export default function CheckoutPage() {
           note: note.trim(),
         }));
 
-      const orders = await apiClient.createOrder({
+      const response = await apiClient.createOrder({
         addressId: selectedAddress.id,
         paymentMethod,
         shopNotes: shopNotesArray.length > 0 ? shopNotesArray : undefined,
@@ -100,8 +100,14 @@ export default function CheckoutPage() {
       // Refresh cart after successful order
       await refreshCart();
 
-      // Navigate to success page with order IDs
-      const orderIds = orders.map((o) => o.id).join(',');
+      // If there's a payment URL (VNPay), redirect to it
+      if (response.paymentUrl) {
+        window.location.href = response.paymentUrl;
+        return;
+      }
+
+      // Otherwise, navigate to success page with order IDs
+      const orderIds = response.orders.map((o) => o.id).join(',');
       router.push(`/checkout/success?orders=${orderIds}`);
     } catch (err) {
       const error = err as ApiError;

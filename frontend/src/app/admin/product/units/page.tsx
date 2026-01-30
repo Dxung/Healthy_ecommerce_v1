@@ -280,7 +280,7 @@ export default function UnitManagementPage() {
             <li>Bạn có thể tạo lại đơn vị với ký hiệu tương tự sau này</li>
           </ul>
         }
-        variant="destructive"
+        variant="danger"
         confirmText="Xóa đơn vị"
         onConfirm={handleDeleteUnit}
         loading={isProcessing}
