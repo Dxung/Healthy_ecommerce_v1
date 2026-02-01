@@ -76,64 +76,131 @@ export default function CartPage() {
     activeShops.reduce((sum, shop) => sum + shop.items.length, 0) ?? 0;
   const allSelected = totalActiveItems > 0 && selectedCount === totalActiveItems;
 
+  // Optimistic update helper
+  const updateCartOptimistically = (
+    updateFn: (cart: CartResponse) => CartResponse
+  ) => {
+    if (cart) {
+      setCart(updateFn(cart));
+    }
+  };
+
   const handleToggleShopSelect = async (shopId: string, isSelected: boolean) => {
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops.map((shop) =>
+        shop.shop.id === shopId
+          ? {
+              ...shop,
+              items: shop.items.map((item) => {
+                const isInactive =
+                  !item.variant.isActive ||
+                  !item.product.isVisible ||
+                  item.product.status !== 'active' ||
+                  item.variant.stockQuantity === 0;
+                return isInactive ? item : { ...item, isSelected };
+              }),
+              selectedCount: isSelected
+                ? shop.items.filter(
+                    (item) =>
+                      item.variant.isActive &&
+                      item.product.isVisible &&
+                      item.product.status === 'active' &&
+                      item.variant.stockQuantity > 0
+                  ).length
+                : 0,
+            }
+          : shop
+      ),
+    }));
+
     try {
-      setOperating(true);
       if (isSelected) {
         await apiClient.selectShopItems(shopId);
       } else {
         await apiClient.deselectShopItems(shopId);
       }
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Thao tác thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
   const handleToggleItemSelect = async (cartItemId: string) => {
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops.map((shop) => ({
+        ...shop,
+        items: shop.items.map((item) =>
+          item.id === cartItemId ? { ...item, isSelected: !item.isSelected } : item
+        ),
+        selectedCount:
+          shop.selectedCount +
+          (shop.items.find((i) => i.id === cartItemId)?.isSelected ? -1 : 1),
+      })),
+    }));
+
     try {
-      setOperating(true);
       await apiClient.toggleCartItemSelection(cartItemId);
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Thao tác thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
   const handleUpdateQuantity = async (cartItemId: string, quantity: number) => {
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops.map((shop) => ({
+        ...shop,
+        items: shop.items.map((item) =>
+          item.id === cartItemId ? { ...item, quantity } : item
+        ),
+      })),
+    }));
+
     try {
-      setOperating(true);
       await apiClient.updateCartItem(cartItemId, quantity);
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Cập nhật số lượng thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
   const handleRemoveItem = async (cartItemId: string) => {
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops
+        .map((shop) => ({
+          ...shop,
+          items: shop.items.filter((item) => item.id !== cartItemId),
+        }))
+        .filter((shop) => shop.items.length > 0),
+      totalItems: prevCart.totalItems - 1,
+    }));
+
     try {
-      setOperating(true);
       await apiClient.removeCartItem(cartItemId);
       toast.success('Đã xóa sản phẩm');
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Xóa sản phẩm thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
@@ -143,7 +210,7 @@ export default function CartPage() {
       const result = await apiClient.removeInactiveItems();
       toast.success(`Đã xóa ${result.removedCount} sản phẩm không khả dụng`);
       await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Xóa sản phẩm thất bại');
@@ -153,20 +220,43 @@ export default function CartPage() {
   };
 
   const handleToggleSelectAll = async (selected: boolean) => {
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops.map((shop) => ({
+        ...shop,
+        items: shop.items.map((item) => {
+          const isInactive =
+            !item.variant.isActive ||
+            !item.product.isVisible ||
+            item.product.status !== 'active' ||
+            item.variant.stockQuantity === 0;
+          return isInactive ? item : { ...item, isSelected: selected };
+        }),
+        selectedCount: selected
+          ? shop.items.filter(
+              (item) =>
+                item.variant.isActive &&
+                item.product.isVisible &&
+                item.product.status === 'active' &&
+                item.variant.stockQuantity > 0
+            ).length
+          : 0,
+      })),
+    }));
+
     try {
-      setOperating(true);
       if (selected) {
         await apiClient.selectAllCartItems();
       } else {
         await apiClient.deselectAllCartItems();
       }
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Thao tác thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
@@ -177,17 +267,28 @@ export default function CartPage() {
 
     if (selectedItemIds.length === 0) return;
 
+    // Optimistic update
+    updateCartOptimistically((prevCart) => ({
+      ...prevCart,
+      shops: prevCart.shops
+        .map((shop) => ({
+          ...shop,
+          items: shop.items.filter((item) => !item.isSelected),
+          selectedCount: 0,
+        }))
+        .filter((shop) => shop.items.length > 0),
+      totalItems: prevCart.totalItems - selectedItemIds.length,
+    }));
+
     try {
-      setOperating(true);
       await apiClient.removeCartItems(selectedItemIds);
       toast.success(`Đã xóa ${selectedItemIds.length} sản phẩm`);
-      await fetchCart();
-      await refreshCart();
+      refreshCart();
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Xóa sản phẩm thất bại');
-    } finally {
-      setOperating(false);
+      // Revert on error
+      fetchCart();
     }
   };
 
@@ -237,10 +338,18 @@ export default function CartPage() {
         </div>
       )}
 
-      {/* Cart Header (Table Header) */}
+      {/* Cart Header (Table Header) with Select All */}
       {activeShops.length > 0 && (
         <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-gray-50 rounded-t-lg border-b text-sm font-medium text-gray-500">
-          <div className="w-4" /> {/* Checkbox space */}
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={(e) => handleToggleSelectAll(e.target.checked)}
+              disabled={operating || totalActiveItems === 0}
+              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary disabled:opacity-50"
+            />
+          </div>
           <div className="flex-1">Sản phẩm</div>
           <div className="w-24 text-right">Đơn giá</div>
           <div className="w-28 text-center">Số lượng</div>
@@ -285,6 +394,7 @@ export default function CartPage() {
         hasInactiveItems={inactiveItems.length > 0}
         onToggleSelectAll={handleToggleSelectAll}
         onRemoveSelected={handleRemoveSelected}
+        onRemoveInactive={handleRemoveInactive}
         disabled={operating}
       />
     </div>

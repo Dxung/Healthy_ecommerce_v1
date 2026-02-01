@@ -22,7 +22,7 @@ export function ProductCard({ product }: ProductCardProps) {
       : `${formatPrice(product.minPrice)} - ${formatPrice(product.maxPrice)}`;
 
   return (
-    <Link href={`/products/${product.id}`}>
+    <Link href={`/products/${product.slug}`}>
       <div className="bg-white rounded-lg border overflow-hidden hover:shadow-md transition-shadow group">
         {/* Image */}
         <div className="aspect-square bg-gray-100 relative overflow-hidden">

@@ -13,7 +13,8 @@ interface ImageGalleryProps {
   images: ProductImage[];
   productName: string;
   thumbnailUrl?: string | null;
-  variantImageUrl?: string | null;
+  hoveredVariantImageUrl?: string | null;
+  selectedVariantImageUrl?: string | null;
   selectedVariantId?: string | null;
   onMainImageChange?: (imageUrl: string) => void;
 }
@@ -22,55 +23,80 @@ export function ImageGallery({
   images,
   productName,
   thumbnailUrl,
-  variantImageUrl,
+  hoveredVariantImageUrl,
+  selectedVariantImageUrl,
   selectedVariantId,
   onMainImageChange,
 }: ImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const [thumbnailOffset, setThumbnailOffset] = useState(0);
+  // Store the previous index before hovering
+  const [preHoverIndex, setPreHoverIndex] = useState<number | null>(null);
 
   const maxVisibleThumbnails = 5;
-  const maxTotalImages = 6;
-  const [thumbnailOffset, setThumbnailOffset] = useState(0);
 
-  // Build base images: start with thumbnailUrl, then gallery images (max 6 total)
+  // Build base images: start with thumbnailUrl, then gallery images
   const baseImages: ProductImage[] = [];
   if (thumbnailUrl) {
     baseImages.push({ id: 'thumbnail', imageUrl: thumbnailUrl });
   }
   // Add gallery images that are different from thumbnail
   for (const img of images) {
-    if (baseImages.length >= maxTotalImages) break;
     if (!baseImages.some((b) => b.imageUrl === img.imageUrl)) {
       baseImages.push(img);
     }
   }
 
-  // When variant is selected, add variant image to beginning (if different from existing)
+  // When variant is selected (clicked), add variant image to END (if different from existing)
   const displayImages: ProductImage[] =
-    selectedVariantId && variantImageUrl && !baseImages.some((img) => img.imageUrl === variantImageUrl)
-      ? [{ id: 'variant', imageUrl: variantImageUrl }, ...baseImages].slice(0, maxTotalImages)
+    selectedVariantId && selectedVariantImageUrl && !baseImages.some((img) => img.imageUrl === selectedVariantImageUrl)
+      ? [...baseImages, { id: 'variant', imageUrl: selectedVariantImageUrl }]
       : baseImages;
 
-  // Reset to first image when variant changes
+  // When variant is selected, auto-select the variant image (at the end)
   useEffect(() => {
-    if (selectedVariantId && variantImageUrl) {
+    if (selectedVariantId && selectedVariantImageUrl) {
+      const variantIndex = displayImages.findIndex((img) => img.imageUrl === selectedVariantImageUrl);
+      if (variantIndex !== -1) {
+        setCurrentIndex(variantIndex);
+        // Scroll to show the variant image if needed
+        if (variantIndex >= thumbnailOffset + maxVisibleThumbnails) {
+          setThumbnailOffset(Math.max(0, variantIndex - maxVisibleThumbnails + 1));
+        }
+      }
+    } else {
+      // When variant is deselected, return to thumbnail (first image)
       setCurrentIndex(0);
       setThumbnailOffset(0);
     }
-  }, [selectedVariantId, variantImageUrl]);
+  }, [selectedVariantId, selectedVariantImageUrl]);
 
-  const currentImage = displayImages[currentIndex]?.imageUrl;
+  // Determine what image to show in main frame
+  // Priority: hovered variant > current selected thumbnail
+  const mainImageUrl = hoveredVariantImageUrl || displayImages[currentIndex]?.imageUrl;
 
   const handleThumbnailClick = (index: number) => {
     setCurrentIndex(index);
+    setPreHoverIndex(null);
     onMainImageChange?.(displayImages[index]?.imageUrl);
   };
 
   const handleThumbnailHover = (index: number) => {
+    // Save current index before hover
+    if (preHoverIndex === null) {
+      setPreHoverIndex(currentIndex);
+    }
     setCurrentIndex(index);
-    onMainImageChange?.(displayImages[index]?.imageUrl);
+  };
+
+  const handleThumbnailLeave = () => {
+    // Restore to pre-hover index when leaving thumbnails
+    if (preHoverIndex !== null) {
+      setCurrentIndex(preHoverIndex);
+      setPreHoverIndex(null);
+    }
   };
 
   const scrollThumbnails = (direction: 'left' | 'right') => {
@@ -86,11 +112,13 @@ export function ImageGallery({
   const goToPrev = () => {
     const newIndex = currentIndex === 0 ? displayImages.length - 1 : currentIndex - 1;
     setCurrentIndex(newIndex);
+    setPreHoverIndex(null);
   };
 
   const goToNext = () => {
     const newIndex = currentIndex === displayImages.length - 1 ? 0 : currentIndex + 1;
     setCurrentIndex(newIndex);
+    setPreHoverIndex(null);
   };
 
   const openLightbox = () => {
@@ -101,6 +129,7 @@ export function ImageGallery({
 
   const handleLightboxNavigate = (index: number) => {
     setCurrentIndex(index);
+    setPreHoverIndex(null);
   };
 
   // Calculate thumbnail size (each thumbnail ~80px + 8px gap)
@@ -116,10 +145,10 @@ export function ImageGallery({
         style={{ width: `${galleryWidth}px`, height: `${galleryWidth}px` }}
         onClick={openLightbox}
       >
-        {currentImage ? (
+        {mainImageUrl ? (
           <>
             <img
-              src={currentImage}
+              src={mainImageUrl}
               alt={productName}
               className="w-full h-full object-cover transition-transform group-hover:scale-105"
             />
@@ -160,7 +189,7 @@ export function ImageGallery({
 
       {/* Thumbnails */}
       {displayImages.length > 1 && (
-        <div className="relative">
+        <div className="relative" onMouseLeave={handleThumbnailLeave}>
           {/* Scroll Left Button */}
           {displayImages.length > maxVisibleThumbnails && thumbnailOffset > 0 && (
             <button
@@ -181,7 +210,7 @@ export function ImageGallery({
               .slice(thumbnailOffset, thumbnailOffset + maxVisibleThumbnails)
               .map((img, idx) => {
                 const actualIndex = idx + thumbnailOffset;
-                const isActive = actualIndex === currentIndex;
+                const isActive = actualIndex === currentIndex && !hoveredVariantImageUrl;
                 return (
                   <button
                     key={img.id}

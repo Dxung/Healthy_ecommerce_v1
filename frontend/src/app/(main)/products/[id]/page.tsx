@@ -98,7 +98,12 @@ export default function ProductDetailPage() {
   };
 
   const handleVariantSelect = (variantId: string) => {
-    setSelectedVariantId(variantId);
+    // Toggle selection - click again to deselect
+    if (selectedVariantId === variantId) {
+      setSelectedVariantId(null);
+    } else {
+      setSelectedVariantId(variantId);
+    }
     setHoveredVariantImageUrl(null);
   };
 
@@ -146,151 +151,156 @@ export default function ProductDetailPage() {
   const displayCompareAtPrice = selectedVariant?.compareAtPrice ?? firstVariant?.compareAtPrice;
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8" style={{ maxWidth: '1200px' }}>
-      {/* Breadcrumb */}
-      <CategoryBreadcrumb
-        categories={product.categoryHierarchy}
-        productName={product.name}
-      />
-
-      {/* Product Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8">
-        {/* Left: Images */}
-        <ImageGallery
-          images={product.images}
+    <div className="bg-gray-100 min-h-screen">
+      <div className="container mx-auto px-4 py-6 space-y-4" style={{ maxWidth: '1200px' }}>
+        {/* Breadcrumb */}
+        <CategoryBreadcrumb
+          categories={product.categoryHierarchy}
           productName={product.name}
-          thumbnailUrl={product.thumbnailUrl}
-          variantImageUrl={hoveredVariantImageUrl || selectedVariant?.imageUrl}
-          selectedVariantId={selectedVariantId}
         />
 
-        {/* Right: Info */}
-        <div className="space-y-6">
-          {/* Product Name */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
-            {product.shortDescription && (
-              <p className="text-gray-600 mt-1">{product.shortDescription}</p>
-            )}
-          </div>
+        {/* Product Overview Section */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8">
+            {/* Left: Images */}
+            <ImageGallery
+              images={product.images}
+              productName={product.name}
+              thumbnailUrl={product.thumbnailUrl}
+              hoveredVariantImageUrl={hoveredVariantImageUrl}
+              selectedVariantImageUrl={selectedVariant?.imageUrl}
+              selectedVariantId={selectedVariantId}
+            />
 
-          {/* Rating & Stats */}
-          <div className="flex items-center gap-4 text-sm">
-            <button
-              onClick={scrollToReviews}
-              className="flex items-center gap-2 hover:text-primary transition-colors"
-            >
-              <StarRatingVisual rating={product.averageRating} size="md" />
-              <span className="font-medium">{product.averageRating.toFixed(1)}</span>
-              <span className="text-gray-400">({product.totalRatings} đánh giá)</span>
-            </button>
-            <span className="text-gray-400">|</span>
-            <span>Đã bán {product.soldCount}</span>
-          </div>
-
-          {/* Price */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            {selectedVariant ? (
-              <ProductPrice
-                price={displayPrice}
-                compareAtPrice={displayCompareAtPrice}
-                size="lg"
-              />
-            ) : (
-              <div className="text-3xl font-bold text-primary">
-                {product.minPrice === product.maxPrice
-                  ? new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(product.minPrice)
-                  : `${new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(product.minPrice)} - ${new Intl.NumberFormat('vi-VN', {
-                      style: 'currency',
-                      currency: 'VND',
-                    }).format(product.maxPrice)}`}
+            {/* Right: Info */}
+            <div className="space-y-6">
+              {/* Product Name */}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">{product.name}</h1>
+                {product.shortDescription && (
+                  <p className="text-gray-600 mt-1">{product.shortDescription}</p>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Variant Selector */}
-          <VariantSelector
-            variants={product.variants}
-            selectedVariantId={selectedVariantId}
-            onSelect={handleVariantSelect}
-            quantity={quantity}
-            onQuantityChange={setQuantity}
-            onHover={handleVariantHover}
-          />
+              {/* Rating & Stats */}
+              <div className="flex items-center gap-4 text-sm">
+                <button
+                  onClick={scrollToReviews}
+                  className="flex items-center gap-2 hover:text-primary transition-colors"
+                >
+                  <StarRatingVisual rating={product.averageRating} size="md" />
+                  <span className="font-medium">{product.averageRating.toFixed(1)}</span>
+                  <span className="text-gray-400">({product.totalRatings} đánh giá)</span>
+                </button>
+                <span className="text-gray-400">|</span>
+                <span>Đã bán {product.soldCount}</span>
+              </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <Button
-              size="lg"
-              variant="outline"
-              className="flex-1 border-primary text-primary hover:bg-primary/10"
-              onClick={handleAddToCart}
-              disabled={addingToCart || buyingNow || !selectedVariantId}
-            >
-              {addingToCart ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <ShoppingCart className="w-5 h-5 mr-2" />
-              )}
-              Thêm vào giỏ
-            </Button>
-            <Button
-              size="lg"
-              className="flex-1"
-              onClick={handleBuyNow}
-              disabled={addingToCart || buyingNow || !selectedVariantId}
-            >
-              {buyingNow ? (
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              ) : (
-                <Zap className="w-5 h-5 mr-2" />
-              )}
-              Mua ngay
-            </Button>
-          </div>
+              {/* Price */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                {selectedVariant ? (
+                  <ProductPrice
+                    price={displayPrice}
+                    compareAtPrice={displayCompareAtPrice}
+                    size="lg"
+                  />
+                ) : (
+                  <div className="text-3xl font-bold text-primary">
+                    {product.minPrice === product.maxPrice
+                      ? new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(product.minPrice)
+                      : `${new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(product.minPrice)} - ${new Intl.NumberFormat('vi-VN', {
+                          style: 'currency',
+                          currency: 'VND',
+                        }).format(product.maxPrice)}`}
+                  </div>
+                )}
+              </div>
 
-          {/* Category & Brand */}
-          {(product.categoryName || product.brandName) && (
-            <div className="text-sm space-y-1 pt-4 border-t">
-              {product.categoryName && (
-                <p>
-                  <span className="text-gray-500">Danh mục:</span> {product.categoryName}
-                </p>
-              )}
-              {product.brandName && (
-                <p>
-                  <span className="text-gray-500">Thương hiệu:</span> {product.brandName}
-                </p>
+              {/* Variant Selector */}
+              <VariantSelector
+                variants={product.variants}
+                selectedVariantId={selectedVariantId}
+                onSelect={handleVariantSelect}
+                quantity={quantity}
+                onQuantityChange={setQuantity}
+                onHover={handleVariantHover}
+              />
+
+              {/* Action Buttons */}
+              <div className="flex gap-4">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="flex-1 border-primary text-primary hover:bg-primary/10"
+                  onClick={handleAddToCart}
+                  disabled={addingToCart || buyingNow || !selectedVariantId}
+                >
+                  {addingToCart ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <ShoppingCart className="w-5 h-5 mr-2" />
+                  )}
+                  Thêm vào giỏ
+                </Button>
+                <Button
+                  size="lg"
+                  className="flex-1"
+                  onClick={handleBuyNow}
+                  disabled={addingToCart || buyingNow || !selectedVariantId}
+                >
+                  {buyingNow ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <Zap className="w-5 h-5 mr-2" />
+                  )}
+                  Mua ngay
+                </Button>
+              </div>
+
+              {/* Category & Brand */}
+              {(product.categoryName || product.brandName) && (
+                <div className="text-sm space-y-1 pt-4 border-t">
+                  {product.categoryName && (
+                    <p>
+                      <span className="text-gray-500">Danh mục:</span> {product.categoryName}
+                    </p>
+                  )}
+                  {product.brandName && (
+                    <p>
+                      <span className="text-gray-500">Thương hiệu:</span> {product.brandName}
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
 
-      {/* Shop Info Section */}
-      <ShopInfoSection shop={product.shop} />
+        {/* Shop Info Section */}
+        <ShopInfoSection shop={product.shop} />
 
-      {/* Product Detail Section */}
-      <ProductDetailSection
-        categoryHierarchy={product.categoryHierarchy}
-        allergenTags={product.allergenTags}
-        dietTags={product.dietTags}
-        description={product.description}
-        nutrition={product.nutrition}
-        totalStock={totalStock}
-        shopProvince={product.shop.province}
-      />
+        {/* Product Detail Section */}
+        <ProductDetailSection
+          categoryHierarchy={product.categoryHierarchy}
+          allergenTags={product.allergenTags}
+          dietTags={product.dietTags}
+          description={product.description}
+          nutrition={product.nutrition}
+          totalStock={totalStock}
+          shopProvince={product.shop.province}
+        />
 
-      {/* Reviews Section */}
-      <div ref={reviewSectionRef} className="scroll-mt-4">
-        <h2 className="text-xl font-bold mb-4">Đánh giá sản phẩm</h2>
-        <ReviewList productId={product.id} />
+        {/* Reviews Section */}
+        <div ref={reviewSectionRef} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 scroll-mt-4">
+          <h2 className="text-xl font-bold mb-4">Đánh giá sản phẩm</h2>
+          <ReviewList productId={product.id} />
+        </div>
       </div>
     </div>
   );

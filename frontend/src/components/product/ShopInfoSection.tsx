@@ -38,7 +38,7 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg border p-4">
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Left: Avatar + Name + Button */}
         <div className="flex items-center gap-3">

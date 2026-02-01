@@ -22,7 +22,7 @@ export function CartShopGroup({
   onRemoveItem,
   disabled = false,
 }: CartShopGroupProps) {
-  const { shop, items, shopSubtotal, selectedCount } = shopGroup;
+  const { shop, items, selectedCount } = shopGroup;
 
   // Check if all selectable items are selected
   const selectableItems = items.filter(
@@ -34,13 +34,6 @@ export function CartShopGroup({
   );
   const allSelected = selectableItems.length > 0 && selectedCount === selectableItems.length;
   const hasSelectableItems = selectableItems.length > 0;
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
-  };
 
   return (
     <div className="bg-white rounded-lg border">
@@ -77,16 +70,6 @@ export function CartShopGroup({
             disabled={disabled}
           />
         ))}
-      </div>
-
-      {/* Shop Footer */}
-      <div className="flex items-center justify-end gap-4 px-4 py-3 border-t bg-gray-50">
-        <span className="text-sm text-gray-500">
-          {selectedCount} sản phẩm đã chọn
-        </span>
-        <span className="font-medium">
-          Tạm tính: <span className="text-primary">{formatPrice(shopSubtotal)}</span>
-        </span>
       </div>
     </div>
   );

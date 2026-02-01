@@ -73,18 +73,19 @@ export function CartDropdown() {
                     !item.product.isVisible ||
                     item.product.status !== 'active' ||
                     item.variant.stockQuantity === 0;
+                  const totalPrice = item.variant.price * item.quantity;
 
                   return (
                     <Link
                       key={item.id}
-                      href={`/products/${item.productId}`}
+                      href={`/products/${item.product.slug}`}
                       onClick={() => setIsOpen(false)}
-                      className={`flex gap-3 p-3 hover:bg-gray-50 transition-colors ${
+                      className={`flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors ${
                         isInactive ? 'opacity-60' : ''
                       }`}
                     >
                       {/* Product Image */}
-                      <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded overflow-hidden">
+                      <div className="flex-shrink-0 w-10 h-10 bg-gray-100 rounded overflow-hidden">
                         {item.variant.imageUrl || item.product.thumbnailUrl ? (
                           <img
                             src={item.variant.imageUrl || item.product.thumbnailUrl}
@@ -93,29 +94,26 @@ export function CartDropdown() {
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Package className="w-6 h-6 text-gray-300" />
+                            <Package className="w-5 h-5 text-gray-300" />
                           </div>
                         )}
                       </div>
 
-                      {/* Product Info */}
+                      {/* Product Name */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm text-gray-900 truncate">
                           {item.product.name}
                         </p>
-                        <p className="text-xs text-gray-500 truncate">{item.variant.name}</p>
-                        <div className="flex items-center justify-between mt-1">
-                          <span className="text-sm text-primary font-medium">
-                            {formatPrice(item.variant.price)}
-                          </span>
-                          <span className="text-xs text-gray-400">x{item.quantity}</span>
-                        </div>
                         {isInactive && (
-                          <span className="text-xs text-red-500">Sản phẩm không khả dụng</span>
+                          <span className="text-xs text-red-500">Không khả dụng</span>
                         )}
-                        {item.hasPriceChanged && !isInactive && (
-                          <span className="text-xs text-orange-500">Giá đã thay đổi</span>
-                        )}
+                      </div>
+
+                      {/* Total Price */}
+                      <div className="flex-shrink-0 text-right">
+                        <span className="text-sm text-primary font-medium">
+                          {formatPrice(totalPrice)}
+                        </span>
                       </div>
                     </Link>
                   );

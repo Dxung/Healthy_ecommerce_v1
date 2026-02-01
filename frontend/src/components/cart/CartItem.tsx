@@ -67,7 +67,7 @@ export function CartItem({
 
         {/* Product Image */}
         <Link
-          href={`/products/${item.productId}`}
+          href={`/products/${item.product.slug}`}
           className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden"
         >
           {item.variant.imageUrl || item.product.thumbnailUrl ? (
@@ -86,7 +86,7 @@ export function CartItem({
         {/* Product Info */}
         <div className="flex-1 min-w-0">
           <Link
-            href={`/products/${item.productId}`}
+            href={`/products/${item.product.slug}`}
             className={`font-medium text-gray-900 hover:text-primary line-clamp-2 ${
               hasIssue ? 'opacity-60' : ''
             }`}
@@ -189,7 +189,7 @@ export function CartItem({
 
           {/* Product Image */}
           <Link
-            href={`/products/${item.productId}`}
+            href={`/products/${item.product.slug}`}
             className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-lg overflow-hidden"
           >
             {item.variant.imageUrl || item.product.thumbnailUrl ? (
@@ -208,7 +208,7 @@ export function CartItem({
           {/* Product Info */}
           <div className="flex-1 min-w-0">
             <Link
-              href={`/products/${item.productId}`}
+              href={`/products/${item.product.slug}`}
               className={`font-medium text-gray-900 hover:text-primary line-clamp-2 text-sm ${
                 hasIssue ? 'opacity-60' : ''
               }`}
