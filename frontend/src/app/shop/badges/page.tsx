@@ -107,7 +107,11 @@ export default function ShopBadgesPage() {
     });
   };
 
-  // Check if shop already has official badge or pending application
+  // Check if shop already has badges or pending applications
+  const hasVerifiedBadge = badges.some(b => b.badgeCode === 'approved' && b.status === 'active');
+  const hasPendingVerifiedApplication = applications.some(
+    a => a.badgeCode === 'approved' && a.status === 'pending'
+  );
   const hasOfficialBadge = badges.some(b => b.badgeCode === 'official' && b.status === 'active');
   const hasPendingOfficialApplication = applications.some(
     a => a.badgeCode === 'official' && a.status === 'pending'
@@ -124,17 +128,11 @@ export default function ShopBadgesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Huy hiệu & Chứng nhận</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Quản lý huy hiệu và đăng ký chứng nhận cho shop của bạn
-          </p>
-        </div>
-        <Button onClick={() => setShowApplyModal(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Đăng ký Chính hãng
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Huy hiệu & Chứng nhận</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Quản lý huy hiệu và đăng ký chứng nhận cho shop của bạn
+        </p>
       </div>
 
       {/* Tabs */}
@@ -169,49 +167,81 @@ export default function ShopBadgesPage() {
 
       {/* Content */}
       {activeTab === 'badges' && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {badges.length === 0 ? (
-            <div className="col-span-full bg-white rounded-lg border p-8 text-center">
-              <Award className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500">Shop chưa có huy hiệu nào</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Đăng ký chứng nhận để nhận huy hiệu và các quyền lợi đặc biệt
-              </p>
-            </div>
-          ) : (
-            badges.map((badge) => {
-              const info = badgeInfo[badge.badgeCode];
-              return (
-                <div
-                  key={badge.id}
-                  className={`bg-white rounded-lg border p-4 ${
-                    badge.status === 'active' ? '' : 'opacity-60'
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg bg-gray-100 ${info?.color}`}>
-                      {info?.icon}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900">{info?.name || badge.badgeName}</h3>
-                        <span className={`px-2 py-0.5 text-xs rounded ${
-                          badge.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {badge.status === 'active' ? 'Đang hoạt động' : 'Đã vô hiệu'}
-                        </span>
+        <div className="space-y-6">
+          {/* Current Badges */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {badges.length === 0 ? (
+              <div className="col-span-full bg-white rounded-lg border p-8 text-center">
+                <Award className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">Shop chưa có huy hiệu nào</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Đăng ký chứng nhận để nhận huy hiệu và các quyền lợi đặc biệt
+                </p>
+              </div>
+            ) : (
+              badges.map((badge) => {
+                const info = badgeInfo[badge.badgeCode];
+                return (
+                  <div
+                    key={badge.id}
+                    className={`bg-white rounded-lg border p-4 ${
+                      badge.status === 'active' ? '' : 'opacity-60'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg bg-gray-100 ${info?.color}`}>
+                        {info?.icon}
                       </div>
-                      <p className="text-sm text-gray-500 mt-1">{info?.description}</p>
-                      {badge.expiresAt && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          Hết hạn: {formatDate(badge.expiresAt)}
-                        </p>
-                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium text-gray-900">{info?.name || badge.badgeName}</h3>
+                          <span className={`px-2 py-0.5 text-xs rounded ${
+                            badge.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {badge.status === 'active' ? 'Đang hoạt động' : 'Đã vô hiệu'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">{info?.description}</p>
+                        {badge.expiresAt && (
+                          <p className="text-xs text-gray-400 mt-2">
+                            Hết hạn: {formatDate(badge.expiresAt)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Register for Verified Badge */}
+          {!hasVerifiedBadge && !hasPendingVerifiedApplication && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-lg bg-blue-100">
+                  <Shield className="w-6 h-6 text-blue-500" />
                 </div>
-              );
-            })
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">Đăng ký Shop Xác thực</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Xác thực giấy tờ hợp lệ để nhận huy hiệu "Shop Xác thực" và tăng độ tin cậy với khách hàng.
+                  </p>
+                  <Button className="mt-4" variant="outline" disabled>
+                    <Shield className="w-4 h-4 mr-2" />
+                    Sắp ra mắt
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          {hasPendingVerifiedApplication && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-yellow-700">
+                <Clock className="w-5 h-5" />
+                <span className="font-medium">Đơn đăng ký Shop Xác thực đang chờ duyệt</span>
+              </div>
+            </div>
           )}
         </div>
       )}

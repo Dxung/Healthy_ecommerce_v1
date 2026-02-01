@@ -401,8 +401,9 @@ export class PublicProductController {
         }
 
         // Get shop province name
-        return this.locationRepository.findProvinceById(shop.provinceId).map(
-          (province) => {
+        return this.locationRepository
+          .getLocationNames(shop.provinceId, shop.districtId, shop.wardId)
+          .map((locationNames) => {
             return new PublicProductDetailResponseDto(product, {
               categoryName:
                 categoryHierarchy.length > 0
@@ -418,13 +419,12 @@ export class PublicProductController {
                 : null,
               categoryHierarchy,
               shop,
-              shopProvince: province?.name ?? null,
+              shopProvince: locationNames.provinceName,
               allergenTags,
               dietTags,
               nutrition,
             });
-          },
-        );
+          });
       },
     );
   }

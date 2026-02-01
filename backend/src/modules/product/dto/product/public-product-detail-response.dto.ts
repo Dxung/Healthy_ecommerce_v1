@@ -110,7 +110,7 @@ export class ShopInfoDto {
     this.averageRating = shop.averageRating;
     this.totalRatings = shop.totalRatings;
     this.totalProducts = shop.totalProducts;
-    this.badges = shop.badges;
+    this.badges = shop.getActiveBadges().map((b) => b.badgeCode);
     this.createdAt = shop.createdAt.toISOString();
     this.province = province ?? null;
   }
