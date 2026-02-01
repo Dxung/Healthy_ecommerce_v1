@@ -79,4 +79,15 @@ export interface IDietTagRepository {
    * @returns Array of DietTag domain models.
    */
   findByProductId(productId: string): ResultAsync<DietTag[], DomainError>;
+
+  /**
+   * Sets diet tags for a product (replaces existing).
+   * @param productId - The product ID.
+   * @param dietTagIds - Array of diet tag IDs to set.
+   * @returns void on success.
+   */
+  setProductDietTags(
+    productId: string,
+    dietTagIds: string[],
+  ): ResultAsync<void, DomainError>;
 }

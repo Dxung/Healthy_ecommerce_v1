@@ -1150,6 +1150,17 @@ export interface CreateProductVariantRequest {
   optionValueIndices?: number[];
 }
 
+export interface CreateProductNutritionRequest {
+  calories?: number;
+  protein?: number;
+  carbohydrates?: number;
+  sugar?: number;
+  fat?: number;
+  saturatedFat?: number;
+  fiber?: number;
+  sodium?: number;
+}
+
 export interface CreateProductRequest {
   name: string;
   slug: string;
@@ -1162,6 +1173,9 @@ export interface CreateProductRequest {
   ingredients?: string[];
   servingSize?: number;
   servingUnitId?: string;
+  allergenTagIds?: string[];
+  dietTagIds?: string[];
+  nutrition?: CreateProductNutritionRequest;
 }
 
 export interface UpdateProductRequest {

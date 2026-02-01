@@ -133,6 +133,41 @@ export class OrmAllergenTagRepository implements IAllergenTagRepository {
     ).map((rows: ORMAllergenTag[]) => ORMAllergenTagMapper.toDomainList(rows));
   }
 
+  @WithPosition()
+  setProductAllergenTags(
+    productId: string,
+    allergenTagIds: string[],
+  ): ResultAsync<void, DomainError> {
+    const em = this.getEntityManager() ?? this.dataSource.manager;
+
+    // Delete existing tags for this product, then insert new ones
+    return ResultAsync.fromPromise(
+      em.query(
+        `DELETE FROM product_schema.product_allergen_tags WHERE product_id = $1`,
+        [productId],
+      ),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).andThen(() => {
+      if (allergenTagIds.length === 0) {
+        return ResultAsync.fromSafePromise(Promise.resolve(undefined));
+      }
+
+      // Build VALUES clause for bulk insert
+      const values = allergenTagIds
+        .map((_, index) => `($1, $${index + 2})`)
+        .join(', ');
+      const params = [productId, ...allergenTagIds];
+
+      return ResultAsync.fromPromise(
+        em.query(
+          `INSERT INTO product_schema.product_allergen_tags (product_id, allergen_tag_id) VALUES ${values}`,
+          params,
+        ),
+        (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+      ).map(() => undefined);
+    });
+  }
+
   private getEntityManager() {
     if (!this.als) return null;
     const store = this.als.getStore();

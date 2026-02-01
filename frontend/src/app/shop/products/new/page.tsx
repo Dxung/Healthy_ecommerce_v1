@@ -331,6 +331,21 @@ export default function AddProductPage() {
         expiryDate: v.expiryDate || undefined,
       }));
 
+      // Build nutrition object if any nutrition field is filled
+      const nutritionData = hasNutrition ? {
+        calories: calories ? parseFloat(calories) : undefined,
+        protein: protein ? parseFloat(protein) : undefined,
+        carbohydrates: carbohydrates ? parseFloat(carbohydrates) : undefined,
+        sugar: sugar ? parseFloat(sugar) : undefined,
+        fat: fat ? parseFloat(fat) : undefined,
+        saturatedFat: saturatedFat ? parseFloat(saturatedFat) : undefined,
+        fiber: fiber ? parseFloat(fiber) : undefined,
+        sodium: sodium ? parseFloat(sodium) : undefined,
+      } : undefined;
+
+      // Check if nutrition object has any values
+      const hasAnyNutrition = nutritionData && Object.values(nutritionData).some(v => v !== undefined);
+
       const productData: CreateProductRequest = {
         name: name.trim(),
         slug: slug.trim(),
@@ -342,6 +357,9 @@ export default function AddProductPage() {
         ingredients: ingredients.length > 0 ? ingredients : undefined,
         servingSize: hasNutrition && servingSize ? parseFloat(servingSize) : undefined,
         servingUnitId: hasNutrition && servingUnitId ? servingUnitId : undefined,
+        allergenTagIds: selectedAllergenIds.length > 0 ? selectedAllergenIds : undefined,
+        dietTagIds: selectedDietIds.length > 0 ? selectedDietIds : undefined,
+        nutrition: hasAnyNutrition ? nutritionData : undefined,
       };
 
       const createdProduct = await apiClient.createShopProduct(productData);

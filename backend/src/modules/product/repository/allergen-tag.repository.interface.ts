@@ -79,4 +79,15 @@ export interface IAllergenTagRepository {
    * @returns Array of AllergenTag domain models.
    */
   findByProductId(productId: string): ResultAsync<AllergenTag[], DomainError>;
+
+  /**
+   * Sets allergen tags for a product (replaces existing).
+   * @param productId - The product ID.
+   * @param allergenTagIds - Array of allergen tag IDs to set.
+   * @returns void on success.
+   */
+  setProductAllergenTags(
+    productId: string,
+    allergenTagIds: string[],
+  ): ResultAsync<void, DomainError>;
 }

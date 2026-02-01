@@ -14,6 +14,9 @@ import {
   PRODUCT_VARIANT_REPOSITORY,
   UNIT_REPOSITORY,
   SHOP_OFFICIAL_BRAND_REPOSITORY,
+  ALLERGEN_TAG_REPOSITORY,
+  DIET_TAG_REPOSITORY,
+  PRODUCT_NUTRITION_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import { IProductRepository } from './repository/product.repository.interface';
 import { IProductImageRepository } from './repository/product-image.repository.interface';
@@ -21,11 +24,15 @@ import { IProductIngredientRepository } from './repository/product-ingredient.re
 import { IProductOptionRepository } from './repository/product-option.repository.interface';
 import { IProductVariantRepository } from './repository/product-variant.repository.interface';
 import { IUnitRepository } from './repository/unit.repository.interface';
+import { IAllergenTagRepository } from './repository/allergen-tag.repository.interface';
+import { IDietTagRepository } from './repository/diet-tag.repository.interface';
+import { IProductNutritionRepository } from './repository/product-nutrition.repository.interface';
 import { Product } from './models/product.model';
 import { ProductImage } from './models/product-image.model';
 import { ProductIngredient } from './models/product-ingredient.model';
 import { ProductOption } from './models/product-option.model';
 import { ProductVariant } from './models/product-variant.model';
+import { ProductNutrition } from './models/product-nutrition.model';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import { errAsync, okAsync, ResultAsync } from 'neverthrow';
 import {
@@ -72,6 +79,12 @@ export class ShopProductService implements IShopProductService {
     private readonly unitRepository: IUnitRepository,
     @Inject(SHOP_OFFICIAL_BRAND_REPOSITORY)
     private readonly officialBrandRepository: IShopOfficialBrandRepository,
+    @Inject(ALLERGEN_TAG_REPOSITORY)
+    private readonly allergenTagRepository: IAllergenTagRepository,
+    @Inject(DIET_TAG_REPOSITORY)
+    private readonly dietTagRepository: IDietTagRepository,
+    @Inject(PRODUCT_NUTRITION_REPOSITORY)
+    private readonly nutritionRepository: IProductNutritionRepository,
     @Inject(SHOP_SERVICE)
     private readonly shopService: IShopService,
     @Inject(SHOP_BADGE_BENEFITS_SERVICE)
@@ -461,6 +474,22 @@ export class ShopProductService implements IShopProductService {
             dto.ingredients ?? [],
           ).map((ingredients) => ({ savedProduct, options, variants, ingredients })),
         )
+        // Set allergen tags
+        .andThen((ctx) =>
+          this.allergenTagRepository
+            .setProductAllergenTags(ctx.savedProduct.id, dto.allergenTagIds ?? [])
+            .map(() => ctx),
+        )
+        // Set diet tags
+        .andThen((ctx) =>
+          this.dietTagRepository
+            .setProductDietTags(ctx.savedProduct.id, dto.dietTagIds ?? [])
+            .map(() => ctx),
+        )
+        // Create nutrition
+        .andThen((ctx) =>
+          this.createNutritionForProduct(ctx.savedProduct.id, dto).map(() => ctx),
+        )
         // Finalize product
         .andThen(({ savedProduct, options, variants, ingredients }) => {
           savedProduct.setOptions(options);
@@ -557,6 +586,46 @@ export class ShopProductService implements IShopProductService {
     return this.ingredientRepository
       .setIngredients(productId, ingredients)
       .map(() => ingredients);
+  }
+
+  private createNutritionForProduct(
+    productId: string,
+    dto: CreateProductArgumentDto,
+  ): ResultAsync<void, DomainError> {
+    // Only create nutrition if any nutrition field is provided
+    const nutrition = dto.nutrition;
+    if (
+      !nutrition ||
+      (nutrition.calories === undefined &&
+        nutrition.protein === undefined &&
+        nutrition.carbohydrates === undefined &&
+        nutrition.sugar === undefined &&
+        nutrition.fat === undefined &&
+        nutrition.saturatedFat === undefined &&
+        nutrition.fiber === undefined &&
+        nutrition.sodium === undefined)
+    ) {
+      return okAsync(undefined);
+    }
+
+    // Get serving unit symbol (default to 'g' if not specified)
+    const servingUnit = dto.servingUnitId ? 'g' : 'g'; // Will be resolved later if needed
+
+    const productNutrition = ProductNutrition.create({
+      productId,
+      servingSize: dto.servingSize ?? 100,
+      servingUnit,
+      calories: nutrition.calories ?? null,
+      protein: nutrition.protein ?? null,
+      carbohydrates: nutrition.carbohydrates ?? null,
+      sugar: nutrition.sugar ?? null,
+      fat: nutrition.fat ?? null,
+      saturatedFat: nutrition.saturatedFat ?? null,
+      fiber: nutrition.fiber ?? null,
+      sodium: nutrition.sodium ?? null,
+    });
+
+    return this.nutritionRepository.create(productNutrition).map(() => undefined);
   }
 
   @WithPosition()

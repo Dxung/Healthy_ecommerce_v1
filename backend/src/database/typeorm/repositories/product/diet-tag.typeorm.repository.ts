@@ -131,6 +131,41 @@ export class OrmDietTagRepository implements IDietTagRepository {
     ).map((rows: ORMDietTag[]) => ORMDietTagMapper.toDomainList(rows));
   }
 
+  @WithPosition()
+  setProductDietTags(
+    productId: string,
+    dietTagIds: string[],
+  ): ResultAsync<void, DomainError> {
+    const em = this.getEntityManager() ?? this.dataSource.manager;
+
+    // Delete existing tags for this product, then insert new ones
+    return ResultAsync.fromPromise(
+      em.query(
+        `DELETE FROM product_schema.product_diet_tags WHERE product_id = $1`,
+        [productId],
+      ),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).andThen(() => {
+      if (dietTagIds.length === 0) {
+        return ResultAsync.fromSafePromise(Promise.resolve(undefined));
+      }
+
+      // Build VALUES clause for bulk insert
+      const values = dietTagIds
+        .map((_, index) => `($1, $${index + 2})`)
+        .join(', ');
+      const params = [productId, ...dietTagIds];
+
+      return ResultAsync.fromPromise(
+        em.query(
+          `INSERT INTO product_schema.product_diet_tags (product_id, diet_tag_id) VALUES ${values}`,
+          params,
+        ),
+        (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+      ).map(() => undefined);
+    });
+  }
+
   private getEntityManager() {
     if (!this.als) return null;
     const store = this.als.getStore();

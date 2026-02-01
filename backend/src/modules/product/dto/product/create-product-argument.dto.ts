@@ -15,6 +15,59 @@ import {
 import { Type } from 'class-transformer';
 
 /**
+ * DTO for product nutrition information.
+ */
+export class CreateProductNutritionDto {
+  @ApiPropertyOptional({ description: 'Calories per serving (kcal)', example: 150 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  calories?: number;
+
+  @ApiPropertyOptional({ description: 'Protein per serving (g)', example: 8 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  protein?: number;
+
+  @ApiPropertyOptional({ description: 'Carbohydrates per serving (g)', example: 20 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  carbohydrates?: number;
+
+  @ApiPropertyOptional({ description: 'Sugar per serving (g)', example: 12 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sugar?: number;
+
+  @ApiPropertyOptional({ description: 'Total fat per serving (g)', example: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fat?: number;
+
+  @ApiPropertyOptional({ description: 'Saturated fat per serving (g)', example: 2 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  saturatedFat?: number;
+
+  @ApiPropertyOptional({ description: 'Fiber per serving (g)', example: 3 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fiber?: number;
+
+  @ApiPropertyOptional({ description: 'Sodium per serving (mg)', example: 150 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  sodium?: number;
+}
+
+/**
  * DTO for creating a product option.
  */
 export class CreateProductOptionDto {
@@ -195,4 +248,33 @@ export class CreateProductArgumentDto {
   @IsArray()
   @IsString({ each: true })
   ingredients?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Allergen tag IDs',
+    type: [String],
+    example: ['uuid-1', 'uuid-2'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  allergenTagIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Diet tag IDs',
+    type: [String],
+    example: ['uuid-1', 'uuid-2'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  dietTagIds?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Product nutrition information',
+    type: CreateProductNutritionDto,
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => CreateProductNutritionDto)
+  nutrition?: CreateProductNutritionDto;
 }
