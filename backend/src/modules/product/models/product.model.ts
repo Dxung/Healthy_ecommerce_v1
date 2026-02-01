@@ -93,8 +93,10 @@ export class Product {
 
   /**
    * Creates a new product (draft status).
+   * @param params.id - Optional pre-generated UUID. If not provided, a new one is generated.
    */
   static create(params: {
+    id?: string;
     shopId: string;
     categoryId: string;
     brandId?: string | null;
@@ -107,7 +109,7 @@ export class Product {
   }): Product {
     const now = new Date();
     return new Product(
-      uuidv7(),
+      params.id ?? uuidv7(),
       params.shopId,
       params.categoryId,
       params.brandId ?? null,

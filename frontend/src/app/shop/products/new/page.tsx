@@ -60,8 +60,6 @@ export default function AddProductPage() {
 
   // Form state
   const [name, setName] = useState('');
-  const [slug, setSlug] = useState('');
-  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
   const [description, setDescription] = useState('');
   const [shortDescription, setShortDescription] = useState('');
   // Cascading category selection
@@ -172,32 +170,6 @@ export default function AddProductPage() {
     }
   };
 
-  const generateSlug = (text: string) => {
-    // Take only first 4 words
-    const words = text.trim().split(/\s+/).slice(0, 4).join(' ');
-    return words
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/đ/g, 'd')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim();
-  };
-
-  const handleNameChange = (value: string) => {
-    setName(value);
-    // Auto-generate slug unless user has manually edited it
-    if (!slugManuallyEdited) {
-      setSlug(generateSlug(value));
-    }
-  };
-
-  const handleSlugChange = (value: string) => {
-    setSlug(value);
-    setSlugManuallyEdited(true);
-  };
 
   const addVariant = () => {
     setVariants([
@@ -348,7 +320,6 @@ export default function AddProductPage() {
 
       const productData: CreateProductRequest = {
         name: name.trim(),
-        slug: slug.trim(),
         description: description.trim() || undefined,
         categoryId: getFinalCategoryId(),
         brandId: brandId || undefined,
@@ -425,19 +396,8 @@ export default function AddProductPage() {
             <Input
               id="name"
               value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               placeholder="VD: Sữa hạt óc chó hữu cơ"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="slug">Slug</Label>
-            <Input
-              id="slug"
-              value={slug}
-              onChange={(e) => handleSlugChange(e.target.value)}
-              placeholder="sua-hat-oc-cho-huu-co"
-              className="font-mono"
             />
           </div>
 

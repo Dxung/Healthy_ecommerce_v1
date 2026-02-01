@@ -23,6 +23,7 @@ import {
 } from 'src/shared/types/domain-error.type';
 import { PRODUCT_ERRORS } from './errors/product.errors';
 import { ProductStatus } from 'src/database/typeorm/entities/product/enums/product-status.enum';
+import { parseProductSlug } from 'src/shared/utils/slugify.util';
 import type {
   PaginatedResult,
   PaginationParams,
@@ -107,8 +108,20 @@ export class PublicProductService implements IPublicProductService {
 
   @WithPosition()
   getProductBySlug(slug: string): ResultAsync<Product, DomainError> {
+    // Parse the slug to extract productId (format: <name-slug>-i.<shopId>.<productId>)
+    // This allows users to modify the URL before -i. and it will still work
+    const parsed = parseProductSlug(slug);
+    if (!parsed) {
+      return errAsync(
+        createDomainError(PRODUCT_ERRORS.PRODUCT_NOT_FOUND, {
+          cause: `Invalid product slug format: "${slug}"`,
+        }),
+      );
+    }
+
+    // Fetch product by productId instead of exact slug match
     return this.productRepository
-      .findPublicBySlug(slug, {
+      .findById(parsed.productId, {
         withImages: true,
         withOptions: true,
         withVariants: true,
@@ -118,7 +131,15 @@ export class PublicProductService implements IPublicProductService {
         if (!product) {
           return errAsync(
             createDomainError(PRODUCT_ERRORS.PRODUCT_NOT_FOUND, {
-              cause: `Product with slug "${slug}" not found`,
+              cause: `Product with ID "${parsed.productId}" not found`,
+            }),
+          );
+        }
+        // Only return if active and visible to buyers
+        if (!product.isVisibleToBuyers()) {
+          return errAsync(
+            createDomainError(PRODUCT_ERRORS.PRODUCT_NOT_FOUND, {
+              cause: `Product with ID "${parsed.productId}" is not available`,
             }),
           );
         }

@@ -28,6 +28,7 @@ export const ProductColumn = {
   TOTAL_SOLD: `${PRODUCT_ALIAS}.totalSold`,
   AVERAGE_RATING: `${PRODUCT_ALIAS}.averageRating`,
   CREATED_AT: `${PRODUCT_ALIAS}.createdAt`,
+  DELETED_AT: `${PRODUCT_ALIAS}.deletedAt`,
 } as const;
 
 // ======================== IMAGE COLUMNS ========================

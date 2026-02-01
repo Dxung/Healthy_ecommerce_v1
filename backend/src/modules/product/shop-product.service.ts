@@ -1,11 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AsyncLocalStorage } from 'async_hooks';
+import { v7 as uuidv7 } from 'uuid';
 import {
   IShopProductService,
   ShopProductFilter,
   ProductDetailResult,
   UnitInfoData,
 } from './shop-product.service.interface';
+import { generateProductSlug } from 'src/shared/utils/slugify.util';
 import {
   PRODUCT_REPOSITORY,
   PRODUCT_IMAGE_REPOSITORY,
@@ -317,22 +319,6 @@ export class ShopProductService implements IShopProductService {
   ): ResultAsync<Product, DomainError> {
     return (
       this.getCurrentShopId()
-        // Check slug uniqueness
-        .andThen((shopId) =>
-          this.productRepository
-            .slugExistsInShop(shopId, dto.slug)
-            .map((exists) => ({ shopId, exists })),
-        )
-        .andThen(({ shopId, exists }) => {
-          if (exists) {
-            return errAsync(
-              createDomainError(PRODUCT_ERRORS.PRODUCT_SLUG_EXISTS, {
-                cause: `Slug "${dto.slug}" already exists in this shop`,
-              }),
-            );
-          }
-          return okAsync(shopId);
-        })
         // Check official shop brand restriction
         .andThen((shopId) =>
           this.checkOfficialBrandRestriction(shopId, dto.brandId).map(
@@ -438,12 +424,17 @@ export class ShopProductService implements IShopProductService {
     shopId: string,
     dto: CreateProductArgumentDto,
   ): ResultAsync<Product, DomainError> {
+    // Generate productId first, then create slug with embedded IDs
+    const productId = uuidv7();
+    const slug = generateProductSlug(dto.name, shopId, productId);
+
     const product = Product.create({
+      id: productId,
       shopId,
       categoryId: dto.categoryId,
       brandId: dto.brandId ?? null,
       name: dto.name,
-      slug: dto.slug,
+      slug,
       description: dto.description ?? null,
       thumbnailUrl: dto.thumbnailUrl,
       servingSize: dto.servingSize ?? null,

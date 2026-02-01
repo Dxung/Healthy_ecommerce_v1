@@ -1163,7 +1163,7 @@ export interface CreateProductNutritionRequest {
 
 export interface CreateProductRequest {
   name: string;
-  slug: string;
+  slug?: string;
   description?: string;
   categoryId: string;
   brandId?: string;

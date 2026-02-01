@@ -181,14 +181,14 @@ export class CreateProductArgumentDto {
   @MaxLength(255)
   name: string;
 
-  @ApiProperty({
-    description: 'URL-friendly slug',
+  @ApiPropertyOptional({
+    description: 'URL-friendly slug (auto-generated if not provided)',
     example: 'sua-tuoi-vinamilk',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   @MaxLength(255)
-  slug: string;
+  slug?: string;
 
   @ApiPropertyOptional({ description: 'Product description' })
   @IsOptional()

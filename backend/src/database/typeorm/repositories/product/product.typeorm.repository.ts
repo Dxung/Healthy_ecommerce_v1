@@ -320,7 +320,9 @@ export class OrmProductRepository implements IProductRepository {
       })
       .andWhere(`${ProductColumn.SLUG} = :${QueryParam.SLUG}`, {
         [QueryParam.SLUG]: slug,
-      });
+      })
+      // Exclude soft-deleted products
+      .andWhere(`${ProductColumn.DELETED_AT} IS NULL`);
 
     if (excludeId) {
       qb.andWhere(`${ProductColumn.ID} != :${QueryParam.EXCLUDE_ID}`, {
