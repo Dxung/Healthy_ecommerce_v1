@@ -43,7 +43,7 @@ export default function CartPage() {
         const isInactive =
           !item.variant.isActive ||
           !item.product.isVisible ||
-          item.product.status !== 'approved' ||
+          item.product.status !== 'active' ||
           item.variant.stockQuantity === 0;
         if (isInactive) {
           inactiveItems.push(item);

@@ -16,6 +16,7 @@ export interface VariantWithProduct {
   imageUrl: string | null;
   isActive: boolean;
   deletedAt: Date | null;
+  expiryDate: Date | null;
   product: {
     id: string;
     shopId: string;

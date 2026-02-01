@@ -96,6 +96,7 @@ export class OrmCartRepository implements ICartRepository {
             stockQuantity: item.variant.stockQuantity,
             isActive: item.variant.isActive,
             sku: item.variant.sku,
+            expiryDate: item.variant.expiryDate,
           },
           product: {
             id: item.product.id,
@@ -263,6 +264,7 @@ export class OrmCartRepository implements ICartRepository {
             variant.deletedAt IS NOT NULL
             OR variant.isActive = false
             OR variant.stockQuantity <= 0
+            OR (variant.expiryDate IS NOT NULL AND variant.expiryDate < CURRENT_DATE)
             OR product.deletedAt IS NOT NULL
             OR product.isVisible = false
             OR product.status != :activeStatus
@@ -320,6 +322,7 @@ export class OrmCartRepository implements ICartRepository {
             stockQuantity: item.variant.stockQuantity,
             isActive: item.variant.isActive,
             sku: item.variant.sku,
+            expiryDate: item.variant.expiryDate,
           },
           product: {
             id: item.product.id,

@@ -89,7 +89,7 @@ export function VariantSelector({
                     <span>{variant.name}</span>
                   </div>
                   {!isAvailable && (
-                    <span className="text-xs text-red-500 block">Het hang</span>
+                    <span className="text-xs text-red-500 block">Hết hàng</span>
                   )}
                 </button>
               );

@@ -9,19 +9,19 @@ export const REVIEW_IMAGE_ALIAS = 'reviewImage';
 export const REVIEW_REPLY_ALIAS = 'reviewReply';
 export const USER_ALIAS = 'user';
 
-// Column references
+// Column references (use entity property names, not database column names)
 export const ReviewColumn = {
   ID: `${REVIEW_ALIAS}.id`,
-  ORDER_ITEM_ID: `${REVIEW_ALIAS}.order_item_id`,
-  USER_ID: `${REVIEW_ALIAS}.user_id`,
-  PRODUCT_ID: `${REVIEW_ALIAS}.product_id`,
-  SHOP_ID: `${REVIEW_ALIAS}.shop_id`,
+  ORDER_ITEM_ID: `${REVIEW_ALIAS}.orderItemId`,
+  USER_ID: `${REVIEW_ALIAS}.userId`,
+  PRODUCT_ID: `${REVIEW_ALIAS}.productId`,
+  SHOP_ID: `${REVIEW_ALIAS}.shopId`,
   RATING: `${REVIEW_ALIAS}.rating`,
   CONTENT: `${REVIEW_ALIAS}.content`,
   STATUS: `${REVIEW_ALIAS}.status`,
-  DELETED_AT: `${REVIEW_ALIAS}.deleted_at`,
-  CREATED_AT: `${REVIEW_ALIAS}.created_at`,
-  UPDATED_AT: `${REVIEW_ALIAS}.updated_at`,
+  DELETED_AT: `${REVIEW_ALIAS}.deletedAt`,
+  CREATED_AT: `${REVIEW_ALIAS}.createdAt`,
+  UPDATED_AT: `${REVIEW_ALIAS}.updatedAt`,
 } as const;
 
 // Query parameter names

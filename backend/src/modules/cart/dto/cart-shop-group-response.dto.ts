@@ -9,8 +9,8 @@ export class CartShopGroupResponseDto {
     logoUrl: string | null;
   };
   items: CartItemResponseDto[];
-  subtotal: number;
-  allSelected: boolean;
+  shopSubtotal: number;
+  selectedCount: number;
 
   constructor(
     shop: { id: string; name: string; slug: string; logoUrl: string | null },
@@ -18,11 +18,13 @@ export class CartShopGroupResponseDto {
   ) {
     this.shop = shop;
     this.items = items.map((item) => new CartItemResponseDto(item));
-    this.subtotal = items.reduce(
+
+    // Calculate subtotal for selected items in this shop
+    const selectedItems = items.filter((item) => item.cartItem.isSelected);
+    this.shopSubtotal = selectedItems.reduce(
       (sum, item) => sum + item.variant.price * item.cartItem.quantity,
       0,
     );
-    this.allSelected =
-      items.length > 0 && items.every((item) => item.cartItem.isSelected);
+    this.selectedCount = selectedItems.length;
   }
 }

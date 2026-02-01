@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Store, Star, Package, Calendar } from 'lucide-react';
+import { Store, MessageSquare, Package, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ShopInfo {
@@ -29,19 +29,19 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
     const diffYears = Math.floor(diffMonths / 12);
 
     if (diffYears > 0) {
-      return `${diffYears} nam truoc`;
+      return `${diffYears} năm trước`;
     }
     if (diffMonths > 0) {
-      return `${diffMonths} thang truoc`;
+      return `${diffMonths} tháng trước`;
     }
-    return 'Moi tham gia';
+    return 'Mới tham gia';
   };
 
   return (
     <div className="bg-white rounded-lg border p-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         {/* Left: Avatar + Name + Button */}
-        <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-3">
           <Link href={`/shop/${shop.slug}`}>
             {shop.logoUrl ? (
               <img
@@ -55,7 +55,7 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
               </div>
             )}
           </Link>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0">
             <Link
               href={`/shop/${shop.slug}`}
               className="font-semibold text-gray-900 hover:text-primary transition-colors block truncate"
@@ -66,7 +66,7 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
               <p className="text-sm text-gray-500 truncate">{shop.province}</p>
             )}
           </div>
-          <Link href={`/shop/${shop.slug}`}>
+          <Link href={`/shop/${shop.slug}`} className="ml-2">
             <Button variant="outline" size="sm">
               Xem Shop
             </Button>
@@ -80,14 +80,12 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
         <div className="grid grid-cols-3 gap-4 sm:gap-6 text-center sm:text-left">
           <div>
             <div className="flex items-center justify-center sm:justify-start gap-1">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <MessageSquare className="w-4 h-4 text-primary" />
               <span className="font-semibold text-gray-900">
-                {shop.averageRating.toFixed(1)}
+                {shop.totalRatings}
               </span>
             </div>
-            <p className="text-xs text-gray-500">
-              {shop.totalRatings} danh gia
-            </p>
+            <p className="text-xs text-gray-500">Đánh giá</p>
           </div>
 
           <div>
@@ -97,7 +95,7 @@ export function ShopInfoSection({ shop }: ShopInfoSectionProps) {
                 {shop.totalProducts}
               </span>
             </div>
-            <p className="text-xs text-gray-500">San pham</p>
+            <p className="text-xs text-gray-500">Sản phẩm</p>
           </div>
 
           <div>

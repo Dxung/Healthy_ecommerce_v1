@@ -12,10 +12,11 @@ import { ProductPrice } from '@/components/product/ProductPrice';
 import { ShopInfoSection } from '@/components/product/ShopInfoSection';
 import { ProductDetailSection } from '@/components/product/ProductDetailSection';
 import { ReviewList } from '@/components/review/ReviewList';
+import { StarRatingVisual } from '@/components/ui/StarRatingVisual';
+import { useCart } from '@/contexts/CartContext';
 import {
   Loader2,
   Package,
-  Star,
   ShoppingCart,
   Zap,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { addToCart } = useCart();
   const productId = params.id as string;
   const reviewSectionRef = useRef<HTMLDivElement>(null);
 
@@ -51,14 +53,10 @@ export default function ProductDetailPage() {
         ? await apiClient.getPublicProductById(productId)
         : await apiClient.getPublicProductBySlug(productId);
       setProduct(data);
-      // Select first active variant by default
-      const firstActiveVariant = data.variants.find((v) => v.isActive && v.stockQuantity > 0);
-      if (firstActiveVariant) {
-        setSelectedVariantId(firstActiveVariant.id);
-      }
+      // Don't auto-select variant, let user choose
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error.message || 'Khong the tai thong tin san pham');
+      toast.error(error.message || 'Không thể tải thông tin sản phẩm');
     } finally {
       setLoading(false);
     }
@@ -66,17 +64,17 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = async () => {
     if (!selectedVariantId) {
-      toast.error('Vui long chon phan loai');
+      toast.error('Vui lòng chọn phân loại');
       return;
     }
 
     try {
       setAddingToCart(true);
-      await apiClient.addToCart(selectedVariantId, quantity);
-      toast.success('Da them vao gio hang');
+      await addToCart(selectedVariantId, quantity);
+      toast.success('Đã thêm vào giỏ hàng');
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error.message || 'Khong the them vao gio hang');
+      toast.error(error.message || 'Không thể thêm vào giỏ hàng');
     } finally {
       setAddingToCart(false);
     }
@@ -84,17 +82,17 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = async () => {
     if (!selectedVariantId) {
-      toast.error('Vui long chon phan loai');
+      toast.error('Vui lòng chọn phân loại');
       return;
     }
 
     try {
       setBuyingNow(true);
-      await apiClient.addToCart(selectedVariantId, quantity);
+      await addToCart(selectedVariantId, quantity);
       router.push('/checkout');
     } catch (err) {
       const error = err as ApiError;
-      toast.error(error.message || 'Khong the them vao gio hang');
+      toast.error(error.message || 'Không thể thêm vào giỏ hàng');
       setBuyingNow(false);
     }
   };
@@ -129,9 +127,9 @@ export default function ProductDetailPage() {
     return (
       <div className="container mx-auto px-4 py-12 text-center">
         <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-medium text-gray-900 mb-2">Khong tim thay san pham</h2>
+        <h2 className="text-xl font-medium text-gray-900 mb-2">Không tìm thấy sản phẩm</h2>
         <Link href="/products">
-          <Button>Quay lai danh sach</Button>
+          <Button>Quay lại danh sách</Button>
         </Link>
       </div>
     );
@@ -140,14 +138,15 @@ export default function ProductDetailPage() {
   const selectedVariant = product.variants.find((v) => v.id === selectedVariantId);
   const totalStock = product.variants.reduce((sum, v) => sum + v.stockQuantity, 0);
 
-  // Get current price for display
+  // Get current price for display - use first variant price as default when none selected
+  const firstVariant = product.variants[0];
   const displayPrice = selectedVariant
     ? selectedVariant.price
-    : product.minPrice;
-  const displayCompareAtPrice = selectedVariant?.compareAtPrice;
+    : firstVariant?.price ?? product.minPrice;
+  const displayCompareAtPrice = selectedVariant?.compareAtPrice ?? firstVariant?.compareAtPrice;
 
   return (
-    <div className="container mx-auto px-4 py-6 space-y-8">
+    <div className="container mx-auto px-4 py-6 space-y-8" style={{ maxWidth: '1200px' }}>
       {/* Breadcrumb */}
       <CategoryBreadcrumb
         categories={product.categoryHierarchy}
@@ -155,13 +154,14 @@ export default function ProductDetailPage() {
       />
 
       {/* Product Overview */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-8">
         {/* Left: Images */}
         <ImageGallery
           images={product.images}
           productName={product.name}
           thumbnailUrl={product.thumbnailUrl}
           variantImageUrl={hoveredVariantImageUrl || selectedVariant?.imageUrl}
+          selectedVariantId={selectedVariantId}
         />
 
         {/* Right: Info */}
@@ -176,18 +176,16 @@ export default function ProductDetailPage() {
 
           {/* Rating & Stats */}
           <div className="flex items-center gap-4 text-sm">
-            {product.averageRating > 0 && (
-              <button
-                onClick={scrollToReviews}
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-              >
-                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                <span className="font-medium">{product.averageRating.toFixed(1)}</span>
-                <span className="text-gray-400">({product.totalRatings} danh gia)</span>
-              </button>
-            )}
+            <button
+              onClick={scrollToReviews}
+              className="flex items-center gap-2 hover:text-primary transition-colors"
+            >
+              <StarRatingVisual rating={product.averageRating} size="md" />
+              <span className="font-medium">{product.averageRating.toFixed(1)}</span>
+              <span className="text-gray-400">({product.totalRatings} đánh giá)</span>
+            </button>
             <span className="text-gray-400">|</span>
-            <span>Da ban {product.soldCount}</span>
+            <span>Đã bán {product.soldCount}</span>
           </div>
 
           {/* Price */}
@@ -240,7 +238,7 @@ export default function ProductDetailPage() {
               ) : (
                 <ShoppingCart className="w-5 h-5 mr-2" />
               )}
-              Them vao gio
+              Thêm vào giỏ
             </Button>
             <Button
               size="lg"
@@ -262,12 +260,12 @@ export default function ProductDetailPage() {
             <div className="text-sm space-y-1 pt-4 border-t">
               {product.categoryName && (
                 <p>
-                  <span className="text-gray-500">Danh muc:</span> {product.categoryName}
+                  <span className="text-gray-500">Danh mục:</span> {product.categoryName}
                 </p>
               )}
               {product.brandName && (
                 <p>
-                  <span className="text-gray-500">Thuong hieu:</span> {product.brandName}
+                  <span className="text-gray-500">Thương hiệu:</span> {product.brandName}
                 </p>
               )}
             </div>
@@ -291,7 +289,7 @@ export default function ProductDetailPage() {
 
       {/* Reviews Section */}
       <div ref={reviewSectionRef} className="scroll-mt-4">
-        <h2 className="text-xl font-bold mb-4">Danh gia san pham</h2>
+        <h2 className="text-xl font-bold mb-4">Đánh giá sản phẩm</h2>
         <ReviewList productId={product.id} />
       </div>
     </div>

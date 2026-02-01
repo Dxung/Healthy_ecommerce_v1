@@ -4,6 +4,7 @@ export class CartItemResponseDto {
   id: string;
   variantId: string;
   productId: string;
+  shopId: string;
   quantity: number;
   isSelected: boolean;
   priceAtAdded: number;
@@ -31,10 +32,18 @@ export class CartItemResponseDto {
     status: string;
   };
 
+  shop: {
+    id: string;
+    name: string;
+    slug: string;
+    logoUrl: string | null;
+  };
+
   constructor(item: CartItemWithDetails) {
     this.id = item.cartItem.id;
     this.variantId = item.cartItem.variantId;
     this.productId = item.cartItem.productId;
+    this.shopId = item.shop.id;
     this.quantity = item.cartItem.quantity;
     this.isSelected = item.cartItem.isSelected;
     this.priceAtAdded = item.cartItem.priceAtAdded;
@@ -43,5 +52,6 @@ export class CartItemResponseDto {
     this.updatedAt = item.cartItem.updatedAt;
     this.variant = item.variant;
     this.product = item.product;
+    this.shop = item.shop;
   }
 }

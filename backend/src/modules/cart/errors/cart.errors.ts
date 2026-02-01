@@ -23,6 +23,10 @@ export const CART_ERRORS = {
     code: 'CART_VARIANT_NOT_ACTIVE',
     message: 'Biến thể sản phẩm hiện không khả dụng.',
   },
+  VARIANT_EXPIRED: {
+    code: 'CART_VARIANT_EXPIRED',
+    message: 'Sản phẩm đã hết hạn sử dụng.',
+  },
   INSUFFICIENT_STOCK: {
     code: 'CART_INSUFFICIENT_STOCK',
     message: 'Số lượng sản phẩm trong kho không đủ.',

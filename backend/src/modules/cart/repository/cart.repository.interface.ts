@@ -17,6 +17,7 @@ export interface CartItemWithDetails {
     stockQuantity: number;
     isActive: boolean;
     sku: string | null;
+    expiryDate: Date | null;
   };
   product: {
     id: string;

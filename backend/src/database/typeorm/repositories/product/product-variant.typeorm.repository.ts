@@ -214,6 +214,7 @@ export class OrmProductVariantRepository implements IProductVariantRepository {
         imageUrl: orm.imageUrl,
         isActive: orm.isActive,
         deletedAt: orm.deletedAt,
+        expiryDate: orm.expiryDate,
         product: {
           id: orm.product.id,
           shopId: orm.product.shopId,

@@ -29,7 +29,7 @@ export function CartItem({
   const isInactive =
     !item.variant.isActive ||
     !item.product.isVisible ||
-    item.product.status !== 'approved';
+    item.product.status !== 'active';
   const isOutOfStock = item.variant.stockQuantity === 0;
   const isOverStock = item.quantity > item.variant.stockQuantity;
   const hasIssue = isInactive || isOutOfStock || isOverStock;

@@ -71,6 +71,7 @@ export function CartDropdown() {
                   const isInactive =
                     !item.variant.isActive ||
                     !item.product.isVisible ||
+                    item.product.status !== 'active' ||
                     item.variant.stockQuantity === 0;
 
                   return (

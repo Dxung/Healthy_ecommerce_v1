@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Package, ZoomIn } from 'lucide-react';
 import { ImageLightbox } from './ImageLightbox';
 
@@ -14,6 +14,7 @@ interface ImageGalleryProps {
   productName: string;
   thumbnailUrl?: string | null;
   variantImageUrl?: string | null;
+  selectedVariantId?: string | null;
   onMainImageChange?: (imageUrl: string) => void;
 }
 
@@ -22,36 +23,53 @@ export function ImageGallery({
   productName,
   thumbnailUrl,
   variantImageUrl,
+  selectedVariantId,
   onMainImageChange,
 }: ImageGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isShowingVariantImage, setIsShowingVariantImage] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
 
   const maxVisibleThumbnails = 5;
+  const maxTotalImages = 6;
   const [thumbnailOffset, setThumbnailOffset] = useState(0);
 
-  const allImages = images.length > 0 ? images : thumbnailUrl ? [{ id: 'thumbnail', imageUrl: thumbnailUrl }] : [];
+  // Build base images: start with thumbnailUrl, then gallery images (max 6 total)
+  const baseImages: ProductImage[] = [];
+  if (thumbnailUrl) {
+    baseImages.push({ id: 'thumbnail', imageUrl: thumbnailUrl });
+  }
+  // Add gallery images that are different from thumbnail
+  for (const img of images) {
+    if (baseImages.length >= maxTotalImages) break;
+    if (!baseImages.some((b) => b.imageUrl === img.imageUrl)) {
+      baseImages.push(img);
+    }
+  }
 
-  // Add variant image to the list if it exists and is different from gallery images
-  const displayImages = variantImageUrl && !images.some((img) => img.imageUrl === variantImageUrl)
-    ? [{ id: 'variant', imageUrl: variantImageUrl }, ...allImages]
-    : allImages;
+  // When variant is selected, add variant image to beginning (if different from existing)
+  const displayImages: ProductImage[] =
+    selectedVariantId && variantImageUrl && !baseImages.some((img) => img.imageUrl === variantImageUrl)
+      ? [{ id: 'variant', imageUrl: variantImageUrl }, ...baseImages].slice(0, maxTotalImages)
+      : baseImages;
 
-  const currentImage = isShowingVariantImage && variantImageUrl
-    ? variantImageUrl
-    : displayImages[currentIndex]?.imageUrl;
+  // Reset to first image when variant changes
+  useEffect(() => {
+    if (selectedVariantId && variantImageUrl) {
+      setCurrentIndex(0);
+      setThumbnailOffset(0);
+    }
+  }, [selectedVariantId, variantImageUrl]);
+
+  const currentImage = displayImages[currentIndex]?.imageUrl;
 
   const handleThumbnailClick = (index: number) => {
     setCurrentIndex(index);
-    setIsShowingVariantImage(false);
     onMainImageChange?.(displayImages[index]?.imageUrl);
   };
 
   const handleThumbnailHover = (index: number) => {
     setCurrentIndex(index);
-    setIsShowingVariantImage(false);
     onMainImageChange?.(displayImages[index]?.imageUrl);
   };
 
@@ -68,13 +86,11 @@ export function ImageGallery({
   const goToPrev = () => {
     const newIndex = currentIndex === 0 ? displayImages.length - 1 : currentIndex - 1;
     setCurrentIndex(newIndex);
-    setIsShowingVariantImage(false);
   };
 
   const goToNext = () => {
     const newIndex = currentIndex === displayImages.length - 1 ? 0 : currentIndex + 1;
     setCurrentIndex(newIndex);
-    setIsShowingVariantImage(false);
   };
 
   const openLightbox = () => {
@@ -85,21 +101,19 @@ export function ImageGallery({
 
   const handleLightboxNavigate = (index: number) => {
     setCurrentIndex(index);
-    setIsShowingVariantImage(false);
   };
 
-  // Update variant image display when variantImageUrl changes
-  const handleVariantImageChange = (url: string | null) => {
-    if (url) {
-      setIsShowingVariantImage(true);
-    }
-  };
+  // Calculate thumbnail size (each thumbnail ~80px + 8px gap)
+  const thumbnailWidth = 80;
+  const thumbnailGap = 8;
+  const galleryWidth = maxVisibleThumbnails * thumbnailWidth + (maxVisibleThumbnails - 1) * thumbnailGap;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ maxWidth: `${galleryWidth}px` }}>
       {/* Main Image */}
       <div
         className="aspect-square bg-gray-100 rounded-lg relative overflow-hidden group cursor-pointer"
+        style={{ width: `${galleryWidth}px`, height: `${galleryWidth}px` }}
         onClick={openLightbox}
       >
         {currentImage ? (
@@ -160,21 +174,23 @@ export function ImageGallery({
           {/* Thumbnails Container */}
           <div
             ref={thumbnailContainerRef}
-            className="flex gap-2 overflow-hidden px-1"
+            className="flex overflow-hidden px-1"
+            style={{ gap: `${thumbnailGap}px` }}
           >
             {displayImages
               .slice(thumbnailOffset, thumbnailOffset + maxVisibleThumbnails)
               .map((img, idx) => {
                 const actualIndex = idx + thumbnailOffset;
-                const isActive = !isShowingVariantImage && actualIndex === currentIndex;
+                const isActive = actualIndex === currentIndex;
                 return (
                   <button
                     key={img.id}
                     onClick={() => handleThumbnailClick(actualIndex)}
                     onMouseEnter={() => handleThumbnailHover(actualIndex)}
-                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded overflow-hidden border-2 transition-colors ${
+                    className={`flex-shrink-0 rounded overflow-hidden border-2 transition-colors ${
                       isActive ? 'border-primary' : 'border-transparent hover:border-gray-300'
                     }`}
+                    style={{ width: `${thumbnailWidth}px`, height: `${thumbnailWidth}px` }}
                   >
                     <img
                       src={img.imageUrl}

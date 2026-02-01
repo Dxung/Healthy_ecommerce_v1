@@ -35,6 +35,10 @@ export const ORDER_ERRORS = {
     code: 'ORDER_PRODUCT_UNAVAILABLE',
     message: 'Một số sản phẩm không còn khả dụng.',
   },
+  PRODUCT_EXPIRED: {
+    code: 'ORDER_PRODUCT_EXPIRED',
+    message: 'Một số sản phẩm đã hết hạn sử dụng.',
+  },
   INSUFFICIENT_STOCK: {
     code: 'ORDER_INSUFFICIENT_STOCK',
     message: 'Số lượng tồn kho không đủ cho một số sản phẩm.',

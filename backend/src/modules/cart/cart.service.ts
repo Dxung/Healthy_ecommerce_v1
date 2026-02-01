@@ -112,6 +112,11 @@ export class CartService implements ICartService {
           return errAsync(createDomainError(CART_ERRORS.VARIANT_NOT_ACTIVE));
         }
 
+        // Check if variant is expired
+        if (variant.expiryDate && new Date(variant.expiryDate) < new Date()) {
+          return errAsync(createDomainError(CART_ERRORS.VARIANT_EXPIRED));
+        }
+
         // Check product is available
         if (
           !variant.product ||

@@ -174,6 +174,17 @@ export class OrderService implements IOrderService {
             return errAsync(createDomainError(ORDER_ERRORS.INSUFFICIENT_STOCK));
           }
 
+          // Check for expired products
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const hasExpiredProducts = selectedItems.some(
+            (item) =>
+              item.variant.expiryDate && new Date(item.variant.expiryDate) < today,
+          );
+          if (hasExpiredProducts) {
+            return errAsync(createDomainError(ORDER_ERRORS.PRODUCT_EXPIRED));
+          }
+
           // Check product availability
           const productUnavailable = selectedItems.some(
             (item) =>

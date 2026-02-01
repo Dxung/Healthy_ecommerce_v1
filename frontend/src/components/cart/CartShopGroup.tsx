@@ -29,7 +29,7 @@ export function CartShopGroup({
     (item) =>
       item.variant.isActive &&
       item.product.isVisible &&
-      item.product.status === 'approved' &&
+      item.product.status === 'active' &&
       item.variant.stockQuantity > 0
   );
   const allSelected = selectableItems.length > 0 && selectedCount === selectableItems.length;

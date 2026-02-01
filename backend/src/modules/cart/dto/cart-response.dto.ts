@@ -2,22 +2,18 @@ import type { CartItemWithDetails } from '../repository/cart.repository.interfac
 import { CartShopGroupResponseDto } from './cart-shop-group-response.dto';
 
 export class CartResponseDto {
-  id: string;
-  itemCount: number;
-  uniqueItemCount: number;
-  selectedItemCount: number;
-  allSelected: boolean;
+  cartId: string;
   shops: CartShopGroupResponseDto[];
-  subtotal: number;
-  selectedSubtotal: number;
+  totalItems: number;
+  totalQuantity: number;
+  selectedTotal: number;
+  hasInactiveItems: boolean;
+  hasPriceChangedItems: boolean;
 
-  constructor(
-    cartId: string,
-    itemsWithDetails: CartItemWithDetails[],
-  ) {
-    this.id = cartId;
-    this.uniqueItemCount = itemsWithDetails.length;
-    this.itemCount = itemsWithDetails.reduce(
+  constructor(cartId: string, itemsWithDetails: CartItemWithDetails[]) {
+    this.cartId = cartId;
+    this.totalItems = itemsWithDetails.length;
+    this.totalQuantity = itemsWithDetails.reduce(
       (sum, item) => sum + item.cartItem.quantity,
       0,
     );
@@ -47,26 +43,27 @@ export class CartResponseDto {
       ({ shop, items }) => new CartShopGroupResponseDto(shop, items),
     );
 
-    // Calculate selected items
+    // Calculate selected total
     const selectedItems = itemsWithDetails.filter(
       (item) => item.cartItem.isSelected,
     );
-    this.selectedItemCount = selectedItems.reduce(
-      (sum, item) => sum + item.cartItem.quantity,
+    this.selectedTotal = selectedItems.reduce(
+      (sum, item) => sum + item.variant.price * item.cartItem.quantity,
       0,
     );
-    this.allSelected =
-      itemsWithDetails.length > 0 &&
-      itemsWithDetails.every((item) => item.cartItem.isSelected);
 
-    // Calculate subtotals
-    this.subtotal = itemsWithDetails.reduce(
-      (sum, item) => sum + item.variant.price * item.cartItem.quantity,
-      0,
+    // Check for inactive items (variant inactive, product hidden/deleted, or out of stock)
+    this.hasInactiveItems = itemsWithDetails.some(
+      (item) =>
+        !item.variant.isActive ||
+        !item.product.isVisible ||
+        item.product.status !== 'active' ||
+        item.variant.stockQuantity === 0,
     );
-    this.selectedSubtotal = selectedItems.reduce(
-      (sum, item) => sum + item.variant.price * item.cartItem.quantity,
-      0,
+
+    // Check for price changed items
+    this.hasPriceChangedItems = itemsWithDetails.some(
+      (item) => item.hasPriceChanged,
     );
   }
 }

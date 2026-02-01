@@ -64,13 +64,13 @@ export function ProductDetailSection({
     <div className="space-y-6">
       {/* Product Details Section */}
       <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Chi tiet san pham</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Chi tiết sản phẩm</h2>
 
         <div className="space-y-3 text-sm">
           {/* Category */}
           {categoryHierarchy.length > 0 && (
             <div className="flex items-start">
-              <span className="text-gray-500 w-24 shrink-0">Danh muc</span>
+              <span className="text-gray-500 w-24 shrink-0">Danh mục</span>
               <div className="flex items-center flex-wrap gap-1">
                 {categoryHierarchy.map((cat, idx) => (
                   <span key={cat.id} className="flex items-center">
@@ -90,7 +90,7 @@ export function ProductDetailSection({
           {/* Tags */}
           {(allergenTags.length > 0 || dietTags.length > 0) && (
             <div className="flex items-start">
-              <span className="text-gray-500 w-24 shrink-0">Phan loai</span>
+              <span className="text-gray-500 w-24 shrink-0">Phân loại</span>
               <div className="flex flex-wrap gap-2">
                 {allergenTags.map((tag) => (
                   <Tooltip key={tag.id} content={tag.description} position="bottom">
@@ -119,12 +119,12 @@ export function ProductDetailSection({
               {totalStock > 0 ? (
                 <span className="flex items-center gap-1">
                   <Check className="w-4 h-4" />
-                  Con hang ({totalStock} san pham)
+                  Còn hàng ({totalStock} sản phẩm)
                 </span>
               ) : (
                 <span className="flex items-center gap-1">
                   <X className="w-4 h-4" />
-                  Het hang
+                  Hết hàng
                 </span>
               )}
             </span>
@@ -133,8 +133,8 @@ export function ProductDetailSection({
           {/* Location */}
           {shopProvince && (
             <div className="flex items-start">
-              <span className="text-gray-500 w-24 shrink-0">Dia chi</span>
-              <span className="text-gray-900">{shopProvince}, Viet Nam</span>
+              <span className="text-gray-500 w-24 shrink-0">Địa chỉ</span>
+              <span className="text-gray-900">{shopProvince}, Việt Nam</span>
             </div>
           )}
         </div>
@@ -142,20 +142,20 @@ export function ProductDetailSection({
 
       {/* Description Section */}
       <div className="bg-white rounded-lg border p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Mo ta san pham</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-4">Mô tả sản phẩm</h2>
 
         {description ? (
           <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-line">
             {description}
           </div>
         ) : (
-          <p className="text-gray-400 italic">Chua co mo ta</p>
+          <p className="text-gray-400 italic">Chưa có mô tả</p>
         )}
 
         {/* Ingredients */}
         {ingredients && (
           <div className="mt-6 pt-4 border-t">
-            <h3 className="font-semibold text-gray-900 mb-2">Thanh phan</h3>
+            <h3 className="font-semibold text-gray-900 mb-2">Thành phần</h3>
             <p className="text-sm text-gray-700 whitespace-pre-line">{ingredients}</p>
           </div>
         )}
@@ -165,10 +165,10 @@ export function ProductDetailSection({
       {hasNutritionData && (
         <div className="bg-white rounded-lg border p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Thong tin dinh duong
+            Thông tin dinh dưỡng
             {nutrition.servingSize && nutrition.servingUnitAbbreviation && (
               <span className="text-sm font-normal text-gray-500 ml-2">
-                (Tren {nutrition.servingSize}{nutrition.servingUnitAbbreviation})
+                (Trên {nutrition.servingSize}{nutrition.servingUnitAbbreviation})
               </span>
             )}
           </h2>
@@ -202,7 +202,7 @@ export function ProductDetailSection({
                   FAT
                 </div>
                 <div className="text-xl font-bold text-purple-600">{nutrition.fat}g</div>
-                <div className="text-xs text-gray-500">Fat</div>
+                <div className="text-xs text-gray-500">Chất béo</div>
               </div>
             )}
           </div>
@@ -211,19 +211,19 @@ export function ProductDetailSection({
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
             {nutrition.sugar !== null && (
               <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-600">Duong</span>
+                <span className="text-gray-600">Đường</span>
                 <span className="font-medium">{nutrition.sugar}g</span>
               </div>
             )}
             {nutrition.saturatedFat !== null && (
               <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-600">Chat beo bao hoa</span>
+                <span className="text-gray-600">Chất béo bão hòa</span>
                 <span className="font-medium">{nutrition.saturatedFat}g</span>
               </div>
             )}
             {nutrition.fiber !== null && (
               <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-600">Chat xo</span>
+                <span className="text-gray-600">Chất xơ</span>
                 <span className="font-medium">{nutrition.fiber}g</span>
               </div>
             )}
