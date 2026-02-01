@@ -20,6 +20,7 @@ export * from './product/product-option-response.dto';
 export * from './product/product-variant-response.dto';
 export * from './product/product-list-response.dto';
 export * from './product/product-detail-response.dto';
+export * from './product/public-product-detail-response.dto';
 
 // Allergen Tag DTOs
 export * from './allergen-tag/create-allergen-tag-argument.dto';

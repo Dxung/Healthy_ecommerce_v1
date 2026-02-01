@@ -18,6 +18,15 @@ export interface ReviewLoadOptions {
 }
 
 /**
+ * Filter options for product reviews.
+ */
+export interface ProductReviewFilter {
+  rating?: number;
+  hasContent?: boolean;
+  hasImages?: boolean;
+}
+
+/**
  * Result of rating calculation
  */
 export interface RatingResult {
@@ -54,14 +63,14 @@ export interface IReviewRepository {
    * @param productId - The product ID.
    * @param pagination - Pagination parameters.
    * @param options - Optional relation loading options.
-   * @param rating - Optional filter by star rating (1-5).
+   * @param filter - Optional filter options (rating, hasContent, hasImages).
    * @returns Paginated list of Review domain models.
    */
   findByProductId(
     productId: string,
     pagination: PaginationParams,
     options?: ReviewLoadOptions,
-    rating?: number,
+    filter?: ProductReviewFilter,
   ): ResultAsync<PaginatedResult<Review>, DomainError>;
 
   /**

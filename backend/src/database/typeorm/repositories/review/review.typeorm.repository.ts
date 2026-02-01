@@ -13,6 +13,7 @@ import {
   IReviewRepository,
   ReviewLoadOptions,
   RatingResult,
+  ProductReviewFilter,
 } from 'src/modules/review/repository/review.repository.interface';
 import {
   PaginationParams,
@@ -74,7 +75,7 @@ export class OrmReviewRepository implements IReviewRepository {
     productId: string,
     pagination: PaginationParams,
     options?: ReviewLoadOptions,
-    rating?: number,
+    filter?: ProductReviewFilter,
   ): ResultAsync<PaginatedResult<Review>, DomainError> {
     const repo = this.getReviewRepository();
     const { page, limit } = pagination;
@@ -90,8 +91,13 @@ export class OrmReviewRepository implements IReviewRepository {
       });
 
     // Filter by rating if specified
-    if (rating !== undefined && rating >= 1 && rating <= 5) {
-      qb.andWhere(`${ReviewColumn.RATING} = :rating`, { rating });
+    if (filter?.rating !== undefined && filter.rating >= 1 && filter.rating <= 5) {
+      qb.andWhere(`${ReviewColumn.RATING} = :rating`, { rating: filter.rating });
+    }
+
+    // Filter by hasContent - reviews with non-empty content
+    if (filter?.hasContent === true) {
+      qb.andWhere(`${REVIEW_ALIAS}.content IS NOT NULL AND ${REVIEW_ALIAS}.content != ''`);
     }
 
     // Always load images for product reviews
@@ -99,6 +105,13 @@ export class OrmReviewRepository implements IReviewRepository {
       `${REVIEW_ALIAS}.${ReviewRelation.IMAGES}`,
       REVIEW_IMAGE_ALIAS,
     );
+
+    // Filter by hasImages - reviews that have at least one image
+    if (filter?.hasImages === true) {
+      qb.andWhere(
+        `EXISTS (SELECT 1 FROM product_schema.review_images ri WHERE ri.review_id = ${REVIEW_ALIAS}.id)`,
+      );
+    }
 
     if (options?.withReply) {
       qb.leftJoinAndSelect(

@@ -72,4 +72,11 @@ export interface IAllergenTagRepository {
    * @returns True if in use, false otherwise.
    */
   isInUse(allergenTagId: string): ResultAsync<boolean, DomainError>;
+
+  /**
+   * Finds all allergen tags for a specific product.
+   * @param productId - The product ID.
+   * @returns Array of AllergenTag domain models.
+   */
+  findByProductId(productId: string): ResultAsync<AllergenTag[], DomainError>;
 }

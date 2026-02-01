@@ -19,6 +19,7 @@ interface VariantSelectorProps {
   onSelect: (variantId: string) => void;
   quantity: number;
   onQuantityChange: (quantity: number) => void;
+  onHover?: (variantId: string | null) => void;
 }
 
 export function VariantSelector({
@@ -27,6 +28,7 @@ export function VariantSelector({
   onSelect,
   quantity,
   onQuantityChange,
+  onHover,
 }: VariantSelectorProps) {
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
   const maxQuantity = selectedVariant?.stockQuantity || 0;
@@ -65,6 +67,8 @@ export function VariantSelector({
                 <button
                   key={variant.id}
                   onClick={() => isAvailable && onSelect(variant.id)}
+                  onMouseEnter={() => isAvailable && variant.imageUrl && onHover?.(variant.id)}
+                  onMouseLeave={() => onHover?.(null)}
                   disabled={!isAvailable}
                   className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
                     isSelected
@@ -85,7 +89,7 @@ export function VariantSelector({
                     <span>{variant.name}</span>
                   </div>
                   {!isAvailable && (
-                    <span className="text-xs text-red-500 block">Hết hàng</span>
+                    <span className="text-xs text-red-500 block">Het hang</span>
                   )}
                 </button>
               );

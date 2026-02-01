@@ -243,6 +243,26 @@ export class OrmCategoryRepository implements ICategoryRepository {
     });
   }
 
+  @WithPosition()
+  findAncestors(categoryId: string): ResultAsync<Category[], DomainError> {
+    return this.findById(categoryId).andThen((category) => {
+      if (!category) {
+        return ResultAsync.fromSafePromise(Promise.resolve([]));
+      }
+
+      // If no parent, this is root - return just this category
+      if (!category.parentId) {
+        return ResultAsync.fromSafePromise(Promise.resolve([category]));
+      }
+
+      // Recursively get ancestors of parent
+      return this.findAncestors(category.parentId).map((ancestors) => {
+        // Add current category to the end of the ancestors list
+        return [...ancestors, category];
+      });
+    });
+  }
+
   private getEntityManager() {
     if (!this.als) return null;
     const store = this.als.getStore();

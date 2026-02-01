@@ -7,11 +7,35 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ResultAsync } from 'neverthrow';
 import { PUBLIC_PRODUCT_SERVICE } from './tokens/product.token';
 import { IPublicProductService } from './public-product.service.interface';
-import { ProductListResponseDto, ProductDetailResponseDto } from './dto';
+import {
+  ProductListResponseDto,
+  ProductDetailResponseDto,
+  PublicProductDetailResponseDto,
+} from './dto';
 import { ProductErrorHttpMapper } from './errors/product-errors-http.mapper';
 import { ExceptionSource } from 'src/common/exception filters/exception-source';
+import {
+  CATEGORY_REPOSITORY,
+  SHOP_REPOSITORY,
+  ALLERGEN_TAG_REPOSITORY,
+  DIET_TAG_REPOSITORY,
+  PRODUCT_NUTRITION_REPOSITORY,
+  BRAND_REPOSITORY,
+  UNIT_REPOSITORY,
+  LOCATION_REPOSITORY,
+} from 'src/database/typeorm/tokens/database.token';
+import { ICategoryRepository } from './repository/category.repository.interface';
+import { IShopRepository } from 'src/modules/shop/repository/shop.repository.interface';
+import { IAllergenTagRepository } from './repository/allergen-tag.repository.interface';
+import { IDietTagRepository } from './repository/diet-tag.repository.interface';
+import { IProductNutritionRepository } from './repository/product-nutrition.repository.interface';
+import { IBrandRepository } from './repository/brand.repository.interface';
+import { IUnitRepository } from './repository/unit.repository.interface';
+import { ILocationRepository } from 'src/modules/location/repository/location.repository.interface';
+import { Product } from './models/product.model';
 
 @ApiTags('Products')
 @Controller('products')
@@ -19,6 +43,22 @@ export class PublicProductController {
   constructor(
     @Inject(PUBLIC_PRODUCT_SERVICE)
     private readonly publicProductService: IPublicProductService,
+    @Inject(CATEGORY_REPOSITORY)
+    private readonly categoryRepository: ICategoryRepository,
+    @Inject(SHOP_REPOSITORY)
+    private readonly shopRepository: IShopRepository,
+    @Inject(ALLERGEN_TAG_REPOSITORY)
+    private readonly allergenTagRepository: IAllergenTagRepository,
+    @Inject(DIET_TAG_REPOSITORY)
+    private readonly dietTagRepository: IDietTagRepository,
+    @Inject(PRODUCT_NUTRITION_REPOSITORY)
+    private readonly nutritionRepository: IProductNutritionRepository,
+    @Inject(BRAND_REPOSITORY)
+    private readonly brandRepository: IBrandRepository,
+    @Inject(UNIT_REPOSITORY)
+    private readonly unitRepository: IUnitRepository,
+    @Inject(LOCATION_REPOSITORY)
+    private readonly locationRepository: ILocationRepository,
   ) {}
 
   @Get()
@@ -135,21 +175,24 @@ export class PublicProductController {
   @ApiResponse({
     status: 200,
     description: 'Product details',
-    type: ProductDetailResponseDto,
+    type: PublicProductDetailResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
   getProductBySlug(
     @Param('slug') slug: string,
-  ): Promise<ProductDetailResponseDto> {
-    return this.publicProductService.getProductBySlug(slug).match(
-      (product) => new ProductDetailResponseDto(product),
-      (error) => {
-        throw ProductErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
+  ): Promise<PublicProductDetailResponseDto> {
+    return this.publicProductService
+      .getProductBySlug(slug)
+      .andThen((product) => this.buildPublicProductResponse(product))
+      .match(
+        (dto) => dto,
+        (error) => {
+          throw ProductErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   @Get(':id')
@@ -157,21 +200,24 @@ export class PublicProductController {
   @ApiResponse({
     status: 200,
     description: 'Product details',
-    type: ProductDetailResponseDto,
+    type: PublicProductDetailResponseDto,
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
   getProductById(
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<ProductDetailResponseDto> {
-    return this.publicProductService.getProductById(id).match(
-      (product) => new ProductDetailResponseDto(product),
-      (error) => {
-        throw ProductErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
+  ): Promise<PublicProductDetailResponseDto> {
+    return this.publicProductService
+      .getProductById(id)
+      .andThen((product) => this.buildPublicProductResponse(product))
+      .match(
+        (dto) => dto,
+        (error) => {
+          throw ProductErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   @Get('category/:categoryId')
@@ -316,5 +362,70 @@ export class PublicProductController {
           );
         },
       );
+  }
+
+  /**
+   * Builds the full public product response with all extended data.
+   */
+  private buildPublicProductResponse(
+    product: Product,
+  ): ResultAsync<PublicProductDetailResponseDto, import('src/shared/types/domain-error.type').DomainError> {
+    // Load all additional data in parallel
+    return ResultAsync.combine([
+      this.categoryRepository.findAncestors(product.categoryId),
+      this.shopRepository.findById(product.shopId),
+      this.allergenTagRepository.findByProductId(product.id),
+      this.dietTagRepository.findByProductId(product.id),
+      this.nutritionRepository.findByProductId(product.id),
+      product.brandId
+        ? this.brandRepository.findById(product.brandId)
+        : ResultAsync.fromSafePromise(Promise.resolve(null)),
+      product.servingUnitId
+        ? this.unitRepository.findById(product.servingUnitId)
+        : ResultAsync.fromSafePromise(Promise.resolve(null)),
+    ]).andThen(
+      ([
+        categoryHierarchy,
+        shop,
+        allergenTags,
+        dietTags,
+        nutrition,
+        brand,
+        servingUnit,
+      ]) => {
+        if (!shop) {
+          // This shouldn't happen, but handle it gracefully
+          return ResultAsync.fromSafePromise(
+            Promise.reject(new Error('Shop not found')),
+          );
+        }
+
+        // Get shop province name
+        return this.locationRepository.findProvinceById(shop.provinceId).map(
+          (province) => {
+            return new PublicProductDetailResponseDto(product, {
+              categoryName:
+                categoryHierarchy.length > 0
+                  ? categoryHierarchy[categoryHierarchy.length - 1].name
+                  : undefined,
+              brandName: brand?.name,
+              servingUnit: servingUnit
+                ? {
+                    id: servingUnit.id,
+                    name: servingUnit.name,
+                    symbol: servingUnit.symbol,
+                  }
+                : null,
+              categoryHierarchy,
+              shop,
+              shopProvince: province?.name ?? null,
+              allergenTags,
+              dietTags,
+              nutrition,
+            });
+          },
+        );
+      },
+    );
   }
 }

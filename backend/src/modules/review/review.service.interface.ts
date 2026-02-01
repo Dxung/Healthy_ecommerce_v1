@@ -81,6 +81,8 @@ export interface IReviewService {
    * @param page - Page number
    * @param limit - Items per page
    * @param rating - Optional filter by star rating (1-5)
+   * @param hasContent - Optional filter for reviews with content
+   * @param hasImages - Optional filter for reviews with images
    * @returns Paginated list of Reviews
    */
   getProductReviews(
@@ -88,6 +90,8 @@ export interface IReviewService {
     page: number,
     limit: number,
     rating?: number,
+    hasContent?: boolean,
+    hasImages?: boolean,
   ): ResultAsync<PaginatedResult<Review>, DomainError>;
 
   /**

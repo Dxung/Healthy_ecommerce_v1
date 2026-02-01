@@ -72,4 +72,11 @@ export interface IDietTagRepository {
    * @returns True if in use, false otherwise.
    */
   isInUse(dietTagId: string): ResultAsync<boolean, DomainError>;
+
+  /**
+   * Finds all diet tags for a specific product.
+   * @param productId - The product ID.
+   * @returns Array of DietTag domain models.
+   */
+  findByProductId(productId: string): ResultAsync<DietTag[], DomainError>;
 }

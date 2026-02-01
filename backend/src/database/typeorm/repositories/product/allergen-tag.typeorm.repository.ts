@@ -118,6 +118,21 @@ export class OrmAllergenTagRepository implements IAllergenTagRepository {
     ).map((result: { exists: boolean }[]) => result[0]?.exists ?? false);
   }
 
+  @WithPosition()
+  findByProductId(productId: string): ResultAsync<AllergenTag[], DomainError> {
+    const em = this.getEntityManager() ?? this.dataSource.manager;
+    return ResultAsync.fromPromise(
+      em.query(
+        `SELECT at.* FROM product_schema.allergen_tags at
+         INNER JOIN product_schema.product_allergen_tags pat ON at.id = pat.allergen_tag_id
+         WHERE pat.product_id = $1 AND at.deleted_at IS NULL AND at.is_active = true
+         ORDER BY at.name ASC`,
+        [productId],
+      ),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((rows: ORMAllergenTag[]) => ORMAllergenTagMapper.toDomainList(rows));
+  }
+
   private getEntityManager() {
     if (!this.als) return null;
     const store = this.als.getStore();

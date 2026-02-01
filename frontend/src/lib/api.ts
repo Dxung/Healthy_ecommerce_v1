@@ -1301,6 +1301,34 @@ export interface PublicProductFilters {
   limit?: number;
 }
 
+export interface CategoryBreadcrumbResponse {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+export interface TagResponse {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  iconUrl?: string | null;
+}
+
+export interface ShopDetailResponse {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  averageRating: number;
+  totalRatings: number;
+  totalProducts: number;
+  badges: string[];
+  createdAt: string;
+  province: string | null;
+}
+
 export interface PublicProductDetailResponse {
   id: string;
   name: string;
@@ -1329,21 +1357,11 @@ export interface PublicProductDetailResponse {
     imageUrl: string | null;
     isActive: boolean;
   }[];
-  allergenTags: { id: string; name: string; slug: string; description: string | null }[];
-  dietTags: { id: string; name: string; slug: string; description: string | null }[];
+  categoryHierarchy: CategoryBreadcrumbResponse[];
+  allergenTags: TagResponse[];
+  dietTags: TagResponse[];
   nutrition: ProductNutritionResponse | null;
-  shop: {
-    id: string;
-    name: string;
-    slug: string;
-    logoUrl: string | null;
-    coverUrl: string | null;
-    averageRating: number;
-    totalRatings: number;
-    totalProducts: number;
-    badges: string[];
-    createdAt: string;
-  };
+  shop: ShopDetailResponse;
 }
 
 export interface PublicShopResponse {
@@ -3464,11 +3482,20 @@ export class ApiClient {
   }
 
   // Public Product Review Methods
-  async getProductReviews(productId: string, page?: number, limit?: number, rating?: number): Promise<ReviewListResponse> {
+  async getProductReviews(
+    productId: string,
+    page?: number,
+    limit?: number,
+    rating?: number,
+    hasContent?: boolean,
+    hasImages?: boolean,
+  ): Promise<ReviewListResponse> {
     const queryParams = new URLSearchParams();
     if (page) queryParams.set('page', page.toString());
     if (limit) queryParams.set('limit', limit.toString());
     if (rating) queryParams.set('rating', rating.toString());
+    if (hasContent) queryParams.set('hasContent', 'true');
+    if (hasImages) queryParams.set('hasImages', 'true');
 
     const query = queryParams.toString();
     return this.request<ReviewListResponse>(`/products/${productId}/reviews${query ? `?${query}` : ''}`, {

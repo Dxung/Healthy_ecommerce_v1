@@ -186,18 +186,24 @@ export class ProductReviewsController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'rating', required: false, type: Number, description: 'Filter by star rating (1-5)' })
+  @ApiQuery({ name: 'hasContent', required: false, type: Boolean, description: 'Filter reviews with text content' })
+  @ApiQuery({ name: 'hasImages', required: false, type: Boolean, description: 'Filter reviews with images' })
   @ApiResponse({ status: 200, type: [ReviewResponseDto] })
   getProductReviews(
     @Param('productId', new ParseUUIDPipe()) productId: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('rating') rating?: string,
+    @Query('hasContent') hasContent?: string,
+    @Query('hasImages') hasImages?: string,
   ): Promise<{ items: ReviewResponseDto[]; total: number; page: number; limit: number; totalPages: number }> {
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 10;
     const ratingNum = rating ? parseInt(rating, 10) : undefined;
+    const hasContentBool = hasContent === 'true' ? true : undefined;
+    const hasImagesBool = hasImages === 'true' ? true : undefined;
 
-    return this.reviewService.getProductReviews(productId, pageNum, limitNum, ratingNum).match(
+    return this.reviewService.getProductReviews(productId, pageNum, limitNum, ratingNum, hasContentBool, hasImagesBool).match(
       (result) => ({
         items: ReviewResponseDto.fromList(result.items),
         total: result.total,

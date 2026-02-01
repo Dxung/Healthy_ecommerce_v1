@@ -109,6 +109,14 @@ export interface ICategoryRepository {
   softDeleteWithDescendants(categoryId: string): ResultAsync<void, DomainError>;
 
   /**
+   * Finds all ancestor categories from root to the given category (inclusive).
+   * Returns path in order: [root, ..., parent, category].
+   * @param categoryId - The category ID.
+   * @returns Array of ancestor Category domain models in hierarchical order.
+   */
+  findAncestors(categoryId: string): ResultAsync<Category[], DomainError>;
+
+  /**
    * Updates the active status of a category and all its descendants.
    * @param categoryId - The root category ID.
    * @param isActive - The new active status.

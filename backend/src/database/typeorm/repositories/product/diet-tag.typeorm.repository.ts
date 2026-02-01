@@ -116,6 +116,21 @@ export class OrmDietTagRepository implements IDietTagRepository {
     ).map((result: { exists: boolean }[]) => result[0]?.exists ?? false);
   }
 
+  @WithPosition()
+  findByProductId(productId: string): ResultAsync<DietTag[], DomainError> {
+    const em = this.getEntityManager() ?? this.dataSource.manager;
+    return ResultAsync.fromPromise(
+      em.query(
+        `SELECT dt.* FROM product_schema.diet_tags dt
+         INNER JOIN product_schema.product_diet_tags pdt ON dt.id = pdt.diet_tag_id
+         WHERE pdt.product_id = $1 AND dt.deleted_at IS NULL AND dt.is_active = true
+         ORDER BY dt.name ASC`,
+        [productId],
+      ),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((rows: ORMDietTag[]) => ORMDietTagMapper.toDomainList(rows));
+  }
+
   private getEntityManager() {
     if (!this.als) return null;
     const store = this.als.getStore();

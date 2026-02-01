@@ -245,12 +245,14 @@ export class ReviewService implements IReviewService {
     page: number,
     limit: number,
     rating?: number,
+    hasContent?: boolean,
+    hasImages?: boolean,
   ): ResultAsync<PaginatedResult<Review>, DomainError> {
     return this.reviewRepository.findByProductId(
       productId,
       { page, limit },
       { withImages: true, withReply: true },
-      rating,
+      { rating, hasContent, hasImages },
     );
   }
 
