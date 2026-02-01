@@ -88,8 +88,8 @@ export default function ProductDetailPage() {
 
     try {
       setBuyingNow(true);
-      await addToCart(selectedVariantId, quantity);
-      router.push('/checkout');
+      await addToCart(selectedVariantId, quantity, true); // selectItem = true
+      router.push('/cart');
     } catch (err) {
       const error = err as ApiError;
       toast.error(error.message || 'Không thể thêm vào giỏ hàng');

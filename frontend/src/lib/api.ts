@@ -835,6 +835,10 @@ export interface CartPreviewResponse {
   totalQuantity: number;
 }
 
+export interface AddToCartResponse {
+  cartItemId: string;
+}
+
 export interface CheckoutPreviewResponse {
   shops: CartShopGroupResponse[];
   totalItems: number;
@@ -2525,10 +2529,10 @@ export class ApiClient {
     });
   }
 
-  async addToCart(variantId: string, quantity: number): Promise<void> {
-    return this.request<void>('/cart/items', {
+  async addToCart(variantId: string, quantity: number, selectItem?: boolean): Promise<AddToCartResponse> {
+    return this.request<AddToCartResponse>('/cart/items', {
       method: 'POST',
-      body: JSON.stringify({ variantId, quantity }),
+      body: JSON.stringify({ variantId, quantity, selectItem }),
     });
   }
 

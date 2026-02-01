@@ -8,7 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { apiClient, type CartPreviewResponse, type ApiError } from '@/lib/api';
+import { apiClient, type CartPreviewResponse, type AddToCartResponse } from '@/lib/api';
 import { useAuth } from './AuthContext';
 
 interface CartContextType {
@@ -17,7 +17,7 @@ interface CartContextType {
   totalQuantity: number;
   isLoading: boolean;
   refreshCart: () => Promise<void>;
-  addToCart: (variantId: string, quantity: number) => Promise<void>;
+  addToCart: (variantId: string, quantity: number, selectItem?: boolean) => Promise<AddToCartResponse>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -46,9 +46,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const addToCart = useCallback(
-    async (variantId: string, quantity: number) => {
-      await apiClient.addToCart(variantId, quantity);
+    async (variantId: string, quantity: number, selectItem?: boolean): Promise<AddToCartResponse> => {
+      const result = await apiClient.addToCart(variantId, quantity, selectItem);
       await refreshCart();
+      return result;
     },
     [refreshCart]
   );
