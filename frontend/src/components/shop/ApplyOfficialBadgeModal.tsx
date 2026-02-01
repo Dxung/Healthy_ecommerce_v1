@@ -50,7 +50,7 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
     try {
       setLoading(true);
       const [brandsData, requirementsData] = await Promise.all([
-        apiClient.getAllBrands(),
+        apiClient.getPublicBrands(),
         apiClient.getOfficialBadgeRequirements(),
       ]);
       setBrands(brandsData.filter(b => b.isActive));

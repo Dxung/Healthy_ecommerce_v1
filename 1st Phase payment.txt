@@ -1,0 +1,315 @@
+# FLOW THANH TOÁN: TỪ TẠO ĐƠN HÀNG → TRƯỚC KHI SHOP XÁC NHẬN
+
+---
+
+## BƯỚC 1: NGƯỜI MUA CHỌN SẢN PHẨM VÀ NHẤN "MUA HÀNG"
+
+### Frontend
+| Tiêu chí | Chi tiết |
+|----------|----------|
+| **Nút bấm** | `"Mua hàng"` (Sticky bar dưới cùng trang giỏ hàng) |
+| **File/Component** | `frontend/src/components/cart/CartStickyBar.tsx` |
+| **Hàm xử lý** | `onClick={() => router.push('/checkout')}` |
+| **Route FE** | Navigate từ `/cart` → `/checkout` |
+| **Data gửi đi** | Không gửi API, chỉ navigate |
+
+**Điều kiện enable nút:**
+```typescript
+// CartStickyBar.tsx
+disabled={selectedCount === 0 || hasInactiveItems}
+```
+
+---
+
+## BƯỚC 2: LOAD TRANG CHECKOUT - LẤY DỮ LIỆU
+
+### Frontend
+| Tiêu chí | Chi tiết |
+|----------|----------|
+| **Page** | `frontend/src/app/(main)/checkout/page.tsx` |
+| **Hàm gọi API** | `apiClient.getCheckoutPreview()` + `apiClient.getAllAddresses()` |
+| **Route gửi đi** | `GET /cart/checkout-preview` + `GET /addresses` |
+
+### Backend - Checkout Preview
+| Tiêu chí | Chi tiết |
+|----------|----------|
+| **Route** | `GET /cart/checkout-preview` |
+| **Controller** | `CartController.getCheckoutPreview()` |
+| **File** | `backend/src/modules/cart/cart.controller.ts` |
+| **Service** | `CartService.prepareCheckout(userId)` |
+| **File** | `backend/src/modules/cart/cart.service.ts` |
+
+### Database tham gia
+| Table | Thuộc tính sử dụng |
+|-------|-------------------|
+| `cart_items` | `id`, `userId`, `variantId`, `quantity`, `isSelected` |
+| `product_variants` | `id`, `name`, `price`, `stockQuantity`, `isActive` |
+| `products` | `id`, `name`, `slug`, `thumbnailUrl`, `isVisible`, `status` |
+| `shops` | `id`, `name`, `slug`, `logoUrl` |
+
+### Cấu trúc data trả về
+```typescript
+// CheckoutPreviewResponse
+{
+  shops: [{
+    shop: { id, name, slug, logoUrl },
+    items: [{
+      id, variantId, productId, quantity, isSelected,
+      variant: { id, name, price, imageUrl, stockQuantity, isActive },
+      product: { id, name, slug, thumbnailUrl, isVisible, status }
+    }],
+    shopSubtotal, selectedCount
+  }],
+  totalItems, totalQuantity, subtotal,
+  hasInactiveItems, hasPriceChangedItems
+}
+```
+
+### FE hiển thị ở đâu
+| Component | Hiển thị |
+|-----------|----------|
+| `ProductsSection.tsx` | Danh sách sản phẩm theo shop + input ghi chú |
+| `AddressSection.tsx` | Địa chỉ giao hàng đã chọn |
+| `PaymentMethodSection.tsx` | 3 lựa chọn thanh toán |
+| `OrderSummary.tsx` | Tổng tiền + nút "Đặt hàng" |
+
+---
+
+## BƯỚC 3: NGƯỜI MUA NHẤN NÚT "ĐẶT HÀNG"
+
+### Frontend
+| Tiêu chí | Chi tiết |
+|----------|----------|
+| **Nút bấm** | `"Đặt hàng"` |
+| **File/Component** | `frontend/src/components/checkout/OrderSummary.tsx` |
+| **Hàm xử lý** | `handleSubmit()` trong `checkout/page.tsx` |
+| **Route gửi đi** | `POST /orders` |
+
+### Cấu trúc data gửi đi
+```typescript
+// CreateOrderRequest
+{
+  addressId: string,           // UUID địa chỉ đã chọn
+  paymentMethod: 'wallet' | 'vnpay' | 'wallet_vnpay' | 'cod',
+  useCoin?: boolean,           // Có dùng xu không
+  coinAmount?: number,         // Số xu muốn dùng
+  shopNotes?: [{               // Ghi chú cho từng shop
+    shopId: string,
+    note: string
+  }]
+}
+```
+
+---
+
+## BƯỚC 4: BACKEND XỬ LÝ TẠO ĐƠN HÀNG
+
+### Backend Flow
+| Bước | Class/Hàm | File |
+|------|-----------|------|
+| 1. Nhận request | `OrderController.createOrder()` | `order.controller.ts:26` |
+| 2. Xử lý logic | `OrderService.createOrder()` | `order.service.ts:102` |
+| 3. Validate địa chỉ | `UserService.getAddressById()` | `user.service.ts` |
+| 4. Lấy cart items | `CartService.prepareCheckout()` | `cart.service.ts` |
+| 5. Check stock | `ProductVariantRepository` | `product-variant.typeorm.repository.ts` |
+| 6. Trừ stock (transaction) | `variantRepository.deductStockWithLock()` | `product-variant.typeorm.repository.ts` |
+| 7. Tạo Order model | `Order.create()` | `order.model.ts` |
+| 8. Tạo OrderItem models | `OrderItem.create()` | `order-item.model.ts` |
+| 9. Lưu vào DB | `OrderRepository.saveOrderWithItems()` | `order.typeorm.repository.ts` |
+| 10. Xóa cart items | `CartService.removeItems()` | `cart.service.ts` |
+| 11. Xử lý thanh toán | Tùy `paymentMethod` (xem bên dưới) | `order.service.ts` |
+
+### Database tham gia - Ghi dữ liệu
+| Table | Thuộc tính ghi |
+|-------|---------------|
+| `orders` | `id`, `orderCode`, `buyerId`, `shopId`, `receiverName`, `receiverPhone`, `shippingAddress`, `shippingWardId`, `shippingDistrictId`, `shippingProvinceId`, `subtotal`, `shippingFee`, `platformFee`, `tierDiscountAmount`, `voucherDiscountAmount`, `coinUsed`, `totalAmount`, `buyerTierCode`, `coinMultiplier`, `paymentMethod`, `paymentStatus`, `status`, `buyerNote`, `createdAt` |
+| `order_items` | `id`, `orderId`, `productId`, `variantId`, `productName`, `variantName`, `productImageUrl`, `unitPrice`, `quantity` |
+| `product_variants` | `stockQuantity` (trừ đi) |
+| `cart_items` | Xóa các items đã mua |
+
+---
+
+## BƯỚC 5: XỬ LÝ THANH TOÁN (TÙY PAYMENT METHOD)
+
+### A. WALLET (Ví điện tử)
+| Bước | Class/Hàm |
+|------|-----------|
+| 1. Check số dư | `WalletService.getMyWallet()` |
+| 2. Trừ tiền ví | `WalletService.debitForOrder()` |
+| 3. Tạo escrow giữ tiền | `EscrowService.createHold()` |
+| 4. Đánh dấu đã thanh toán | `Order.markAsPaid()` |
+
+**DB tham gia:**
+| Table | Thuộc tính |
+|-------|------------|
+| `wallets` | `availableBalance` (trừ đi) |
+| `wallet_transactions` | Tạo record giao dịch |
+| `escrows` | `orderId`, `shopId`, `amount`, `status=HOLDING` |
+| `orders` | `paymentStatus=PAID`, `paidAt` |
+
+### B. VNPAY
+| Bước | Class/Hàm |
+|------|-----------|
+| 1. Tạo payment transaction | `PaymentService.createOrderPayment()` |
+| 2. Tạo VNPay URL | `VnpayService.createPaymentUrl()` |
+| 3. Trả về URL | Response chứa `paymentUrl` |
+
+**DB tham gia:**
+| Table | Thuộc tính |
+|-------|------------|
+| `payment_transactions` | `id`, `orderId`, `amount`, `vnpayTxnRef`, `type=ORDER_PAYMENT`, `status=PENDING` |
+| `orders` | `status=PENDING`, `paymentStatus=PENDING` |
+
+### C. WALLET_VNPAY (Ví + VNPay)
+Kết hợp A + B: Trừ ví trước, phần còn lại qua VNPay
+
+### D. COD (Thanh toán khi nhận hàng)
+| Bước | Class/Hàm |
+|------|-----------|
+| 1. Confirm order ngay | `Order.confirm()` |
+| 2. Lưu order | `OrderRepository.save()` |
+
+**DB tham gia:**
+| Table | Thuộc tính |
+|-------|------------|
+| `orders` | `status=CONFIRMED`, `confirmedAt` |
+
+---
+
+## BƯỚC 6: BACKEND TRẢ VỀ RESPONSE
+
+### Cấu trúc data trả về
+```typescript
+// CreateOrderResponse
+{
+  orders: [{
+    id: string,
+    orderCode: string,        // VD: "#ORD123456"
+    status: 'pending' | 'confirmed',
+    paymentMethod: string,
+    paymentStatus: 'pending' | 'paid',
+    receiverName, receiverPhone, shippingAddress,
+    subtotal, shippingFee, platformFee,
+    tierDiscountAmount, voucherDiscountAmount,
+    coinUsed, totalAmount, coinEarned,
+    buyerNote, shopNote,
+    shop: { id, name, slug, logoUrl },
+    items: [{
+      id, productId, variantId,
+      productName, variantName, productImageUrl,
+      unitPrice, quantity, totalPrice
+    }],
+    createdAt, updatedAt
+  }],
+  paymentUrl?: string,        // Chỉ có nếu VNPAY/WALLET_VNPAY
+  txnRef?: string,            // Transaction reference
+  walletAmountUsed?: number,  // Số tiền trừ từ ví
+  vnpayAmount?: number        // Số tiền qua VNPay
+}
+```
+
+---
+
+## BƯỚC 7: FRONTEND XỬ LÝ RESPONSE
+
+### Trong `checkout/page.tsx` - hàm `handleSubmit()`
+```typescript
+if (response.paymentUrl) {
+  // VNPay: Redirect sang trang thanh toán VNPay
+  window.location.href = response.paymentUrl;
+  return;
+}
+
+// Wallet/COD: Navigate đến trang success
+const orderIds = response.orders.map((o) => o.id).join(',');
+router.push(`/checkout/success?orders=${orderIds}`);
+```
+
+---
+
+## BƯỚC 8: HIỂN THỊ KẾT QUẢ
+
+### A. Nếu VNPAY - Redirect đến VNPay Gateway
+- User thanh toán trên VNPay
+- VNPay redirect về: `GET /payments/vnpay/return`
+- Backend xử lý: `PaymentController.handleVnpayReturn()`
+- Redirect về FE: `/checkout/success?status=success`
+
+### B. Nếu Wallet/COD - Trang Success
+
+| Tiêu chí | Chi tiết |
+|----------|----------|
+| **Page** | `frontend/src/app/(main)/checkout/success/page.tsx` |
+| **Lấy order IDs** | `searchParams.get('orders')?.split(',')` |
+| **Gọi API** | `apiClient.getMyOrderById(orderId)` cho từng order |
+| **Route** | `GET /orders/my/:id` |
+
+### FE hiển thị kết quả
+| Component/Section | Nội dung |
+|-------------------|----------|
+| Header | Icon CheckCircle + "Đặt hàng thành công!" |
+| Order Cards | Thông tin từng đơn hàng theo shop |
+| Shop Info | Logo, tên shop, mã đơn hàng |
+| Product List | Sản phẩm, số lượng, giá |
+| Order Total | Tổng tiền mỗi đơn |
+| Address Section | Địa chỉ giao hàng đầy đủ |
+| Action Buttons | "Xem đơn hàng" + "Tiếp tục mua sắm" |
+
+---
+
+## TỔNG KẾT TRẠNG THÁI ĐƠN HÀNG SAU TẠO
+
+| Payment Method | Order Status | Payment Status |
+|----------------|--------------|----------------|
+| WALLET | `pending` | `paid` |
+| VNPAY (chưa thanh toán) | `pending` | `pending` |
+| VNPAY (đã thanh toán) | `pending` | `paid` |
+| WALLET_VNPAY | `pending` | `pending/paid` |
+| COD | `confirmed` | `pending` |
+
+**Đơn hàng giờ đây chờ shop xác nhận (với COD đã tự động confirm).**
+
+---
+
+## SƠ ĐỒ TỔNG QUAN
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                           FRONTEND                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│  CartStickyBar.tsx          checkout/page.tsx        success/page.tsx│
+│  [Mua hàng] ────────────► OrderSummary.tsx ───────► [Hiển thị kết quả]│
+│      │                     [Đặt hàng]                      ▲        │
+│      │                         │                           │        │
+└──────│─────────────────────────│───────────────────────────│────────┘
+       │                         │                           │
+       │                         ▼                           │
+       │              POST /orders                           │
+       │              CreateOrderRequest                     │
+       │                         │                           │
+┌──────│─────────────────────────│───────────────────────────│────────┐
+│      │                         │                           │        │
+│      │              ┌──────────▼──────────┐               │        │
+│      │              │  OrderController    │               │        │
+│      │              │  order.controller.ts│               │        │
+│      │              └──────────┬──────────┘               │        │
+│      │                         │                           │        │
+│      │              ┌──────────▼──────────┐               │        │
+│      │              │   OrderService      │               │        │
+│      │              │   order.service.ts  │               │        │
+│      │              └──────────┬──────────┘               │        │
+│      │                         │                           │        │
+│      │    ┌────────────────────┼────────────────────┐     │        │
+│      │    ▼                    ▼                    ▼     │        │
+│   CartService         ProductVariantRepo      WalletService        │
+│   UserService         OrderRepository         EscrowService        │
+│                       PaymentService          VnpayService         │
+│                                                                     │
+│                           BACKEND                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│                           DATABASE                                   │
+├─────────────────────────────────────────────────────────────────────┤
+│  orders │ order_items │ cart_items │ product_variants │ wallets    │
+│  escrows│ payment_transactions │ wallet_transactions               │
+└─────────────────────────────────────────────────────────────────────┘
+```

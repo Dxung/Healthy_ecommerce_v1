@@ -2422,6 +2422,14 @@ export class ApiClient {
     });
   }
 
+  // ===================== Public Brand Endpoints =====================
+
+  async getPublicBrands(): Promise<BrandResponse[]> {
+    return this.request<BrandResponse[]>('/brands', {
+      method: 'GET',
+    });
+  }
+
   // ===================== Admin Brand Endpoints =====================
 
   async getAllBrands(): Promise<BrandResponse[]> {

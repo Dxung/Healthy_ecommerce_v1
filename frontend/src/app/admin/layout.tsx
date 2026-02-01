@@ -1,9 +1,10 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Store,
   Package,
@@ -14,14 +15,17 @@ import {
   Users,
   Menu,
   X,
+  Loader2,
+  ShieldX,
 } from 'lucide-react';
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, useMemo } from 'react';
 
 // Context for mobile sidebar state
 const SidebarContext = createContext<{
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-}>({ isOpen: false, setIsOpen: () => {} });
+  isSuperAdmin: boolean;
+}>({ isOpen: false, setIsOpen: () => {}, isSuperAdmin: false });
 
 interface SubNavItem {
   label: string;
@@ -41,59 +45,71 @@ interface NavItem {
   children?: NavChild[];
 }
 
-const navItems: NavItem[] = [
-  {
-    label: 'Quản lý tài khoản',
-    icon: <Users className="w-5 h-5" />,
-    children: [
-      { label: 'Danh sách người dùng', href: '/admin/accounts/users' },
-      { label: 'Thiết lập vai trò và quyền', href: '/admin/accounts/roles' },
-    ],
-  },
-  {
-    label: 'Quản lý Shop',
-    icon: <Store className="w-5 h-5" />,
-    children: [
-      { label: 'Danh sách Shop', href: '/admin/shop/shops' },
-      { label: 'Đơn đăng ký Shop', href: '/admin/shop/registrations' },
-      {
-        label: 'Cấu hình huy hiệu shop',
-        children: [
-          { label: 'Quản lý giấy tờ', href: '/admin/shop/documents' },
-          { label: 'Thiết lập huy hiệu', href: '/admin/shop/badges' },
-        ],
-      },
-    ],
-  },
-  {
-    label: 'Quản lý Đơn hàng',
-    icon: <ShoppingCart className="w-5 h-5" />,
-    children: [
-      { label: 'Tất cả đơn hàng', href: '/admin/orders' },
-    ],
-  },
-  {
-    label: 'Quản lý sản phẩm',
-    icon: <Package className="w-5 h-5" />,
-    children: [
-      { label: 'Đơn vị đo lường', href: '/admin/product/units' },
-      { label: 'Quản lý nhãn dị ứng', href: '/admin/product/allergens' },
-      { label: 'Quản lý nhãn chế độ ăn', href: '/admin/product/diet-tags' },
-      { label: 'Quản lý danh mục', href: '/admin/product/categories' },
-      { label: 'Quản lý thương hiệu', href: '/admin/product/brands' },
-    ],
-  },
-  {
-    label: 'Cài đặt hệ thống',
-    icon: <Settings className="w-5 h-5" />,
-    href: '/admin/settings',
-  },
-];
+// Function to build nav items based on user role
+const buildNavItems = (isSuperAdmin: boolean): NavItem[] => {
+  const accountChildren: NavChild[] = [
+    { label: 'Danh sách người dùng', href: '/admin/accounts/users' },
+  ];
+
+  // Only super_admin can see "Thiết lập vai trò và quyền"
+  if (isSuperAdmin) {
+    accountChildren.push({ label: 'Thiết lập vai trò và quyền', href: '/admin/accounts/roles' });
+  }
+
+  return [
+    {
+      label: 'Quản lý tài khoản',
+      icon: <Users className="w-5 h-5" />,
+      children: accountChildren,
+    },
+    {
+      label: 'Quản lý Shop',
+      icon: <Store className="w-5 h-5" />,
+      children: [
+        { label: 'Danh sách Shop', href: '/admin/shop/shops' },
+        { label: 'Đơn đăng ký Shop', href: '/admin/shop/registrations' },
+        {
+          label: 'Cấu hình huy hiệu shop',
+          children: [
+            { label: 'Quản lý giấy tờ', href: '/admin/shop/documents' },
+            { label: 'Thiết lập huy hiệu', href: '/admin/shop/badges' },
+          ],
+        },
+      ],
+    },
+    {
+      label: 'Quản lý Đơn hàng',
+      icon: <ShoppingCart className="w-5 h-5" />,
+      children: [
+        { label: 'Tất cả đơn hàng', href: '/admin/orders' },
+      ],
+    },
+    {
+      label: 'Quản lý sản phẩm',
+      icon: <Package className="w-5 h-5" />,
+      children: [
+        { label: 'Đơn vị đo lường', href: '/admin/product/units' },
+        { label: 'Quản lý nhãn dị ứng', href: '/admin/product/allergens' },
+        { label: 'Quản lý nhãn chế độ ăn', href: '/admin/product/diet-tags' },
+        { label: 'Quản lý danh mục', href: '/admin/product/categories' },
+        { label: 'Quản lý thương hiệu', href: '/admin/product/brands' },
+      ],
+    },
+    {
+      label: 'Cài đặt hệ thống',
+      icon: <Settings className="w-5 h-5" />,
+      href: '/admin/settings',
+    },
+  ];
+};
 
 function AdminSidebar() {
   const pathname = usePathname();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const { isOpen, setIsOpen } = useContext(SidebarContext);
+  const { isOpen, setIsOpen, isSuperAdmin } = useContext(SidebarContext);
+
+  // Build nav items based on user role
+  const navItems = useMemo(() => buildNavItems(isSuperAdmin), [isSuperAdmin]);
 
   // Check if any descendant is active (supports nested children)
   const isDescendantActive = useCallback((children: NavChild[]): boolean => {
@@ -125,7 +141,7 @@ function AdminSidebar() {
     }
 
     setExpandedItems(newExpanded);
-  }, [pathname, isDescendantActive, isSubParentActive]);
+  }, [pathname, isDescendantActive, isSubParentActive, navItems]);
 
   // Close mobile sidebar on route change
   useEffect(() => {
@@ -299,10 +315,43 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  // Check if user has admin or super_admin role
+  const isAdmin = user?.roles?.some(role => role === 'admin' || role === 'super_admin') ?? false;
+  const isSuperAdmin = user?.roles?.includes('super_admin') ?? false;
+
+  // Redirect non-admin users to home page
+  useEffect(() => {
+    if (user === null) {
+      // User is not logged in, redirect to login
+      router.replace('/login');
+    } else if (user && !isAdmin) {
+      // User is logged in but not admin, redirect to home
+      router.replace('/');
+    } else {
+      // User is admin, allow access
+      setIsChecking(false);
+    }
+  }, [user, isAdmin, router]);
+
+  // Show loading while checking permissions
+  if (isChecking || user === null || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-gray-500">Đang kiểm tra quyền truy cập...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <SidebarContext.Provider value={{ isOpen: isSidebarOpen, setIsOpen: setIsSidebarOpen }}>
+    <SidebarContext.Provider value={{ isOpen: isSidebarOpen, setIsOpen: setIsSidebarOpen, isSuperAdmin }}>
       <Header />
       <div className="flex flex-1 bg-gray-50">
         {/* Mobile menu toggle button */}
