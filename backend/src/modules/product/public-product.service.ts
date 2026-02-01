@@ -108,10 +108,13 @@ export class PublicProductService implements IPublicProductService {
   @WithPosition()
   getProductBySlug(slug: string): ResultAsync<Product, DomainError> {
     return this.productRepository
-      .findPublic({ page: 1, limit: 1 }, { search: slug })
-      .andThen((result) => {
-        // Find exact slug match from results
-        const product = result.items.find((p) => p.slug === slug);
+      .findPublicBySlug(slug, {
+        withImages: true,
+        withOptions: true,
+        withVariants: true,
+        withUnits: true,
+      })
+      .andThen((product) => {
         if (!product) {
           return errAsync(
             createDomainError(PRODUCT_ERRORS.PRODUCT_NOT_FOUND, {
@@ -119,8 +122,7 @@ export class PublicProductService implements IPublicProductService {
             }),
           );
         }
-        // Load full details
-        return this.getProductById(product.id);
+        return okAsync(product);
       });
   }
 

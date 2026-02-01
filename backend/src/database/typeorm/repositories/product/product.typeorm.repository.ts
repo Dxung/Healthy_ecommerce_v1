@@ -70,6 +70,27 @@ export class OrmProductRepository implements IProductRepository {
   }
 
   @WithPosition()
+  findPublicBySlug(
+    slug: string,
+    options?: ProductLoadOptions,
+  ): ResultAsync<Product | null, DomainError> {
+    const repo = this.getProductRepository();
+    const relations = this.buildRelations(options);
+
+    return ResultAsync.fromPromise(
+      repo.findOne({
+        where: {
+          slug,
+          status: ProductStatus.ACTIVE,
+          isVisible: true,
+        },
+        relations,
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((orm) => (orm ? ORMProductMapper.toDomain(orm) : null));
+  }
+
+  @WithPosition()
   findByShopId(
     shopId: string,
     pagination: PaginationParams,

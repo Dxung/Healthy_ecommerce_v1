@@ -108,6 +108,17 @@ export interface IProductRepository {
   ): ResultAsync<PaginatedResult<Product>, DomainError>;
 
   /**
+   * Finds a public (active/visible) product by its slug.
+   * @param slug - The product slug.
+   * @param options - Optional relation loading options.
+   * @returns The Product domain model or null if not found.
+   */
+  findPublicBySlug(
+    slug: string,
+    options?: ProductLoadOptions,
+  ): ResultAsync<Product | null, DomainError>;
+
+  /**
    * Checks if a slug exists for a shop (excluding a specific product ID).
    * @param shopId - The shop ID.
    * @param slug - The slug to check.

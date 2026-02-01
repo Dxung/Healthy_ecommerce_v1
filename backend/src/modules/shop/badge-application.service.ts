@@ -70,17 +70,19 @@ export class BadgeApplicationService implements IBadgeApplicationService {
   @WithPosition()
   getVerifiedRequirements(): ResultAsync<DocumentType[], DomainError> {
     // Get requirements for APPROVED badge (which is the verified badge)
+    // Pass true to load documentType relation
     return this.badgeRequirementRepository
-      .findByBadgeCode(ShopBadgeCode.APPROVED)
-      .map((requirements) => requirements.map((r) => r.documentType).filter((d): d is DocumentType => d !== undefined));
+      .findByBadgeCode(ShopBadgeCode.APPROVED, true)
+      .map((requirements) => requirements.map((r) => r.documentType).filter((d): d is DocumentType => d != null));
   }
 
   @WithPosition()
   getOfficialRequirements(): ResultAsync<DocumentType[], DomainError> {
     // Get requirements for OFFICIAL badge - same for all brands
+    // Pass true to load documentType relation
     return this.badgeRequirementRepository
-      .findByBadgeCode(ShopBadgeCode.OFFICIAL)
-      .map((requirements) => requirements.map((r) => r.documentType).filter((d): d is DocumentType => d !== undefined));
+      .findByBadgeCode(ShopBadgeCode.OFFICIAL, true)
+      .map((requirements) => requirements.map((r) => r.documentType).filter((d): d is DocumentType => d != null));
   }
 
   @WithPosition()
