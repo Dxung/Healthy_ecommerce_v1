@@ -80,41 +80,45 @@ export class OrmCartRepository implements ICartRepository {
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormCartItems) =>
-      ormCartItems.map((item) => {
-        const currentPrice = Number(item.variant.price);
-        const priceAtAdded = Number(item.priceAtAdded);
-        return {
-          cartItem: ORMCartMapper.cartItemToDomain(item),
-          variant: {
-            id: item.variant.id,
-            name: item.variant.name,
-            price: currentPrice,
-            compareAtPrice: item.variant.compareAtPrice
-              ? Number(item.variant.compareAtPrice)
-              : null,
-            imageUrl: item.variant.imageUrl,
-            stockQuantity: item.variant.stockQuantity,
-            isActive: item.variant.isActive,
-            sku: item.variant.sku,
-            expiryDate: item.variant.expiryDate,
-          },
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            slug: item.product.slug,
-            thumbnailUrl: item.product.thumbnailUrl,
-            isVisible: item.product.isVisible,
-            status: item.product.status,
-          },
-          shop: {
-            id: item.shop.id,
-            name: item.shop.name,
-            slug: item.shop.slug,
-            logoUrl: item.shop.logoUrl,
-          },
-          hasPriceChanged: currentPrice !== priceAtAdded,
-        };
-      }),
+      ormCartItems
+        .filter((item) => item.variant && item.product && item.shop)
+        .map((item) => {
+          const currentPrice = Number(item.variant.price);
+          const priceAtAdded = Number(item.priceAtAdded);
+          const quantity = item.quantity;
+          return {
+            cartItem: ORMCartMapper.cartItemToDomain(item),
+            variant: {
+              id: item.variant.id,
+              name: item.variant.name,
+              price: currentPrice,
+              compareAtPrice: item.variant.compareAtPrice
+                ? Number(item.variant.compareAtPrice)
+                : null,
+              imageUrl: item.variant.imageUrl,
+              stockQuantity: item.variant.stockQuantity,
+              isActive: item.variant.isActive,
+              sku: item.variant.sku,
+              expiryDate: item.variant.expiryDate,
+            },
+            product: {
+              id: item.product.id,
+              name: item.product.name,
+              slug: item.product.slug,
+              thumbnailUrl: item.product.thumbnailUrl,
+              isVisible: item.product.isVisible,
+              status: item.product.status,
+            },
+            shop: {
+              id: item.shop.id,
+              name: item.shop.name,
+              slug: item.shop.slug,
+              logoUrl: item.shop.logoUrl,
+            },
+            hasPriceChanged: currentPrice !== priceAtAdded,
+            totalPrice: currentPrice * quantity,
+          };
+        }),
     );
   }
 
@@ -284,10 +288,9 @@ export class OrmCartRepository implements ICartRepository {
       repo
         .createQueryBuilder('item')
         .where('item.cartId = :cartId', { cartId })
-        .select('COALESCE(SUM(item.quantity), 0)', 'total')
-        .getRawOne<{ total: string }>(),
+        .getCount(),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((result) => parseInt(result?.total || '0', 10));
+    );
   }
 
   @WithPosition()
@@ -306,41 +309,45 @@ export class OrmCartRepository implements ICartRepository {
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormCartItems) =>
-      ormCartItems.map((item) => {
-        const currentPrice = Number(item.variant.price);
-        const priceAtAdded = Number(item.priceAtAdded);
-        return {
-          cartItem: ORMCartMapper.cartItemToDomain(item),
-          variant: {
-            id: item.variant.id,
-            name: item.variant.name,
-            price: currentPrice,
-            compareAtPrice: item.variant.compareAtPrice
-              ? Number(item.variant.compareAtPrice)
-              : null,
-            imageUrl: item.variant.imageUrl,
-            stockQuantity: item.variant.stockQuantity,
-            isActive: item.variant.isActive,
-            sku: item.variant.sku,
-            expiryDate: item.variant.expiryDate,
-          },
-          product: {
-            id: item.product.id,
-            name: item.product.name,
-            slug: item.product.slug,
-            thumbnailUrl: item.product.thumbnailUrl,
-            isVisible: item.product.isVisible,
-            status: item.product.status,
-          },
-          shop: {
-            id: item.shop.id,
-            name: item.shop.name,
-            slug: item.shop.slug,
-            logoUrl: item.shop.logoUrl,
-          },
-          hasPriceChanged: currentPrice !== priceAtAdded,
-        };
-      }),
+      ormCartItems
+        .filter((item) => item.variant && item.product && item.shop)
+        .map((item) => {
+          const currentPrice = Number(item.variant.price);
+          const priceAtAdded = Number(item.priceAtAdded);
+          const quantity = item.quantity;
+          return {
+            cartItem: ORMCartMapper.cartItemToDomain(item),
+            variant: {
+              id: item.variant.id,
+              name: item.variant.name,
+              price: currentPrice,
+              compareAtPrice: item.variant.compareAtPrice
+                ? Number(item.variant.compareAtPrice)
+                : null,
+              imageUrl: item.variant.imageUrl,
+              stockQuantity: item.variant.stockQuantity,
+              isActive: item.variant.isActive,
+              sku: item.variant.sku,
+              expiryDate: item.variant.expiryDate,
+            },
+            product: {
+              id: item.product.id,
+              name: item.product.name,
+              slug: item.product.slug,
+              thumbnailUrl: item.product.thumbnailUrl,
+              isVisible: item.product.isVisible,
+              status: item.product.status,
+            },
+            shop: {
+              id: item.shop.id,
+              name: item.shop.name,
+              slug: item.shop.slug,
+              logoUrl: item.shop.logoUrl,
+            },
+            hasPriceChanged: currentPrice !== priceAtAdded,
+            totalPrice: currentPrice * quantity,
+          };
+        }),
     );
   }
 

@@ -6,6 +6,7 @@ import {
   CartFullResponse,
   CartPreviewData,
   CheckoutPreviewData,
+  AddToCartResult,
 } from './cart.service.interface';
 import { ICartRepository } from './repository/cart.repository.interface';
 import { IPublicProductService } from '../product/public-product.service.interface';
@@ -77,10 +78,10 @@ export class CartService implements ICartService {
           CART_PREVIEW_LIMIT,
         ),
         this.cartRepository.getItemCount(cart.id),
-      ]).map(([recentItems, totalQuantity]) => ({
+      ]).map(([recentItems, itemCount]) => ({
         recentItems,
-        totalItems: cart.uniqueItemCount,
-        totalQuantity,
+        totalItems: itemCount,
+        totalQuantity: itemCount,
       })),
     );
   }
@@ -89,7 +90,8 @@ export class CartService implements ICartService {
   addToCart(
     variantId: string,
     quantity: number,
-  ): ResultAsync<void, DomainError> {
+    selectItem: boolean = false,
+  ): ResultAsync<AddToCartResult, DomainError> {
     const userId = this.getUserId();
     if (!userId) {
       return errAsync(
@@ -147,7 +149,13 @@ export class CartService implements ICartService {
                   );
                 }
                 existingItem.updateQuantity(newQuantity);
-                return this.cartRepository.updateItem(existingItem);
+                // Select item if requested (for "Buy Now" feature)
+                if (selectItem) {
+                  existingItem.select();
+                }
+                return this.cartRepository
+                  .updateItem(existingItem)
+                  .map((updated) => ({ cartItemId: updated.id }));
               } else {
                 // Create new item
                 const newItem = CartItem.createNew(
@@ -157,13 +165,15 @@ export class CartService implements ICartService {
                   variantId,
                   quantity,
                   variant.price,
+                  selectItem, // Select item if requested (for "Buy Now" feature)
                 );
-                return this.cartRepository.addItem(newItem);
+                return this.cartRepository
+                  .addItem(newItem)
+                  .map((added) => ({ cartItemId: added.id }));
               }
             }),
         ),
-      )
-      .map(() => undefined);
+      );
   }
 
   @WithPosition()
@@ -473,4 +483,5 @@ export class CartService implements ICartService {
         }),
       );
   }
+
 }

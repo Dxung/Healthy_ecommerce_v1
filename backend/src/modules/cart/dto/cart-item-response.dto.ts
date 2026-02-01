@@ -9,6 +9,8 @@ export class CartItemResponseDto {
   isSelected: boolean;
   priceAtAdded: number;
   hasPriceChanged: boolean;
+  /** Total price for this item (price * quantity) */
+  totalPrice: number;
   createdAt: Date;
   updatedAt: Date;
 
@@ -48,6 +50,7 @@ export class CartItemResponseDto {
     this.isSelected = item.cartItem.isSelected;
     this.priceAtAdded = item.cartItem.priceAtAdded;
     this.hasPriceChanged = item.hasPriceChanged;
+    this.totalPrice = item.totalPrice;
     this.createdAt = item.cartItem.createdAt;
     this.updatedAt = item.cartItem.updatedAt;
     this.variant = item.variant;

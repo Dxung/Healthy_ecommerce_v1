@@ -6,3 +6,4 @@ export * from './cart-shop-group-response.dto';
 export * from './cart-response.dto';
 export * from './cart-preview-response.dto';
 export * from './checkout-preparation-response.dto';
+export * from './add-to-cart-response.dto';

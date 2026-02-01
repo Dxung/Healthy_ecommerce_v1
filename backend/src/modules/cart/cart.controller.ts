@@ -25,6 +25,7 @@ import {
   CartResponseDto,
   CartPreviewResponseDto,
   CheckoutPreparationResponseDto,
+  AddToCartResponseDto,
 } from './dto';
 
 @ApiTags('Cart')
@@ -70,17 +71,21 @@ export class CartController {
 
   @Post('items')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Add item to cart' })
-  addToCart(@Body() dto: AddToCartArgumentDto): Promise<void> {
-    return this.cartService.addToCart(dto.variantId, dto.quantity).match(
-      () => undefined,
-      (error) => {
-        throw CartErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
+  @ApiOperation({
+    summary: 'Add item to cart. Use selectItem=true for "Buy Now" feature.',
+  })
+  addToCart(@Body() dto: AddToCartArgumentDto): Promise<AddToCartResponseDto> {
+    return this.cartService
+      .addToCart(dto.variantId, dto.quantity, dto.selectItem)
+      .match(
+        ({ cartItemId }) => new AddToCartResponseDto(cartItemId),
+        (error) => {
+          throw CartErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   @Patch('items/:cartItemId')

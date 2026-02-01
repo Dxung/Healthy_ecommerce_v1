@@ -20,6 +20,7 @@ export class CartItem {
 
   /**
    * Creates a new cart item
+   * @param isSelected - Whether the item is selected (default: false)
    */
   static createNew(
     cartId: string,
@@ -28,6 +29,7 @@ export class CartItem {
     variantId: string,
     quantity: number,
     priceAtAdded: number,
+    isSelected: boolean = false,
   ): CartItem {
     const now = new Date();
     return new CartItem(
@@ -38,7 +40,7 @@ export class CartItem {
       variantId,
       quantity,
       priceAtAdded,
-      true, // Selected by default
+      isSelected,
       now,
       now,
     );

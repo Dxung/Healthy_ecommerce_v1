@@ -35,6 +35,8 @@ export interface CartItemWithDetails {
   };
   /** Whether the price has changed since item was added */
   hasPriceChanged: boolean;
+  /** Total price for this item (price * quantity) */
+  totalPrice: number;
 }
 
 export interface ICartRepository {

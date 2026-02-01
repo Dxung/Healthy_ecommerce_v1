@@ -1,4 +1,4 @@
-import { IsUUID, IsInt, Min } from 'class-validator';
+import { IsUUID, IsInt, Min, IsBoolean, IsOptional } from 'class-validator';
 
 export class AddToCartArgumentDto {
   @IsUUID()
@@ -7,4 +7,8 @@ export class AddToCartArgumentDto {
   @IsInt()
   @Min(1, { message: 'Số lượng phải lớn hơn 0' })
   quantity: number;
+
+  @IsOptional()
+  @IsBoolean()
+  selectItem?: boolean;
 }

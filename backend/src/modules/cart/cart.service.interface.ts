@@ -18,6 +18,10 @@ export interface CheckoutPreviewData {
   hasInactiveItems: boolean;
 }
 
+export interface AddToCartResult {
+  cartItemId: string;
+}
+
 export interface ICartService {
   /**
    * Get full cart with items grouped by shop
@@ -31,11 +35,13 @@ export interface ICartService {
 
   /**
    * Add item to cart (creates cart if not exists)
+   * @param selectItem - If true, the item will be selected (for "Buy Now" feature)
    */
   addToCart(
     variantId: string,
     quantity: number,
-  ): ResultAsync<void, DomainError>;
+    selectItem?: boolean,
+  ): ResultAsync<AddToCartResult, DomainError>;
 
   /**
    * Update cart item quantity
