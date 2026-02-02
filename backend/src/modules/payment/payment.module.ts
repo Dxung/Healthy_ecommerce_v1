@@ -24,6 +24,7 @@ import { AlsModule } from 'src/shared/als/als.module';
 import { UoWModule } from 'src/shared/unitOfWork/uow.module';
 import { AuthModule } from '../auth/auth.module';
 import { SessionModule } from '../session/session.module';
+import { AuthorizationModule } from '../authorization/authorization.module';
 import { ShopModule } from '../shop/shop.module';
 import { OrderModule } from '../order/order.module';
 
@@ -45,6 +46,7 @@ import { OrderModule } from '../order/order.module';
     UoWModule,
     AuthModule,
     SessionModule,
+    AuthorizationModule,
     // forwardRef required: ShopModule doesn't import PaymentModule, but WalletService
     // needs ShopService to resolve current user's shop for shop wallet operations
     forwardRef(() => ShopModule),
