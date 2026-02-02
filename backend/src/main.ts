@@ -28,8 +28,6 @@ async function bootstrap() {
 
   setupSwagger(app);
 
-  app.setGlobalPrefix('api');
-
   app.useGlobalPipes(
     new ValidationPipe(
       getValidationPipeOptions(process.env.NODE_ENV?.trim() === 'production'),
