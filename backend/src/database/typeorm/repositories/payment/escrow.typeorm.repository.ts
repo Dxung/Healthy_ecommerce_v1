@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { DataSource, LessThanOrEqual, IsNull, Or } from 'typeorm';
 import { ResultAsync } from 'neverthrow';
 import { AsyncLocalStorage } from 'async_hooks';
-import { IEscrowRepository } from 'src/modules/payment/repository/escrow.repository.interface';
+import {
+  IEscrowRepository,
+  EscrowListFilters,
+  PaginatedEscrowResult,
+} from 'src/modules/payment/repository/escrow.repository.interface';
 import { EscrowHold } from 'src/modules/payment/models/escrow-hold.model';
 import { PendingRelease } from 'src/modules/payment/models/pending-release.model';
 import { ORMEscrowHold } from '../../entities/payment/orm.escrow-hold.entity';
 import { ORMPendingRelease } from '../../entities/payment/orm.pending-release.entity';
 import { ORMOrder } from '../../entities/order/orm.order.entity';
+import { ORMShop } from '../../entities/shop/orm.shop.entity';
 import { ORMEscrowHoldMapper } from '../../mappers/escrow-hold.mapper.orm';
 import { ORMPendingReleaseMapper } from '../../mappers/pending-release.mapper.orm';
 import { EscrowStatus } from '../../entities/payment/enums/escrow-status.enum';
@@ -163,6 +168,100 @@ export class OrmEscrowRepository implements IEscrowRepository {
         shopId: orm.shopId,
       })),
     );
+  }
+
+  @WithPosition()
+  findAllForAdmin(
+    filters: EscrowListFilters,
+    page: number,
+    limit: number,
+  ): ResultAsync<PaginatedEscrowResult, DomainError> {
+    const repo = this.getEscrowRepository();
+    const offset = (page - 1) * limit;
+
+    const queryBuilder = repo
+      .createQueryBuilder('escrow')
+      .innerJoin(ORMOrder, 'order', 'escrow.order_id = order.id')
+      .innerJoin(ORMShop, 'shop', 'escrow.shop_id = shop.id')
+      .select([
+        'escrow.id',
+        'escrow.order_id',
+        'escrow.shop_id',
+        'escrow.amount',
+        'escrow.order_subtotal',
+        'escrow.coin_used',
+        'escrow.platform_fee_percent',
+        'escrow.status',
+        'escrow.released_at',
+        'escrow.created_at',
+        'escrow.updated_at',
+        'order.order_code as "orderCode"',
+        'shop.name as "shopName"',
+      ])
+      .addSelect('order.order_code', 'orderCode')
+      .addSelect('shop.name', 'shopName');
+
+    if (filters.status) {
+      queryBuilder.andWhere('escrow.status = :status', {
+        status: filters.status,
+      });
+    }
+
+    if (filters.fromDate) {
+      queryBuilder.andWhere('escrow.created_at >= :fromDate', {
+        fromDate: new Date(filters.fromDate),
+      });
+    }
+
+    if (filters.toDate) {
+      const toDateEnd = new Date(filters.toDate);
+      toDateEnd.setHours(23, 59, 59, 999);
+      queryBuilder.andWhere('escrow.created_at <= :toDate', {
+        toDate: toDateEnd,
+      });
+    }
+
+    queryBuilder.orderBy('escrow.created_at', 'DESC');
+
+    return ResultAsync.fromPromise(
+      Promise.all([
+        queryBuilder
+          .offset(offset)
+          .limit(limit)
+          .getRawMany(),
+        queryBuilder.getCount(),
+      ]),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map(([rawResults, total]) => {
+      const items = rawResults.map((raw) => {
+        const escrow = ORMEscrowHoldMapper.toDomain({
+          id: raw.escrow_id,
+          orderId: raw.escrow_order_id,
+          shopId: raw.escrow_shop_id,
+          amount: parseFloat(raw.escrow_amount),
+          orderSubtotal: parseFloat(raw.escrow_order_subtotal),
+          coinUsed: parseFloat(raw.escrow_coin_used),
+          platformFeePercent: parseFloat(raw.escrow_platform_fee_percent),
+          status: raw.escrow_status,
+          releasedAt: raw.escrow_released_at,
+          createdAt: raw.escrow_created_at,
+          updatedAt: raw.escrow_updated_at,
+        } as ORMEscrowHold);
+
+        return {
+          escrow,
+          orderCode: raw.orderCode,
+          shopName: raw.shopName,
+        };
+      });
+
+      return {
+        items,
+        total,
+        page,
+        limit,
+      };
+    });
   }
 
   private getEntityManager() {

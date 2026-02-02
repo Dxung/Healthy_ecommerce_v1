@@ -4,16 +4,19 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { PaymentController } from './payment.controller';
 import { WalletController } from './wallet.controller';
 import { ShopWalletController } from './shop-wallet.controller';
+import { AdminWalletController } from './admin-wallet.controller';
 import { PaymentService } from './payment.service';
 import { VnpayService } from './services/vnpay.service';
 import { WalletService } from './services/wallet.service';
 import { EscrowService } from './services/escrow.service';
+import { AdminWalletService } from './services/admin-wallet.service';
 import { TopupReconcileCronjob } from './cronjobs/topup-reconcile.cronjob';
 import {
   PAYMENT_SERVICE,
   VNPAY_SERVICE,
   WALLET_SERVICE,
   ESCROW_SERVICE,
+  ADMIN_WALLET_SERVICE,
 } from './tokens/payment.token';
 import { vnpayConfig } from './configs/vnpay.config';
 import { DatabaseModule } from 'src/database/database.module';
@@ -69,10 +72,14 @@ import { OrderModule } from '../order/order.module';
       provide: ESCROW_SERVICE,
       useClass: EscrowService,
     },
+    {
+      provide: ADMIN_WALLET_SERVICE,
+      useClass: AdminWalletService,
+    },
     // Cronjobs
     TopupReconcileCronjob,
   ],
-  controllers: [PaymentController, WalletController, ShopWalletController],
+  controllers: [PaymentController, WalletController, ShopWalletController, AdminWalletController],
   exports: [PAYMENT_SERVICE, WALLET_SERVICE, ESCROW_SERVICE, VNPAY_SERVICE],
 })
 export class PaymentModule {}

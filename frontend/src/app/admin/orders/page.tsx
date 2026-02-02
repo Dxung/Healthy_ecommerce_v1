@@ -39,21 +39,6 @@ const ORDER_STATUSES: { value: OrderStatus | ''; label: string }[] = [
   { value: 'refunded', label: 'Đã hoàn tiền' },
 ];
 
-// Valid status transitions for admin
-const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
-  const transitions: Record<OrderStatus, OrderStatus[]> = {
-    pending: ['confirmed', 'cancelled'],
-    confirmed: ['shipping', 'cancelled'],
-    shipping: ['completed', 'cancelled'],
-    delivered: ['completed', 'cancelled', 'refunding'],
-    completed: ['refunding'],
-    refunding: ['refunded', 'completed'],
-    cancelled: [],
-    refunded: [],
-  };
-  return transitions[currentStatus] || [];
-};
-
 const getStatusColor = (status: OrderStatus): string => {
   switch (status) {
     case 'pending':
@@ -153,12 +138,6 @@ function AdminOrdersPageContent() {
   );
   const [buyerName, setBuyerName] = useState<string | null>(null);
 
-  // Status change
-  const [showStatusDialog, setShowStatusDialog] = useState(false);
-  const [newStatus, setNewStatus] = useState<OrderStatus | ''>('');
-  const [statusNote, setStatusNote] = useState('');
-  const [statusChanging, setStatusChanging] = useState(false);
-
   // Filters
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | ''>('');
@@ -218,42 +197,6 @@ function AdminOrdersPageContent() {
 
   const closeDetailPanel = () => {
     setSelectedOrder(null);
-    setShowStatusDialog(false);
-    setNewStatus('');
-    setStatusNote('');
-  };
-
-  const handleOpenStatusDialog = () => {
-    setShowStatusDialog(true);
-    setNewStatus('');
-    setStatusNote('');
-  };
-
-  const handleStatusChange = async () => {
-    if (!selectedOrder || !newStatus) return;
-
-    setStatusChanging(true);
-    try {
-      const updated = await apiClient.updateAdminOrderStatus(
-        selectedOrder.id,
-        newStatus,
-        statusNote || undefined
-      );
-      // Update the selected order
-      setSelectedOrder(updated);
-      // Update the order in the list
-      setOrders((prev) =>
-        prev.map((o) => (o.id === updated.id ? updated : o))
-      );
-      setShowStatusDialog(false);
-      setNewStatus('');
-      setStatusNote('');
-    } catch (err) {
-      console.error('Failed to update order status:', err);
-      alert('Không thể cập nhật trạng thái đơn hàng');
-    } finally {
-      setStatusChanging(false);
-    }
   };
 
   return (
@@ -522,85 +465,16 @@ function AdminOrdersPageContent() {
             <div className="p-6 space-y-6">
               {/* Status */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full ${getStatusColor(selectedOrder.status)}`}
-                  >
-                    {getStatusIcon(selectedOrder.status)}
-                    {getStatusLabel(selectedOrder.status)}
-                  </span>
-                  {getValidNextStatuses(selectedOrder.status).length > 0 && (
-                    <button
-                      onClick={handleOpenStatusDialog}
-                      className="px-3 py-1.5 text-sm font-medium text-primary border border-primary rounded-lg hover:bg-primary/5 transition-colors"
-                    >
-                      Đổi trạng thái
-                    </button>
-                  )}
-                </div>
+                <span
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-full ${getStatusColor(selectedOrder.status)}`}
+                >
+                  {getStatusIcon(selectedOrder.status)}
+                  {getStatusLabel(selectedOrder.status)}
+                </span>
                 <span className="text-sm text-gray-500">
                   {formatDate(selectedOrder.createdAt)}
                 </span>
               </div>
-
-              {/* Status Change Dialog */}
-              {showStatusDialog && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">
-                    Thay đổi trạng thái đơn hàng
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Trạng thái mới
-                      </label>
-                      <select
-                        value={newStatus}
-                        onChange={(e) => setNewStatus(e.target.value as OrderStatus)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
-                      >
-                        <option value="">Chọn trạng thái</option>
-                        {getValidNextStatuses(selectedOrder.status).map((status) => (
-                          <option key={status} value={status}>
-                            {getStatusLabel(status)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-600 mb-1">
-                        Ghi chú (tùy chọn)
-                      </label>
-                      <textarea
-                        value={statusNote}
-                        onChange={(e) => setStatusNote(e.target.value)}
-                        placeholder="Nhập lý do thay đổi trạng thái..."
-                        rows={2}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm resize-none"
-                      />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <button
-                        onClick={() => setShowStatusDialog(false)}
-                        disabled={statusChanging}
-                        className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        Hủy
-                      </button>
-                      <button
-                        onClick={handleStatusChange}
-                        disabled={!newStatus || statusChanging}
-                        className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
-                      >
-                        {statusChanging && (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        )}
-                        Xác nhận
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Shop Info */}
               <div className="bg-gray-50 rounded-lg p-4">
@@ -746,7 +620,7 @@ function AdminOrdersPageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between text-gray-500">
-                    <span>Phí nền tảng ({selectedOrder.platformFeePercent}%)</span>
+                    <span>Phí nền tảng ({selectedOrder.platformFeePercent.toFixed(2)}%)</span>
                     <span>{formatCurrency(selectedOrder.platformFee)}</span>
                   </div>
                 </div>

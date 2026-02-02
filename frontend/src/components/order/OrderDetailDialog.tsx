@@ -263,6 +263,12 @@ export function OrderDetailDialog({
                     <span className="text-gray-500">Phí vận chuyển</span>
                     <span>{order.shippingFee > 0 ? formatPrice(order.shippingFee) : 'Miễn phí'}</span>
                   </div>
+                  {order.platformShipDiscount > 0 && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Giảm giá vận chuyển</span>
+                      <span>-{formatPrice(order.platformShipDiscount)}</span>
+                    </div>
+                  )}
                   {order.voucherDiscountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Giảm giá voucher</span>

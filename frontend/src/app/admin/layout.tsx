@@ -17,6 +17,7 @@ import {
   X,
   Loader2,
   ShieldX,
+  Wallet,
 } from 'lucide-react';
 import { useState, useEffect, useCallback, createContext, useContext, useMemo } from 'react';
 
@@ -83,6 +84,11 @@ const buildNavItems = (isSuperAdmin: boolean): NavItem[] => {
       children: [
         { label: 'Tất cả đơn hàng', href: '/admin/orders' },
       ],
+    },
+    {
+      label: 'Ví nền tảng',
+      icon: <Wallet className="w-5 h-5" />,
+      href: '/admin/wallet',
     },
     {
       label: 'Quản lý sản phẩm',

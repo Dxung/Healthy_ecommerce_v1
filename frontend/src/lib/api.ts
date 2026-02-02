@@ -423,6 +423,67 @@ export interface AdminOrderListParams {
   limit?: number;
 }
 
+// Admin Platform Wallet Types
+export type EscrowStatus = 'holding' | 'released' | 'refunded';
+
+export interface PlatformWalletResponse {
+  balance: number;
+  frozenBalance: number;
+  formattedBalance: string;
+}
+
+export interface PlatformTransactionResponse {
+  id: string;
+  type: string;
+  typeLabel: string;
+  amount: number;
+  formattedAmount: string;
+  balanceAfter: number;
+  description: string | null;
+  createdAt: string;
+}
+
+export interface PlatformTransactionsListResponse {
+  items: PlatformTransactionResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminEscrowResponse {
+  id: string;
+  orderId: string;
+  orderCode: string;
+  shopId: string;
+  shopName: string;
+  amount: number;
+  formattedAmount: string;
+  orderSubtotal: number;
+  coinUsed: number;
+  platformFeePercent: number;
+  status: EscrowStatus;
+  statusLabel: string;
+  createdAt: string;
+  releasedAt: string | null;
+}
+
+export interface AdminEscrowListResponse {
+  items: AdminEscrowResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminEscrowListParams {
+  status?: EscrowStatus;
+  fromDate?: string;
+  toDate?: string;
+  page?: number;
+  limit?: number;
+}
+
 // Admin User Types
 export type UserStatus = 'active' | 'suspended' | 'deleted';
 
@@ -881,6 +942,7 @@ export interface OrderResponse {
   tierDiscountAmount: number;
   voucherDiscountAmount: number;
   coinUsed: number;
+  platformShipDiscount: number;
   totalAmount: number;
   coinEarned: number;
   buyerNote: string | null;
@@ -2953,14 +3015,39 @@ export class ApiClient {
     });
   }
 
-  async updateAdminOrderStatus(
-    id: string,
-    status: OrderStatus,
-    note?: string
-  ): Promise<AdminOrderResponse> {
-    return this.request<AdminOrderResponse>(`/admin/orders/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status, note }),
+  // ===================== Admin Platform Wallet Endpoints =====================
+
+  async getPlatformWallet(): Promise<PlatformWalletResponse> {
+    return this.request<PlatformWalletResponse>('/admin/wallet', {
+      method: 'GET',
+    });
+  }
+
+  async getPlatformWalletTransactions(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PlatformTransactionsListResponse> {
+    const searchParams = new URLSearchParams();
+    searchParams.set('page', String(page));
+    searchParams.set('limit', String(limit));
+    return this.request<PlatformTransactionsListResponse>(
+      `/admin/wallet/transactions?${searchParams.toString()}`,
+      { method: 'GET' }
+    );
+  }
+
+  async getAdminEscrows(
+    params?: AdminEscrowListParams
+  ): Promise<AdminEscrowListResponse> {
+    const searchParams = new URLSearchParams();
+    if (params?.status) searchParams.set('status', params.status);
+    if (params?.fromDate) searchParams.set('fromDate', params.fromDate);
+    if (params?.toDate) searchParams.set('toDate', params.toDate);
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
+    return this.request<AdminEscrowListResponse>(`/admin/wallet/escrows${query}`, {
+      method: 'GET',
     });
   }
 
