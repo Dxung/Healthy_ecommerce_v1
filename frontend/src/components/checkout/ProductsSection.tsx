@@ -48,41 +48,57 @@ export function ProductsSection({
             </Link>
           </div>
 
+          {/* Table Header */}
+          <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b bg-gray-50 text-sm font-medium text-gray-600">
+            <div className="col-span-5">Sản phẩm</div>
+            <div className="col-span-2 text-center">Đơn giá</div>
+            <div className="col-span-2 text-center">Số lượng</div>
+            <div className="col-span-3 text-right">Thành tiền</div>
+          </div>
+
           {/* Items */}
           <div className="divide-y">
             {shopGroup.items.map((item) => (
-              <div key={item.id} className="flex gap-4 p-4">
-                {/* Product Image */}
-                <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                  {item.variant.imageUrl || item.product.thumbnailUrl ? (
-                    <img
-                      src={item.variant.imageUrl || item.product.thumbnailUrl}
-                      alt={item.product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Package className="w-6 h-6 text-gray-300" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Product Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 line-clamp-1">
-                    {item.product.name}
-                  </p>
-                  <p className="text-sm text-gray-500">{item.variant.name}</p>
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-primary font-medium">
-                      {formatPrice(item.variant.price)}
-                    </span>
-                    <span className="text-gray-500">x{item.quantity}</span>
+              <div key={item.id} className="grid grid-cols-12 gap-2 p-4 items-center">
+                {/* Product Name & Variant */}
+                <div className="col-span-5 flex gap-3 items-center min-w-0">
+                  <div className="flex-shrink-0 w-14 h-14 bg-gray-100 rounded-lg overflow-hidden">
+                    {item.variant.imageUrl || item.product.thumbnailUrl ? (
+                      <img
+                        src={item.variant.imageUrl || item.product.thumbnailUrl}
+                        alt={item.product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Package className="w-5 h-5 text-gray-300" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-gray-900 line-clamp-2 text-sm">
+                      {item.product.name}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      Phân loại: {item.variant.name}
+                    </p>
                   </div>
                 </div>
 
+                {/* Unit Price */}
+                <div className="col-span-2 text-center">
+                  <span className="text-sm text-gray-700">
+                    {formatPrice(item.variant.price)}
+                  </span>
+                </div>
+
+                {/* Quantity */}
+                <div className="col-span-2 text-center">
+                  <span className="text-sm text-gray-700">{item.quantity}</span>
+                </div>
+
                 {/* Subtotal */}
-                <div className="text-right">
+                <div className="col-span-3 text-right">
                   <span className="font-semibold text-primary">
                     {formatPrice(item.variant.price * item.quantity)}
                   </span>

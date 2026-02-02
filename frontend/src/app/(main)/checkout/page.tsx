@@ -30,16 +30,23 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
+  const [useCoin, setUseCoin] = useState(false);
+  const [coinBalance, setCoinBalance] = useState(0);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   const fetchCheckoutData = useCallback(async () => {
     try {
       setLoading(true);
-      const [checkout, addressList] = await Promise.all([
+      const [checkout, addressList, coinWallet, wallet] = await Promise.all([
         apiClient.getCheckoutPreview(),
         apiClient.getAllAddresses(),
+        apiClient.getCoinWallet().catch(() => ({ balance: 0 })),
+        apiClient.getWalletBalance().catch(() => ({ availableBalance: 0 })),
       ]);
       setCheckoutData(checkout);
       setAddresses(addressList);
+      setCoinBalance(coinWallet.balance);
+      setWalletBalance(wallet.availableBalance);
 
       // Auto-select default address
       const defaultAddress = addressList.find((a) => a.isDefault) || addressList[0];
@@ -95,6 +102,7 @@ export default function CheckoutPage() {
         addressId: selectedAddress.id,
         paymentMethod,
         shopNotes: shopNotesArray.length > 0 ? shopNotesArray : undefined,
+        useCoin,
       });
 
       // Refresh cart after successful order
@@ -177,6 +185,10 @@ export default function CheckoutPage() {
           <PaymentMethodSection
             selectedMethod={paymentMethod}
             onMethodChange={setPaymentMethod}
+            useCoin={useCoin}
+            onUseCoinChange={setUseCoin}
+            coinBalance={coinBalance}
+            walletBalance={walletBalance}
           />
         </div>
 
