@@ -39,7 +39,7 @@ export class AdminWalletController {
   ) {}
 
   @Get()
-  @Permissions('wallet:read')
+  @Permissions('order:read')
   @ApiOperation({ summary: 'Get platform wallet balance' })
   @ApiResponse({
     status: 200,
@@ -59,7 +59,7 @@ export class AdminWalletController {
   }
 
   @Get('transactions')
-  @Permissions('wallet:read')
+  @Permissions('order:read')
   @ApiOperation({ summary: 'Get platform wallet transactions' })
   @ApiResponse({
     status: 200,
@@ -93,7 +93,7 @@ export class AdminWalletController {
   }
 
   @Get('escrows')
-  @Permissions('wallet:read')
+  @Permissions('order:read')
   @ApiOperation({ summary: 'Get escrow holds list' })
   @ApiResponse({
     status: 200,

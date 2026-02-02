@@ -260,7 +260,7 @@ export default function ShopOrdersPage() {
                       <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
                         <div className="flex items-center gap-1">
                           <User className="w-4 h-4" />
-                          <span>{order.buyer.username}</span>
+                          <span>{order.buyer.fullName || 'Khách hàng'}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <Phone className="w-4 h-4" />
@@ -337,7 +337,7 @@ export default function ShopOrdersPage() {
                   <div className="text-sm text-gray-600 space-y-1">
                     <div className="flex items-center gap-2">
                       <User className="w-4 h-4 text-gray-400" />
-                      <span>{selectedOrder.buyer.username}</span>
+                      <span>{selectedOrder.buyer.fullName || 'Khách hàng'}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{selectedOrder.receiverName}</span>
@@ -407,9 +407,38 @@ export default function ShopOrdersPage() {
                     <span className="text-gray-500">Phí vận chuyển</span>
                     <span>{formatPrice(selectedOrder.shippingFee)}</span>
                   </div>
+                  {selectedOrder.platformShipDiscount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Giảm phí vận chuyển (nền tảng)</span>
+                      <span>-{formatPrice(selectedOrder.platformShipDiscount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Xu sử dụng</span>
+                    <span className={selectedOrder.coinUsed > 0 ? 'text-green-600' : ''}>
+                      {selectedOrder.coinUsed > 0 ? `-${formatPrice(selectedOrder.coinUsed)}` : '0 xu'}
+                    </span>
+                  </div>
                   <div className="flex justify-between font-semibold pt-2 border-t">
-                    <span>Tổng cộng</span>
-                    <span className="text-primary">{formatPrice(selectedOrder.totalAmount)}</span>
+                    <span>Tổng đơn hàng</span>
+                    <span>{formatPrice(selectedOrder.totalAmount)}</span>
+                  </div>
+                </div>
+
+                {/* Shop Revenue */}
+                <div className="space-y-2 pt-2 border-t bg-blue-50 -mx-4 px-4 py-3 rounded-b">
+                  <h4 className="text-sm font-medium text-blue-800">Doanh thu Shop</h4>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-700">Tạm tính sản phẩm</span>
+                    <span className="text-blue-900">{formatPrice(selectedOrder.subtotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-700">Phí sàn ({selectedOrder.platformFeePercent}%)</span>
+                    <span className="text-red-600">-{formatPrice(selectedOrder.platformFee)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold pt-2 border-t border-blue-200">
+                    <span className="text-blue-800">Shop nhận được</span>
+                    <span className="text-primary">{formatPrice(selectedOrder.shopReceiveAmount)}</span>
                   </div>
                 </div>
 

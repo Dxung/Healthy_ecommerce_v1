@@ -99,7 +99,12 @@ export function OrderCard({
       {/* Items Preview (show first 2 items) */}
       <div className="divide-y">
         {order.items.slice(0, 2).map((item) => (
-          <div key={item.id} className="flex gap-4 p-4">
+          <Link
+            key={item.id}
+            href={`/products/${item.productId}`}
+            className="flex gap-4 p-4 hover:bg-gray-50 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
               {item.productImageUrl ? (
                 <img
@@ -114,14 +119,16 @@ export function OrderCard({
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-gray-900 line-clamp-1">{item.productName}</p>
+              <p className="font-medium text-gray-900 line-clamp-1 hover:text-primary">
+                {item.productName}
+              </p>
               <p className="text-sm text-gray-500">{item.variantName}</p>
               <div className="flex items-center justify-between mt-1">
                 <span className="text-sm text-gray-500">x{item.quantity}</span>
                 <span className="font-medium text-primary">{formatPrice(item.totalPrice)}</span>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
         {order.itemCount > 2 && (
           <div className="px-4 py-2 text-sm text-gray-500 text-center">

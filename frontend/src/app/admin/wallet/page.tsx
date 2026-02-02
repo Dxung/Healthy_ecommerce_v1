@@ -197,32 +197,17 @@ export default function AdminWalletPage() {
             </div>
           ) : (
             <>
-              {/* Balance Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <Wallet className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Số dư hiện tại</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {wallet?.formattedBalance || formatCurrency(0)}
-                      </p>
-                    </div>
+              {/* Balance Card */}
+              <div className="bg-white rounded-lg shadow p-6 max-w-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                    <Wallet className="w-6 h-6 text-green-600" />
                   </div>
-                </div>
-                <div className="bg-white rounded-lg shadow p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      <ShieldCheck className="w-6 h-6 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Số dư đóng băng</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {formatCurrency(wallet?.frozenBalance || 0)}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Số dư hiện tại</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {wallet?.formattedBalance || formatCurrency(0)}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -432,28 +417,28 @@ export default function AdminWalletPage() {
                         <tr key={escrow.id} className="hover:bg-gray-50">
                           <td className="px-4 py-4 whitespace-nowrap">
                             <span className="text-sm font-medium text-primary">
-                              {escrow.orderCode}
+                              {escrow.orderCode || '-'}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {escrow.shopName}
+                            {escrow.shopName || '-'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                            {escrow.formattedAmount}
+                            {escrow.formattedAmount || formatCurrency(escrow.amount || 0)}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                            {escrow.platformFeePercent.toFixed(2)}%
+                            {(escrow.platformFeePercent ?? 0).toFixed(2)}%
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-center">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${getEscrowStatusColor(escrow.status)}`}
                             >
                               {getEscrowStatusIcon(escrow.status)}
-                              {escrow.statusLabel}
+                              {escrow.statusLabel || escrow.status}
                             </span>
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(escrow.createdAt)}
+                            {escrow.createdAt ? formatDate(escrow.createdAt) : '-'}
                           </td>
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                             {escrow.releasedAt ? formatDate(escrow.releasedAt) : '-'}

@@ -121,7 +121,13 @@ export class ShopOrderResponseDto {
 
   subtotal: number;
   shippingFee: number;
+  platformFee: number;
+  platformFeePercent: number;
+  coinUsed: number;
+  platformShipDiscount: number;
   totalAmount: number;
+  /** Amount shop will receive = subtotal - platformFee */
+  shopReceiveAmount: number;
 
   buyerNote: string | null;
   shopNote: string | null;
@@ -162,7 +168,12 @@ export class ShopOrderResponseDto {
 
     this.subtotal = order.subtotal;
     this.shippingFee = order.shippingFee;
+    this.platformFee = order.platformFee;
+    this.platformFeePercent = order.platformFeePercent;
+    this.coinUsed = order.coinUsed;
+    this.platformShipDiscount = order.platformShipDiscount;
     this.totalAmount = order.totalAmount;
+    this.shopReceiveAmount = order.subtotal - order.platformFee;
 
     this.buyerNote = order.buyerNote;
     this.shopNote = order.shopNote;

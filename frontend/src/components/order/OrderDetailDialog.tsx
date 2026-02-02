@@ -187,7 +187,11 @@ export function OrderDetailDialog({
               {/* Items */}
               <div className="border rounded-lg divide-y">
                 {order.items.map((item) => (
-                  <div key={item.id} className="flex gap-4 p-4">
+                  <Link
+                    key={item.id}
+                    href={`/products/${item.productId}`}
+                    className="flex gap-4 p-4 hover:bg-gray-50 transition-colors"
+                  >
                     <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                       {item.productImageUrl ? (
                         <img
@@ -202,7 +206,7 @@ export function OrderDetailDialog({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900">{item.productName}</p>
+                      <p className="font-medium text-gray-900 hover:text-primary">{item.productName}</p>
                       <p className="text-sm text-gray-500">{item.variantName}</p>
                       <div className="flex items-center justify-between mt-1">
                         <span className="text-sm">
@@ -213,7 +217,7 @@ export function OrderDetailDialog({
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 

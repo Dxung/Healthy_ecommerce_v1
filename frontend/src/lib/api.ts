@@ -1292,7 +1292,7 @@ export interface ShopOrderListItemResponse {
   itemCount: number;
   buyer: {
     id: string;
-    username: string;
+    fullName: string | null;
     avatarUrl: string | null;
   };
   receiverName: string;
@@ -1316,7 +1316,7 @@ export interface ShopOrderResponse {
   paymentStatus: PaymentStatus;
   buyer: {
     id: string;
-    username: string;
+    fullName: string | null;
     avatarUrl: string | null;
   };
   receiverName: string;
@@ -1325,7 +1325,12 @@ export interface ShopOrderResponse {
   subtotal: number;
   shippingFee: number;
   platformFee: number;
+  platformFeePercent: number;
+  coinUsed: number;
+  platformShipDiscount: number;
   totalAmount: number;
+  /** Amount shop will receive = subtotal - platformFee */
+  shopReceiveAmount: number;
   buyerNote: string | null;
   shopNote: string | null;
   items: OrderItemResponse[];
