@@ -117,7 +117,10 @@ export class AdminShopController {
   @ApiOperation({ summary: 'Unsuspend a shop (admin action)' })
   @ApiResponse({ status: 200, description: 'Shop unsuspended successfully' })
   @ApiResponse({ status: 404, description: 'Shop not found' })
-  @ApiResponse({ status: 409, description: 'Shop is not suspended or is banned' })
+  @ApiResponse({
+    status: 409,
+    description: 'Shop is not suspended or is banned',
+  })
   unsuspendShop(
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<{ success: boolean; message: string }> {

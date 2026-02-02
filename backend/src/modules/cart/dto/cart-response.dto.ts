@@ -22,7 +22,12 @@ export class CartResponseDto {
     const shopGroups = new Map<
       string,
       {
-        shop: { id: string; name: string; slug: string; logoUrl: string | null };
+        shop: {
+          id: string;
+          name: string;
+          slug: string;
+          logoUrl: string | null;
+        };
         items: CartItemWithDetails[];
       }
     >();

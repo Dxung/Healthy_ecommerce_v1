@@ -3,7 +3,10 @@ import { AsyncLocalStorage } from 'async_hooks';
 import { ResultAsync, errAsync } from 'neverthrow';
 import type { ITypeORMAlsStore } from 'src/shared/als/interfaces/als-store.interface';
 import type { DomainError } from 'src/shared/types/domain-error.type';
-import type { PaginatedResult, PaginationParams } from 'src/shared/types/pagination.type';
+import type {
+  PaginatedResult,
+  PaginationParams,
+} from 'src/shared/types/pagination.type';
 import { createDomainError } from 'src/shared/types/domain-error.type';
 import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
 import { SHOP_ERRORS } from './errors/shop.errors';
@@ -55,7 +58,8 @@ export class AdminShopService implements IAdminShopService {
     if (!adminId) {
       return errAsync(
         createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
-          cause: 'Admin ID not found in ALS - shouldn\'t happen if AuthGuard is used',
+          cause:
+            "Admin ID not found in ALS - shouldn't happen if AuthGuard is used",
         }),
       );
     }
@@ -95,7 +99,8 @@ export class AdminShopService implements IAdminShopService {
     if (!adminId) {
       return errAsync(
         createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
-          cause: 'Admin ID not found in ALS - shouldn\'t happen if AuthGuard is used',
+          cause:
+            "Admin ID not found in ALS - shouldn't happen if AuthGuard is used",
         }),
       );
     }
@@ -135,7 +140,8 @@ export class AdminShopService implements IAdminShopService {
     if (!adminId) {
       return errAsync(
         createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
-          cause: 'Admin ID not found in ALS - shouldn\'t happen if AuthGuard is used',
+          cause:
+            "Admin ID not found in ALS - shouldn't happen if AuthGuard is used",
         }),
       );
     }
@@ -153,7 +159,9 @@ export class AdminShopService implements IAdminShopService {
         );
       }
 
-      return this.shopRepository.banShop(id, reason, adminId).map(() => undefined);
+      return this.shopRepository
+        .banShop(id, reason, adminId)
+        .map(() => undefined);
     });
   }
 }

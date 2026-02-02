@@ -396,7 +396,8 @@ export class ShopProductService implements IShopProductService {
           // No brand specified but shop is official - block
           return errAsync(
             createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_BRAND_REQUIRED, {
-              cause: 'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm',
+              cause:
+                'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm',
             }),
           );
         }
@@ -407,9 +408,13 @@ export class ShopProductService implements IShopProductService {
           .andThen((isOfficialForBrand) => {
             if (!isOfficialForBrand) {
               return errAsync(
-                createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_UNAUTHORIZED_BRAND, {
-                  cause: 'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký',
-                }),
+                createDomainError(
+                  PRODUCT_ERRORS.OFFICIAL_SHOP_UNAUTHORIZED_BRAND,
+                  {
+                    cause:
+                      'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký',
+                  },
+                ),
               );
             }
             return okAsync(undefined);
@@ -463,12 +468,20 @@ export class ShopProductService implements IShopProductService {
           this.createIngredientsForProduct(
             savedProduct.id,
             dto.ingredients ?? [],
-          ).map((ingredients) => ({ savedProduct, options, variants, ingredients })),
+          ).map((ingredients) => ({
+            savedProduct,
+            options,
+            variants,
+            ingredients,
+          })),
         )
         // Set allergen tags
         .andThen((ctx) =>
           this.allergenTagRepository
-            .setProductAllergenTags(ctx.savedProduct.id, dto.allergenTagIds ?? [])
+            .setProductAllergenTags(
+              ctx.savedProduct.id,
+              dto.allergenTagIds ?? [],
+            )
             .map(() => ctx),
         )
         // Set diet tags
@@ -479,7 +492,9 @@ export class ShopProductService implements IShopProductService {
         )
         // Create nutrition
         .andThen((ctx) =>
-          this.createNutritionForProduct(ctx.savedProduct.id, dto).map(() => ctx),
+          this.createNutritionForProduct(ctx.savedProduct.id, dto).map(
+            () => ctx,
+          ),
         )
         // Finalize product
         .andThen(({ savedProduct, options, variants, ingredients }) => {
@@ -616,7 +631,9 @@ export class ShopProductService implements IShopProductService {
       sodium: nutrition.sodium ?? null,
     });
 
-    return this.nutritionRepository.create(productNutrition).map(() => undefined);
+    return this.nutritionRepository
+      .create(productNutrition)
+      .map(() => undefined);
   }
 
   @WithPosition()
@@ -683,7 +700,9 @@ export class ShopProductService implements IShopProductService {
    * Checks if a hidden product can be shown.
    * Official shops cannot show products of non-official brands.
    */
-  private checkCanShowProduct(product: Product): ResultAsync<void, DomainError> {
+  private checkCanShowProduct(
+    product: Product,
+  ): ResultAsync<void, DomainError> {
     return this.officialBrandRepository
       .hasAnyActiveOfficialBrand(product.shopId)
       .andThen((isOfficialShop) => {
@@ -696,9 +715,13 @@ export class ShopProductService implements IShopProductService {
         if (!product.brandId) {
           // Product has no brand but shop is official - cannot show
           return errAsync(
-            createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT, {
-              cause: 'Shop chính hãng không thể hiện sản phẩm không có thương hiệu',
-            }),
+            createDomainError(
+              PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT,
+              {
+                cause:
+                  'Shop chính hãng không thể hiện sản phẩm không có thương hiệu',
+              },
+            ),
           );
         }
 
@@ -707,9 +730,13 @@ export class ShopProductService implements IShopProductService {
           .andThen((isOfficialForBrand) => {
             if (!isOfficialForBrand) {
               return errAsync(
-                createDomainError(PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT, {
-                  cause: 'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng',
-                }),
+                createDomainError(
+                  PRODUCT_ERRORS.OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT,
+                  {
+                    cause:
+                      'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng',
+                  },
+                ),
               );
             }
             return okAsync(undefined);

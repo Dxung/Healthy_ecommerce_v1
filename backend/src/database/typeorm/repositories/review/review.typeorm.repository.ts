@@ -24,7 +24,11 @@ import { Review } from 'src/modules/review/models/review.model';
 import { ReviewImage } from 'src/modules/review/models/review-image.model';
 import { ReviewReply } from 'src/modules/review/models/review-reply.model';
 import { ReviewStatus } from '../../entities/product/enums/review-status.enum';
-import { ORMReview, ORMReviewImage, ORMReviewReply } from '../../entities/product';
+import {
+  ORMReview,
+  ORMReviewImage,
+  ORMReviewReply,
+} from '../../entities/product';
 import { ORMReviewMapper } from '../../mappers/review.mapper.orm';
 import {
   REVIEW_ALIAS,
@@ -91,13 +95,21 @@ export class OrmReviewRepository implements IReviewRepository {
       });
 
     // Filter by rating if specified
-    if (filter?.rating !== undefined && filter.rating >= 1 && filter.rating <= 5) {
-      qb.andWhere(`${ReviewColumn.RATING} = :rating`, { rating: filter.rating });
+    if (
+      filter?.rating !== undefined &&
+      filter.rating >= 1 &&
+      filter.rating <= 5
+    ) {
+      qb.andWhere(`${ReviewColumn.RATING} = :rating`, {
+        rating: filter.rating,
+      });
     }
 
     // Filter by hasContent - reviews with non-empty content
     if (filter?.hasContent === true) {
-      qb.andWhere(`${REVIEW_ALIAS}.content IS NOT NULL AND ${REVIEW_ALIAS}.content != ''`);
+      qb.andWhere(
+        `${REVIEW_ALIAS}.content IS NOT NULL AND ${REVIEW_ALIAS}.content != ''`,
+      );
     }
 
     // Always load images for product reviews
@@ -248,7 +260,10 @@ export class OrmReviewRepository implements IReviewRepository {
 
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
       createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).andThen(() => this.findById(review.id, { withImages: true, withReply: true }))
+    )
+      .andThen(() =>
+        this.findById(review.id, { withImages: true, withReply: true }),
+      )
       .map((found) => found!);
   }
 
@@ -277,7 +292,9 @@ export class OrmReviewRepository implements IReviewRepository {
   }
 
   @WithPosition()
-  calculateProductRating(productId: string): ResultAsync<RatingResult, DomainError> {
+  calculateProductRating(
+    productId: string,
+  ): ResultAsync<RatingResult, DomainError> {
     const repo = this.getReviewRepository();
 
     return ResultAsync.fromPromise(
@@ -325,7 +342,9 @@ export class OrmReviewRepository implements IReviewRepository {
   // ======================== REPLY OPERATIONS ========================
 
   @WithPosition()
-  findReplyByReviewId(reviewId: string): ResultAsync<ReviewReply | null, DomainError> {
+  findReplyByReviewId(
+    reviewId: string,
+  ): ResultAsync<ReviewReply | null, DomainError> {
     const repo = this.getReplyRepository();
 
     return ResultAsync.fromPromise(
@@ -338,9 +357,8 @@ export class OrmReviewRepository implements IReviewRepository {
   findReplyById(id: string): ResultAsync<ReviewReply | null, DomainError> {
     const repo = this.getReplyRepository();
 
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMReviewMapper.replyToDomain(orm) : null));
   }
 

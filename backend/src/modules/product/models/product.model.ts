@@ -353,7 +353,8 @@ export class Product {
     if (params.thumbnailUrl !== undefined)
       this._thumbnailUrl = params.thumbnailUrl;
     if (params.isVisible !== undefined) this._isVisible = params.isVisible;
-    if (params.servingSize !== undefined) this._servingSize = params.servingSize;
+    if (params.servingSize !== undefined)
+      this._servingSize = params.servingSize;
     if (params.servingUnitId !== undefined)
       this._servingUnitId = params.servingUnitId;
 

@@ -38,7 +38,12 @@ export class AdminUserListResponseDto {
 
   constructor(
     data: AdminUserInfo[],
-    pagination: { page: number; limit: number; total: number; totalPages: number },
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    },
   ) {
     this.data = AdminUserResponseDto.fromList(data);
     this.pagination = pagination;

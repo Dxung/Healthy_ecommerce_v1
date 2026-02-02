@@ -18,7 +18,10 @@ import { Type } from 'class-transformer';
  * DTO for product nutrition information.
  */
 export class CreateProductNutritionDto {
-  @ApiPropertyOptional({ description: 'Calories per serving (kcal)', example: 150 })
+  @ApiPropertyOptional({
+    description: 'Calories per serving (kcal)',
+    example: 150,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -30,7 +33,10 @@ export class CreateProductNutritionDto {
   @Min(0)
   protein?: number;
 
-  @ApiPropertyOptional({ description: 'Carbohydrates per serving (g)', example: 20 })
+  @ApiPropertyOptional({
+    description: 'Carbohydrates per serving (g)',
+    example: 20,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -48,7 +54,10 @@ export class CreateProductNutritionDto {
   @Min(0)
   fat?: number;
 
-  @ApiPropertyOptional({ description: 'Saturated fat per serving (g)', example: 2 })
+  @ApiPropertyOptional({
+    description: 'Saturated fat per serving (g)',
+    example: 2,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)

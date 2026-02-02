@@ -7,7 +7,10 @@ import type { CreateProductArgumentDto } from './dto/product/create-product-argu
 import type { UpdateProductArgumentDto } from './dto/product/update-product-argument.dto';
 import type { CreateVariantArgumentDto } from './dto/product/create-variant-argument.dto';
 import type { UpdateVariantArgumentDto } from './dto/product/update-variant-argument.dto';
-import type { PaginatedResult, PaginationParams } from 'src/shared/types/pagination.type';
+import type {
+  PaginatedResult,
+  PaginationParams,
+} from 'src/shared/types/pagination.type';
 import type { ProductStatus } from 'src/database/typeorm/entities/product/enums/product-status.enum';
 
 /**
@@ -76,7 +79,9 @@ export interface IShopProductService {
    * @param dto - Create product DTO with options and variants.
    * @returns The created product.
    */
-  createProduct(dto: CreateProductArgumentDto): ResultAsync<Product, DomainError>;
+  createProduct(
+    dto: CreateProductArgumentDto,
+  ): ResultAsync<Product, DomainError>;
 
   /**
    * Updates a product owned by the current user's shop.
@@ -139,7 +144,10 @@ export interface IShopProductService {
    * @param imageUrl - The image URL.
    * @returns The created image.
    */
-  addImage(productId: string, imageUrl: string): ResultAsync<ProductImage, DomainError>;
+  addImage(
+    productId: string,
+    imageUrl: string,
+  ): ResultAsync<ProductImage, DomainError>;
 
   /**
    * Removes an image from a product.
@@ -147,7 +155,10 @@ export interface IShopProductService {
    * @param imageId - The image ID.
    * @returns void on success.
    */
-  removeImage(productId: string, imageId: string): ResultAsync<void, DomainError>;
+  removeImage(
+    productId: string,
+    imageId: string,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Reorders product images.
@@ -155,7 +166,10 @@ export interface IShopProductService {
    * @param imageIds - Image IDs in the new order.
    * @returns void on success.
    */
-  reorderImages(productId: string, imageIds: string[]): ResultAsync<void, DomainError>;
+  reorderImages(
+    productId: string,
+    imageIds: string[],
+  ): ResultAsync<void, DomainError>;
 
   // ======================== VARIANT MANAGEMENT ========================
 
@@ -190,5 +204,8 @@ export interface IShopProductService {
    * @param variantId - The variant ID.
    * @returns void on success.
    */
-  deleteVariant(productId: string, variantId: string): ResultAsync<void, DomainError>;
+  deleteVariant(
+    productId: string,
+    variantId: string,
+  ): ResultAsync<void, DomainError>;
 }

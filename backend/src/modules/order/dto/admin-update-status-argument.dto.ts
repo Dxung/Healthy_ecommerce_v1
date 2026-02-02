@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { OrderStatus } from 'src/database/typeorm/entities/order/enums/order-status.enum';
 
 export class AdminUpdateOrderStatusArgumentDto {

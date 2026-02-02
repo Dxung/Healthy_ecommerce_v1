@@ -8,6 +8,7 @@ import { PaymentService } from './payment.service';
 import { VnpayService } from './services/vnpay.service';
 import { WalletService } from './services/wallet.service';
 import { EscrowService } from './services/escrow.service';
+import { TopupReconcileCronjob } from './cronjobs/topup-reconcile.cronjob';
 import {
   PAYMENT_SERVICE,
   VNPAY_SERVICE,
@@ -15,11 +16,9 @@ import {
   ESCROW_SERVICE,
 } from './tokens/payment.token';
 import { vnpayConfig } from './configs/vnpay.config';
-import { PaymentTimeoutCronjob } from './cronjobs/payment-timeout.cronjob';
-import { EscrowReleaseCronjob } from './cronjobs/escrow-release.cronjob';
-import { RefundProcessorCronjob } from './cronjobs/refund-processor.cronjob';
 import { DatabaseModule } from 'src/database/database.module';
 import { AlsModule } from 'src/shared/als/als.module';
+import { UoWModule } from 'src/shared/unitOfWork/uow.module';
 import { AuthModule } from '../auth/auth.module';
 import { SessionModule } from '../session/session.module';
 import { ShopModule } from '../shop/shop.module';
@@ -40,6 +39,7 @@ import { OrderModule } from '../order/order.module';
   imports: [
     DatabaseModule,
     AlsModule,
+    UoWModule,
     AuthModule,
     SessionModule,
     // forwardRef required: ShopModule doesn't import PaymentModule, but WalletService
@@ -70,9 +70,7 @@ import { OrderModule } from '../order/order.module';
       useClass: EscrowService,
     },
     // Cronjobs
-    PaymentTimeoutCronjob,
-    EscrowReleaseCronjob,
-    RefundProcessorCronjob,
+    TopupReconcileCronjob,
   ],
   controllers: [PaymentController, WalletController, ShopWalletController],
   exports: [PAYMENT_SERVICE, WALLET_SERVICE, ESCROW_SERVICE, VNPAY_SERVICE],

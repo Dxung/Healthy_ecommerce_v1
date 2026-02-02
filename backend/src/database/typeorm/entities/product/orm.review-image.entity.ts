@@ -37,7 +37,9 @@ export class ORMReviewImage {
   // ======================== RELATIONSHIPS ========================
 
   /** Review this image belongs to */
-  @ManyToOne(() => ORMReview, (review) => review.images, { onDelete: 'CASCADE' })
+  @ManyToOne(() => ORMReview, (review) => review.images, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'review_id' })
   review: ORMReview;
 }

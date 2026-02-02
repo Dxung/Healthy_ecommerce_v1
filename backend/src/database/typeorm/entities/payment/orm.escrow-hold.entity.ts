@@ -29,6 +29,29 @@ export class ORMEscrowHold {
   @Column({ type: 'decimal', precision: 15, scale: 2 })
   amount: number;
 
+  /** Order subtotal (original value before coin discount) - used to calculate platform fee */
+  @Column({ name: 'order_subtotal', type: 'decimal', precision: 15, scale: 2 })
+  orderSubtotal: number;
+
+  /** Coins used by buyer in this order */
+  @Column({
+    name: 'coin_used',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  coinUsed: number;
+
+  /** Platform fee percent at order creation time (already includes badge discount) */
+  @Column({
+    name: 'platform_fee_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+  })
+  platformFeePercent: number;
+
   @Column({
     type: 'enum',
     enum: EscrowStatus,

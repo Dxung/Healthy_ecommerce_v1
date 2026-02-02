@@ -7,7 +7,10 @@ import {
   PaginationOptions,
   PaginatedResult,
 } from 'src/modules/payment/repository/wallet.repository.interface';
-import { Wallet } from 'src/modules/payment/models/wallet.model';
+import {
+  Wallet,
+  PLATFORM_OWNER_ID,
+} from 'src/modules/payment/models/wallet.model';
 import { WalletTransaction } from 'src/modules/payment/models/wallet-transaction.model';
 import { ORMWallet } from '../../entities/payment/orm.wallet.entity';
 import { ORMWalletTransaction } from '../../entities/payment/orm.wallet-transaction.entity';
@@ -29,6 +32,18 @@ export class OrmWalletRepository implements IWalletRepository {
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
+
+  @WithPosition()
+  findById(walletId: string): ResultAsync<Wallet | null, DomainError> {
+    const repo = this.getWalletRepository();
+
+    return ResultAsync.fromPromise(
+      repo.findOne({ where: { id: walletId } }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((ormWallet) =>
+      ormWallet ? ORMWalletMapper.toDomain(ormWallet) : null,
+    );
+  }
 
   @WithPosition()
   findByOwner(
@@ -77,6 +92,24 @@ export class OrmWalletRepository implements IWalletRepository {
         );
       },
     );
+  }
+
+  @WithPosition()
+  findOrCreateForPlatform(): ResultAsync<Wallet, DomainError> {
+    return this.findByOwner(
+      WalletOwnerType.PLATFORM,
+      PLATFORM_OWNER_ID,
+    ).andThen((existingWallet) => {
+      if (existingWallet) {
+        return okAsync(existingWallet);
+      }
+      const newWallet = Wallet.createForPlatform();
+      return this.saveWalletWithConflictRetry(
+        newWallet,
+        WalletOwnerType.PLATFORM,
+        PLATFORM_OWNER_ID,
+      );
+    });
   }
 
   /**

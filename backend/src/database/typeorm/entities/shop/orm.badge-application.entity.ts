@@ -53,7 +53,12 @@ export class ORMBadgeApplication {
   })
   status: BadgeApplicationStatus;
 
-  @Column({ name: 'rejection_reason', type: 'varchar', length: 500, nullable: true })
+  @Column({
+    name: 'rejection_reason',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
   rejectionReason: string | null;
 
   @Column({ name: 'reviewed_by', type: 'uuid', nullable: true })

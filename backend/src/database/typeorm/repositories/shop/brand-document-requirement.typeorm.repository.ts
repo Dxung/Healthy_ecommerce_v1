@@ -19,14 +19,18 @@ import { PG_UNIQUE_VIOLATION } from 'src/database/constant/postgresql-error.cons
 import { sanitizePostgresError } from '../../guards/sanitize-postgres-error.util';
 
 @Injectable()
-export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequirementRepository {
+export class OrmBrandDocumentRequirementRepository
+  implements IBrandDocumentRequirementRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  create(requirement: BrandDocumentRequirement): ResultAsync<BrandDocumentRequirement, DomainError> {
+  create(
+    requirement: BrandDocumentRequirement,
+  ): ResultAsync<BrandDocumentRequirement, DomainError> {
     const repo = this.getRepository();
     const ormEntity = ORMBrandDocumentRequirementMapper.toOrm(requirement);
 
@@ -35,10 +39,15 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
         const safeError = sanitizePostgresError(error.driverError);
 
         if (error.driverError.code === PG_UNIQUE_VIOLATION) {
-          if (error.driverError.constraint === 'uq_brand_document_requirement') {
-            return createDomainError(BADGE_APPLICATION_ERRORS.REQUIREMENT_ALREADY_EXISTS, {
-              cause: safeError,
-            });
+          if (
+            error.driverError.constraint === 'uq_brand_document_requirement'
+          ) {
+            return createDomainError(
+              BADGE_APPLICATION_ERRORS.REQUIREMENT_ALREADY_EXISTS,
+              {
+                cause: safeError,
+              },
+            );
           }
         }
       }
@@ -47,11 +56,12 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
   }
 
   @WithPosition()
-  findById(id: string): ResultAsync<BrandDocumentRequirement | null, DomainError> {
+  findById(
+    id: string,
+  ): ResultAsync<BrandDocumentRequirement | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormEntity) => {
       if (!ormEntity) return null;
       return ORMBrandDocumentRequirementMapper.toDomain(ormEntity);
@@ -59,7 +69,9 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
   }
 
   @WithPosition()
-  findActiveByBrand(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError> {
+  findActiveByBrand(
+    brandId: string,
+  ): ResultAsync<BrandDocumentRequirement[], DomainError> {
     const repo = this.getRepository();
     return ResultAsync.fromPromise(
       repo.find({
@@ -68,11 +80,15 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
         order: { createdAt: 'ASC' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormEntities) => ORMBrandDocumentRequirementMapper.toDomainList(ormEntities));
+    ).map((ormEntities) =>
+      ORMBrandDocumentRequirementMapper.toDomainList(ormEntities),
+    );
   }
 
   @WithPosition()
-  findAllByBrand(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError> {
+  findAllByBrand(
+    brandId: string,
+  ): ResultAsync<BrandDocumentRequirement[], DomainError> {
     const repo = this.getRepository();
     return ResultAsync.fromPromise(
       repo.find({
@@ -81,7 +97,9 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
         order: { createdAt: 'ASC' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormEntities) => ORMBrandDocumentRequirementMapper.toDomainList(ormEntities));
+    ).map((ormEntities) =>
+      ORMBrandDocumentRequirementMapper.toDomainList(ormEntities),
+    );
   }
 
   @WithPosition()
@@ -97,7 +115,9 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
   }
 
   @WithPosition()
-  update(requirement: BrandDocumentRequirement): ResultAsync<BrandDocumentRequirement, DomainError> {
+  update(
+    requirement: BrandDocumentRequirement,
+  ): ResultAsync<BrandDocumentRequirement, DomainError> {
     const repo = this.getRepository();
 
     return ResultAsync.fromPromise(
@@ -123,9 +143,8 @@ export class OrmBrandDocumentRequirementRepository implements IBrandDocumentRequ
   @WithPosition()
   delete(id: string): ResultAsync<void, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.delete(id),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.delete(id), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map(() => undefined);
   }
 

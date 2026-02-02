@@ -12,7 +12,10 @@ export interface IMealLogRepository {
   /**
    * Finds all meal logs for a user on a specific date.
    */
-  findByUserAndDate(userId: string, date: Date): ResultAsync<DailyMealLog[], DomainError>;
+  findByUserAndDate(
+    userId: string,
+    date: Date,
+  ): ResultAsync<DailyMealLog[], DomainError>;
 
   /**
    * Finds all meal logs for a user within a date range.
@@ -59,5 +62,8 @@ export interface IMealLogRepository {
   /**
    * Get total calories for a user on a specific date.
    */
-  getTotalCaloriesForDate(userId: string, date: Date): ResultAsync<number, DomainError>;
+  getTotalCaloriesForDate(
+    userId: string,
+    date: Date,
+  ): ResultAsync<number, DomainError>;
 }

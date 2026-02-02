@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, LessThan } from 'typeorm';
-import { ResultAsync } from 'neverthrow';
+import { ResultAsync, errAsync } from 'neverthrow';
 import { AsyncLocalStorage } from 'async_hooks';
 import {
   IOrderRepository,
@@ -292,18 +292,42 @@ export class OrmOrderRepository implements IOrderRepository {
   }
 
   @WithPosition()
+  findByIdWithLock(orderId: string): ResultAsync<Order | null, DomainError> {
+    const em = this.getEntityManager();
+    if (!em) {
+      return errAsync(
+        createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
+          cause: 'findByIdWithLock must be called within a transaction',
+        }),
+      );
+    }
+
+    const repo = em.getRepository(ORMOrder);
+
+    return ResultAsync.fromPromise(
+      repo.findOne({
+        where: { id: orderId },
+        relations: ['items'],
+        lock: { mode: 'pessimistic_write' },
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((ormOrder) => (ormOrder ? ORMOrderMapper.toDomain(ormOrder) : null));
+  }
+
+  @WithPosition()
   findOrdersForAutoComplete(
-    daysAfterDelivery: number,
+    daysAfterShipped: number,
   ): ResultAsync<Order[], DomainError> {
     const repo = this.getOrderRepository();
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysAfterDelivery);
+    cutoffDate.setDate(cutoffDate.getDate() - daysAfterShipped);
 
+    // Find orders that have been SHIPPING for X days (buyer hasn't confirmed receipt)
     return ResultAsync.fromPromise(
       repo.find({
         where: {
-          status: OrderStatus.DELIVERED,
-          deliveredAt: LessThan(cutoffDate),
+          status: OrderStatus.SHIPPING,
+          shippedAt: LessThan(cutoffDate),
         },
         relations: ['items'],
       }),
@@ -487,23 +511,6 @@ export class OrmOrderRepository implements IOrderRepository {
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
       createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((saved) => ORMOrderMapper.orderItemToDomain(saved));
-  }
-
-  // ===================== REFUND PROCESSING =====================
-
-  @WithPosition()
-  findCancelledOrdersNeedingRefund(): ResultAsync<Order[], DomainError> {
-    const repo = this.getOrderRepository();
-
-    return ResultAsync.fromPromise(
-      repo.find({
-        where: {
-          status: OrderStatus.CANCELLED,
-          paymentStatus: PaymentStatus.PAID,
-        },
-      }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormOrders) => ormOrders.map((orm) => ORMOrderMapper.toDomain(orm)));
   }
 
   // ===================== PAYMENT TIMEOUT =====================

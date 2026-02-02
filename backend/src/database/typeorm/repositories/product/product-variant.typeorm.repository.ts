@@ -296,11 +296,7 @@ export class OrmProductVariantRepository implements IProductVariantRepository {
       })(),
       (error) => {
         // Handle custom errors
-        if (
-          typeof error === 'object' &&
-          error !== null &&
-          'type' in error
-        ) {
+        if (typeof error === 'object' && error !== null && 'type' in error) {
           const typedError = error as {
             type: string;
             variantId?: string;
@@ -314,9 +310,12 @@ export class OrmProductVariantRepository implements IProductVariantRepository {
             });
           }
           if (typedError.type === 'INSUFFICIENT_STOCK') {
-            return createDomainError(PRODUCT_ERRORS.VARIANT_INSUFFICIENT_STOCK, {
-              cause: `Variant "${typedError.variantName}" has ${typedError.available} in stock, but ${typedError.required} required`,
-            });
+            return createDomainError(
+              PRODUCT_ERRORS.VARIANT_INSUFFICIENT_STOCK,
+              {
+                cause: `Variant "${typedError.variantName}" has ${typedError.available} in stock, but ${typedError.required} required`,
+              },
+            );
           }
         }
         return createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error });
@@ -333,28 +332,26 @@ export class OrmProductVariantRepository implements IProductVariantRepository {
     }
 
     const em = this.getEntityManager() ?? this.dataSource.manager;
-    const variantIds = items.map((item) => item.variantId);
-    const quantityMap = new Map(
-      items.map((item) => [item.variantId, item.quantity]),
+
+    // Sort by variantId to prevent deadlock when multiple transactions run concurrently
+    const sortedItems = [...items].sort((a, b) =>
+      a.variantId.localeCompare(b.variantId),
     );
 
     return ResultAsync.fromPromise(
       (async () => {
-        // Find variants to restore stock
-        const variants = await em.getRepository(ORMProductVariant).find({
-          where: { id: In(variantIds) },
-        });
-
-        // Restore stock for each variant
-        for (const variant of variants) {
-          const restoreQty = quantityMap.get(variant.id) ?? 0;
-          variant.stockQuantity += restoreQty;
-          variant.updatedAt = new Date();
-        }
-
-        // Save all variants
-        if (variants.length > 0) {
-          await em.getRepository(ORMProductVariant).save(variants);
+        // Use atomic SQL UPDATE to prevent race conditions
+        // Each update is: stock_quantity = stock_quantity + restore_qty
+        for (const item of sortedItems) {
+          await em
+            .createQueryBuilder()
+            .update(ORMProductVariant)
+            .set({
+              stockQuantity: () => `stock_quantity + ${item.quantity}`,
+              updatedAt: new Date(),
+            })
+            .where('id = :id', { id: item.variantId })
+            .execute();
         }
       })(),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),

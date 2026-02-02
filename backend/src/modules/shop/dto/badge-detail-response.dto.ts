@@ -24,10 +24,18 @@ export class BadgeRequirementResponseDto {
   documentTypeName: string | null;
 
   // Attribute requirement fields
-  @ApiProperty({ enum: ShopAttributeCode, description: 'Attribute code', nullable: true })
+  @ApiProperty({
+    enum: ShopAttributeCode,
+    description: 'Attribute code',
+    nullable: true,
+  })
   attributeCode: ShopAttributeCode | null;
 
-  @ApiProperty({ enum: ComparisonOperator, description: 'Comparison operator', nullable: true })
+  @ApiProperty({
+    enum: ComparisonOperator,
+    description: 'Comparison operator',
+    nullable: true,
+  })
   operator: ComparisonOperator | null;
 
   @ApiProperty({ description: 'Attribute value', nullable: true })
@@ -64,7 +72,10 @@ export class BadgeDetailResponseDto {
   @ApiProperty({ description: 'Badge description', nullable: true })
   description: string | null;
 
-  @ApiProperty({ description: 'Platform fee discount percentage', nullable: true })
+  @ApiProperty({
+    description: 'Platform fee discount percentage',
+    nullable: true,
+  })
   platformFeeDiscountPercent: number | null;
 
   @ApiProperty({ description: 'Search boost multiplier', nullable: true })
@@ -76,7 +87,10 @@ export class BadgeDetailResponseDto {
   @ApiProperty({ description: 'Whether badge is currently active' })
   isActive: boolean;
 
-  @ApiProperty({ description: 'Badge requirements', type: [BadgeRequirementResponseDto] })
+  @ApiProperty({
+    description: 'Badge requirements',
+    type: [BadgeRequirementResponseDto],
+  })
   requirements: BadgeRequirementResponseDto[];
 
   constructor(badge: ShopBadge) {

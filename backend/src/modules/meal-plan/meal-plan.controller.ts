@@ -181,15 +181,17 @@ export class MealPlanController {
   @HttpCode(HttpStatus.NO_CONTENT)
   setDietPreferences(@Body() dto: UpdateDietPreferencesDto): Promise<void> {
     const userId = this.getUserId();
-    return this.mealPlanService.setDietPreferences(userId, dto.dietTagIds).match(
-      () => undefined,
-      (error) => {
-        throw MealPlanErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
+    return this.mealPlanService
+      .setDietPreferences(userId, dto.dietTagIds)
+      .match(
+        () => undefined,
+        (error) => {
+          throw MealPlanErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   /**
@@ -215,7 +217,9 @@ export class MealPlanController {
    */
   @Post('allergen-exclusions')
   @HttpCode(HttpStatus.NO_CONTENT)
-  setAllergenExclusions(@Body() dto: UpdateAllergenExclusionsDto): Promise<void> {
+  setAllergenExclusions(
+    @Body() dto: UpdateAllergenExclusionsDto,
+  ): Promise<void> {
     const userId = this.getUserId();
     return this.mealPlanService
       .setAllergenExclusions(userId, dto.allergenTagIds)
@@ -299,7 +303,9 @@ export class MealPlanController {
    */
   @Post('meals/from-product')
   @HttpCode(HttpStatus.CREATED)
-  addMealFromProduct(@Body() dto: AddMealFromProductDto): Promise<MealLogResponseDto> {
+  addMealFromProduct(
+    @Body() dto: AddMealFromProductDto,
+  ): Promise<MealLogResponseDto> {
     const userId = this.getUserId();
     return this.mealPlanService.addMealFromProduct(userId, dto).match(
       (log) => new MealLogResponseDto(log),
@@ -317,7 +323,9 @@ export class MealPlanController {
    */
   @Post('meals/from-preset')
   @HttpCode(HttpStatus.CREATED)
-  addMealFromPreset(@Body() dto: AddMealFromPresetDto): Promise<MealLogResponseDto> {
+  addMealFromPreset(
+    @Body() dto: AddMealFromPresetDto,
+  ): Promise<MealLogResponseDto> {
     const userId = this.getUserId();
     return this.mealPlanService.addMealFromPreset(userId, dto).match(
       (log) => new MealLogResponseDto(log),
@@ -528,7 +536,9 @@ export class MealPlanController {
    */
   @Delete('presets/:presetId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  deletePreset(@Param('presetId', ParseUUIDPipe) presetId: string): Promise<void> {
+  deletePreset(
+    @Param('presetId', ParseUUIDPipe) presetId: string,
+  ): Promise<void> {
     const userId = this.getUserId();
     return this.mealPlanService.deletePreset(userId, presetId).match(
       () => undefined,
@@ -594,15 +604,17 @@ export class MealPlanController {
     @Body() dto: VotePresetDto,
   ): Promise<void> {
     const userId = this.getUserId();
-    return this.mealPlanService.votePreset(userId, presetId, dto.voteType).match(
-      () => undefined,
-      (error) => {
-        throw MealPlanErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
+    return this.mealPlanService
+      .votePreset(userId, presetId, dto.voteType)
+      .match(
+        () => undefined,
+        (error) => {
+          throw MealPlanErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   /**
@@ -610,7 +622,9 @@ export class MealPlanController {
    */
   @Delete('presets/:presetId/vote')
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeVote(@Param('presetId', ParseUUIDPipe) presetId: string): Promise<void> {
+  removeVote(
+    @Param('presetId', ParseUUIDPipe) presetId: string,
+  ): Promise<void> {
     const userId = this.getUserId();
     return this.mealPlanService.removeVote(userId, presetId).match(
       () => undefined,
@@ -648,7 +662,9 @@ export class MealPlanController {
    */
   @Post('favorites/:presetId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  addFavorite(@Param('presetId', ParseUUIDPipe) presetId: string): Promise<void> {
+  addFavorite(
+    @Param('presetId', ParseUUIDPipe) presetId: string,
+  ): Promise<void> {
     const userId = this.getUserId();
     return this.mealPlanService.addFavorite(userId, presetId).match(
       () => undefined,
@@ -666,7 +682,9 @@ export class MealPlanController {
    */
   @Delete('favorites/:presetId')
   @HttpCode(HttpStatus.NO_CONTENT)
-  removeFavorite(@Param('presetId', ParseUUIDPipe) presetId: string): Promise<void> {
+  removeFavorite(
+    @Param('presetId', ParseUUIDPipe) presetId: string,
+  ): Promise<void> {
     const userId = this.getUserId();
     return this.mealPlanService.removeFavorite(userId, presetId).match(
       () => undefined,

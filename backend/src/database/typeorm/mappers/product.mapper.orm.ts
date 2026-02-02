@@ -91,7 +91,8 @@ export class ORMProductMapper {
     orm.totalRatings = domain.totalRatings;
     orm.isOfficialApproved = domain.isOfficialApproved;
     orm.isVisible = domain.isVisible;
-    orm.servingSize = domain.servingSize !== null ? String(domain.servingSize) : null;
+    orm.servingSize =
+      domain.servingSize !== null ? String(domain.servingSize) : null;
     orm.servingUnitId = domain.servingUnitId;
     orm.status = domain.status;
     orm.createdAt = domain.createdAt;
@@ -208,7 +209,10 @@ export class ORMProductMapper {
     // Ensure expiryDate is a proper Date object (PostgreSQL date type may return string)
     let expiryDate: Date | null = null;
     if (orm.expiryDate) {
-      expiryDate = orm.expiryDate instanceof Date ? orm.expiryDate : new Date(orm.expiryDate);
+      expiryDate =
+        orm.expiryDate instanceof Date
+          ? orm.expiryDate
+          : new Date(orm.expiryDate);
     }
 
     return new ProductVariant(
@@ -242,7 +246,8 @@ export class ORMProductMapper {
     orm.stockQuantity = domain.stockQuantity;
     orm.imageUrl = domain.imageUrl;
     orm.sellingUnitId = domain.sellingUnitId;
-    orm.unitQuantity = domain.unitQuantity !== null ? String(domain.unitQuantity) : null;
+    orm.unitQuantity =
+      domain.unitQuantity !== null ? String(domain.unitQuantity) : null;
     orm.isActive = domain.isActive;
     orm.expiryDate = domain.expiryDate;
     orm.createdAt = domain.createdAt;

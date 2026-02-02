@@ -7,6 +7,11 @@ import {
 import { WalletOwnerType } from 'src/database/typeorm/entities/payment/enums/wallet-owner-type.enum';
 import { PAYMENT_ERRORS } from '../errors/payment.errors';
 
+/** Platform wallet ID - singleton wallet for the platform */
+export const PLATFORM_WALLET_ID = '019c1d09-20bb-7c17-8900-4930e2a2af86';
+/** Platform owner ID - used as ownerId for platform wallet */
+export const PLATFORM_OWNER_ID = '019c1774-3fb3-72df-b6c7-e017dae96caf';
+
 /**
  * Wallet Domain Model
  * Represents a wallet for buyers or shops.
@@ -45,6 +50,22 @@ export class Wallet {
       uuidv7(),
       WalletOwnerType.SHOP,
       shopId,
+      0,
+      0,
+      0,
+      new Date(),
+    );
+  }
+
+  /**
+   * Creates the platform wallet (singleton)
+   * Uses a fixed ID to ensure only one platform wallet exists
+   */
+  static createForPlatform(): Wallet {
+    return new Wallet(
+      PLATFORM_WALLET_ID,
+      WalletOwnerType.PLATFORM,
+      PLATFORM_OWNER_ID,
       0,
       0,
       0,

@@ -14,7 +14,9 @@ export class ShopOfficialBrandResponseDto {
   @ApiProperty({ description: 'Brand ID' })
   brandId: string;
 
-  @ApiPropertyOptional({ description: 'Application ID that granted this status' })
+  @ApiPropertyOptional({
+    description: 'Application ID that granted this status',
+  })
   applicationId: string | null;
 
   @ApiProperty({ description: 'Date when official status was granted' })
@@ -29,7 +31,9 @@ export class ShopOfficialBrandResponseDto {
   @ApiPropertyOptional({ description: 'Reason for revocation' })
   revokedReason: string | null;
 
-  @ApiProperty({ description: 'Whether the official status is currently active' })
+  @ApiProperty({
+    description: 'Whether the official status is currently active',
+  })
   isActive: boolean;
 
   @ApiProperty({ description: 'Whether the official status has expired' })

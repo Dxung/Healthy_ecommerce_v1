@@ -71,7 +71,9 @@ export interface IReviewService {
    * @param orderItemId - The order item ID
    * @returns The Review or null if not found
    */
-  getReviewByOrderItemId(orderItemId: string): ResultAsync<Review | null, DomainError>;
+  getReviewByOrderItemId(
+    orderItemId: string,
+  ): ResultAsync<Review | null, DomainError>;
 
   /**
    * Gets all reviews for a product (paginated).

@@ -27,9 +27,8 @@ export class OrmDocumentTypeRepository implements IDocumentTypeRepository {
     const repo = this.getRepository();
     const ormDocType = ORMDocumentTypeMapper.toOrm(documentType);
 
-    return ResultAsync.fromPromise(
-      repo.save(ormDocType),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.save(ormDocType), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((saved) => ORMDocumentTypeMapper.toDomain(saved));
   }
 
@@ -140,9 +139,14 @@ export class OrmDocumentTypeRepository implements IDocumentTypeRepository {
     return ResultAsync.fromPromise(
       repo
         .createQueryBuilder('dt')
-        .leftJoinAndSelect('dt.badgeRequirements', 'br', 'br.isActive = :isActive', {
-          isActive: true,
-        })
+        .leftJoinAndSelect(
+          'dt.badgeRequirements',
+          'br',
+          'br.isActive = :isActive',
+          {
+            isActive: true,
+          },
+        )
         .leftJoinAndSelect('br.badge', 'b')
         .orderBy('dt.name', 'ASC')
         .getMany(),

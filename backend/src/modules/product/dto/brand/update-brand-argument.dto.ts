@@ -1,10 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  IsOptional,
-  IsString,
-  IsBoolean,
-  MaxLength,
-} from 'class-validator';
+import { IsOptional, IsString, IsBoolean, MaxLength } from 'class-validator';
 
 /**
  * DTO for updating an existing brand.

@@ -116,35 +116,35 @@ export class AdminUserService implements IAdminUserService {
     // Check if target user is super_admin (protected)
     return this.checkSuperAdminProtection(userId).andThen(() =>
       this.userCoreRepository.findUserById(userId).andThen((user) => {
-      if (!user) {
-        return errAsync(
-          createDomainError(USER_ERRORS.USER_NOT_FOUND, { cause: null }),
-        );
-      }
-
-      // Check if already suspended
-      if (user.status === UserStatus.SUSPENDED) {
-        return errAsync(
-          createDomainError(USER_ERRORS.USER_ALREADY_SUSPENDED, {
-            cause: null,
-          }),
-        );
-      }
-
-      // Update user status to SUSPENDED
-      user.changeStatus(UserStatus.SUSPENDED);
-
-      // Save user and delete all sessions
-      return this.userCoreRepository
-        .updateUser(user)
-        .andThen(() => this.sessionService.deleteAllUserSessions(userId))
-        .map((deletedCount) => {
-          this.logger.log(
-            `User ${userId} suspended by admin. Reason: ${reason}. ${deletedCount} sessions removed.`,
-            'AdminUserService',
+        if (!user) {
+          return errAsync(
+            createDomainError(USER_ERRORS.USER_NOT_FOUND, { cause: null }),
           );
-          return undefined;
-        });
+        }
+
+        // Check if already suspended
+        if (user.status === UserStatus.SUSPENDED) {
+          return errAsync(
+            createDomainError(USER_ERRORS.USER_ALREADY_SUSPENDED, {
+              cause: null,
+            }),
+          );
+        }
+
+        // Update user status to SUSPENDED
+        user.changeStatus(UserStatus.SUSPENDED);
+
+        // Save user and delete all sessions
+        return this.userCoreRepository
+          .updateUser(user)
+          .andThen(() => this.sessionService.deleteAllUserSessions(userId))
+          .map((deletedCount) => {
+            this.logger.log(
+              `User ${userId} suspended by admin. Reason: ${reason}. ${deletedCount} sessions removed.`,
+              'AdminUserService',
+            );
+            return undefined;
+          });
       }),
     );
   }
@@ -170,29 +170,29 @@ export class AdminUserService implements IAdminUserService {
     // Check if target user is super_admin (protected)
     return this.checkSuperAdminProtection(userId).andThen(() =>
       this.userCoreRepository.findUserById(userId).andThen((user) => {
-      if (!user) {
-        return errAsync(
-          createDomainError(USER_ERRORS.USER_NOT_FOUND, { cause: null }),
-        );
-      }
+        if (!user) {
+          return errAsync(
+            createDomainError(USER_ERRORS.USER_NOT_FOUND, { cause: null }),
+          );
+        }
 
-      // Check if already active
-      if (user.status === UserStatus.ACTIVE) {
-        return errAsync(
-          createDomainError(USER_ERRORS.USER_ALREADY_ACTIVE, { cause: null }),
-        );
-      }
+        // Check if already active
+        if (user.status === UserStatus.ACTIVE) {
+          return errAsync(
+            createDomainError(USER_ERRORS.USER_ALREADY_ACTIVE, { cause: null }),
+          );
+        }
 
-      // Update user status to ACTIVE
-      user.changeStatus(UserStatus.ACTIVE);
+        // Update user status to ACTIVE
+        user.changeStatus(UserStatus.ACTIVE);
 
-      return this.userCoreRepository.updateUser(user).map(() => {
-        this.logger.log(
-          `User ${userId} activated by admin.`,
-          'AdminUserService',
-        );
-        return undefined;
-      });
+        return this.userCoreRepository.updateUser(user).map(() => {
+          this.logger.log(
+            `User ${userId} activated by admin.`,
+            'AdminUserService',
+          );
+          return undefined;
+        });
       }),
     );
   }
@@ -222,7 +222,10 @@ export class AdminUserService implements IAdminUserService {
         .deleteAllUserSessions(userId)
         .andThen(() => this.userCoreRepository.softDeleteUser(userId))
         .map(() => {
-          this.logger.log(`User ${userId} deleted by admin.`, 'AdminUserService');
+          this.logger.log(
+            `User ${userId} deleted by admin.`,
+            'AdminUserService',
+          );
           return undefined;
         }),
     );

@@ -10,7 +10,8 @@ export const AUTHORIZATION_ERRORS = {
   },
   ADMIN_CANNOT_ACCESS_BUYER_FEATURE: {
     code: 'AUTHORIZATION_ADMIN_CANNOT_ACCESS_BUYER_FEATURE',
-    message: 'Administrators cannot access buyer features like cart or shop ownership.',
+    message:
+      'Administrators cannot access buyer features like cart or shop ownership.',
   },
 
   // Role errors
@@ -38,7 +39,8 @@ export const AUTHORIZATION_ERRORS = {
   },
   PERMISSION_NAME_EXISTS: {
     code: 'AUTHORIZATION_PERMISSION_NAME_EXISTS',
-    message: 'A permission with this resource:action combination already exists.',
+    message:
+      'A permission with this resource:action combination already exists.',
   },
   PERMISSION_HAS_ROLES: {
     code: 'AUTHORIZATION_PERMISSION_HAS_ROLES',

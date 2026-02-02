@@ -164,13 +164,18 @@ export class ProductVariant {
     if (params.sku !== undefined) this._sku = params.sku;
     if (params.name !== undefined) this._name = params.name;
     if (params.imageUrl !== undefined) this._imageUrl = params.imageUrl;
-    if (params.sellingUnitId !== undefined) this._sellingUnitId = params.sellingUnitId;
-    if (params.unitQuantity !== undefined) this._unitQuantity = params.unitQuantity;
+    if (params.sellingUnitId !== undefined)
+      this._sellingUnitId = params.sellingUnitId;
+    if (params.unitQuantity !== undefined)
+      this._unitQuantity = params.unitQuantity;
     if (params.expiryDate !== undefined) this._expiryDate = params.expiryDate;
     this._updatedAt = new Date();
   }
 
-  updatePrice(price: number, compareAtPrice?: number | null): Result<void, DomainError> {
+  updatePrice(
+    price: number,
+    compareAtPrice?: number | null,
+  ): Result<void, DomainError> {
     if (price < 0) {
       return err(
         createDomainError(VARIANT_ERRORS.INVALID_PRICE, {

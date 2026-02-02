@@ -22,25 +22,37 @@ import { IWalletService } from '../payment/services/wallet.service.interface';
 import { IEscrowService } from '../payment/services/escrow.service.interface';
 import { IPaymentService } from '../payment/payment.service.interface';
 import { IBuyerService } from '../buyer/buyer.service.interface';
+import { IBuyerCoinWalletRepository } from '../buyer/repository/buyer-coin-wallet.repository.interface';
 import { IProductVariantRepository } from '../product/repository/product-variant.repository.interface';
+import { ISystemConfigService } from '../system-config/system-config.service.interface';
+import { IShopBadgeBenefitsService } from '../shop/shop-badge-benefits.service.interface';
+import { IVnpayService } from '../payment/services/vnpay.service.interface';
+import { IPaymentTransactionRepository } from '../payment/repository/payment-transaction.repository.interface';
 import {
   ORDER_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
+  BUYER_COIN_WALLET_REPOSITORY,
+  PAYMENT_TRANSACTION_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import { CART_SERVICE } from '../cart/tokens/cart.token';
 import { USER_SERVICE } from '../user/tokens/user.token';
-import { SHOP_SERVICE } from '../shop/tokens/shop.token';
+import {
+  SHOP_SERVICE,
+  SHOP_BADGE_BENEFITS_SERVICE,
+} from '../shop/tokens/shop.token';
 import { BUYER_SERVICE } from '../buyer/tokens/buyer.token';
 import {
   WALLET_SERVICE,
   ESCROW_SERVICE,
   PAYMENT_SERVICE,
+  VNPAY_SERVICE,
 } from '../payment/tokens/payment.token';
+import { SYSTEM_CONFIG_SERVICE } from '../system-config/tokens/system-config.token';
 import { UOW_TOKEN } from 'src/shared/unitOfWork/tokens/uow.token';
 import { IUow } from 'src/shared/unitOfWork/interfaces/uow.interface';
 import { Order } from './models/order.model';
 import { OrderItem } from './models/order-item.model';
-import { ORDER_AUTO_COMPLETE_DAYS } from './constants/order.constants';
+import { SHIPPING_FEE_DEFAULT } from './constants/order.constants';
 import { CancelledBy } from 'src/database/typeorm/entities/order/enums/cancelled-by.enum';
 import { PaymentMethod } from 'src/database/typeorm/entities/order/enums/payment-method.enum';
 import { PaymentStatus } from 'src/database/typeorm/entities/order/enums/payment-status.enum';
@@ -54,6 +66,8 @@ import {
 import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
 import { ORDER_ERRORS } from './errors/order.errors';
 import { ITypeORMAlsStore } from 'src/shared/als/interfaces/als-store.interface';
+import { CUSTOM_LOG } from 'src/shared/custom-loggers/tokens/custom-logger.token';
+import { ICustomLoggerService } from 'src/shared/custom-loggers/interfaces/custom-logger.service.interface';
 
 @Injectable()
 export class OrderService implements IOrderService {
@@ -77,8 +91,20 @@ export class OrderService implements IOrderService {
     private readonly buyerService: IBuyerService,
     @Inject(PRODUCT_VARIANT_REPOSITORY)
     private readonly variantRepository: IProductVariantRepository,
+    @Inject(BUYER_COIN_WALLET_REPOSITORY)
+    private readonly buyerCoinWalletRepository: IBuyerCoinWalletRepository,
+    @Inject(SYSTEM_CONFIG_SERVICE)
+    private readonly systemConfigService: ISystemConfigService,
     @Inject(UOW_TOKEN)
     private readonly transactionUow: IUow,
+    @Inject(CUSTOM_LOG)
+    private readonly logger: ICustomLoggerService,
+    @Inject(SHOP_BADGE_BENEFITS_SERVICE)
+    private readonly badgeBenefitsService: IShopBadgeBenefitsService,
+    @Inject(VNPAY_SERVICE)
+    private readonly vnpayService: IVnpayService,
+    @Inject(PAYMENT_TRANSACTION_REPOSITORY)
+    private readonly paymentTransactionRepository: IPaymentTransactionRepository,
   ) {}
 
   private getUserId(): string | undefined {
@@ -179,7 +205,8 @@ export class OrderService implements IOrderService {
           today.setHours(0, 0, 0, 0);
           const hasExpiredProducts = selectedItems.some(
             (item) =>
-              item.variant.expiryDate && new Date(item.variant.expiryDate) < today,
+              item.variant.expiryDate &&
+              new Date(item.variant.expiryDate) < today,
           );
           if (hasExpiredProducts) {
             return errAsync(createDomainError(ORDER_ERRORS.PRODUCT_EXPIRED));
@@ -199,133 +226,252 @@ export class OrderService implements IOrderService {
           return okAsync({ selectedItems, address });
         }),
       )
-      .andThen(({ selectedItems, address }) => {
-        // Step 3: Group items by shop
-        const shopGroups = new Map<string, CartItemWithDetails[]>();
-        for (const item of selectedItems) {
-          const existing = shopGroups.get(item.shop.id);
-          if (existing) {
-            existing.push(item);
-          } else {
-            shopGroups.set(item.shop.id, [item]);
+      .andThen(({ selectedItems, address }) =>
+        // Step 3: Get coin config + shipping threshold + buyer coin balance
+        ResultAsync.combine([
+          this.systemConfigService.getCoinMaxUsagePercent(),
+          this.systemConfigService.getShippingFreeThreshold(),
+          input.useCoin
+            ? this.buyerCoinWalletRepository.findByBuyerId(userId)
+            : okAsync(null),
+        ]).map(([coinMaxPercent, shippingFreeThreshold, coinWallet]) => ({
+          selectedItems,
+          address,
+          coinMaxPercent,
+          shippingFreeThreshold,
+          availableCoins: coinWallet?.balance ?? 0,
+        })),
+      )
+      .andThen(
+        ({
+          selectedItems,
+          address,
+          coinMaxPercent,
+          shippingFreeThreshold,
+          availableCoins,
+        }) => {
+          // Step 4: Group items by shop and calculate subtotals
+          const shopGroups = new Map<string, CartItemWithDetails[]>();
+          for (const item of selectedItems) {
+            const existing = shopGroups.get(item.shop.id);
+            if (existing) {
+              existing.push(item);
+            } else {
+              shopGroups.set(item.shop.id, [item]);
+            }
           }
-        }
 
-        // Prepare stock deduction items (aggregate by variant)
-        const stockDeductionMap = new Map<string, number>();
-        for (const item of selectedItems) {
-          const currentQty = stockDeductionMap.get(item.variant.id) ?? 0;
-          stockDeductionMap.set(
-            item.variant.id,
-            currentQty + item.cartItem.quantity,
+          // Calculate subtotal for each shop
+          const shopSubtotals = new Map<string, number>();
+          let grandSubtotal = 0;
+          for (const [shopId, items] of shopGroups) {
+            const subtotal = items.reduce(
+              (sum, item) => sum + item.variant.price * item.cartItem.quantity,
+              0,
+            );
+            shopSubtotals.set(shopId, subtotal);
+            grandSubtotal += subtotal;
+          }
+
+          // Step 5: Calculate coin usage
+          const maxCoinAllowed = Math.floor(
+            (grandSubtotal * coinMaxPercent) / 100,
           );
-        }
-        const stockDeductionItems = Array.from(stockDeductionMap.entries()).map(
-          ([variantId, quantity]) => ({ variantId, quantity }),
-        );
+          let totalCoinToUse = 0;
+          if (input.useCoin && availableCoins > 0) {
+            // If specific amount requested, use min of requested, available, and max allowed
+            if (input.coinAmount !== undefined && input.coinAmount > 0) {
+              totalCoinToUse = Math.min(
+                input.coinAmount,
+                availableCoins,
+                maxCoinAllowed,
+              );
+            } else {
+              // Use as much as allowed
+              totalCoinToUse = Math.min(availableCoins, maxCoinAllowed);
+            }
+          }
 
-        // Step 4: Execute stock deduction + order creation in transaction
-        // This ensures atomicity: if order creation fails, stock is not deducted
-        return this.transactionUow
-          .executeInTransaction(() => {
-            // Deduct stock with pessimistic lock
-            return this.variantRepository
-              .deductStockWithLock(stockDeductionItems)
-              .andThen(() => {
-                // Create orders for each shop
-                const shopNoteMap = new Map(
-                  (input.shopNotes ?? []).map((n) => [n.shopId, n.note]),
-                );
+          // Prepare stock deduction items (aggregate by variant)
+          const stockDeductionMap = new Map<string, number>();
+          for (const item of selectedItems) {
+            const currentQty = stockDeductionMap.get(item.variant.id) ?? 0;
+            stockDeductionMap.set(
+              item.variant.id,
+              currentQty + item.cartItem.quantity,
+            );
+          }
+          const stockDeductionItems = Array.from(
+            stockDeductionMap.entries(),
+          ).map(([variantId, quantity]) => ({ variantId, quantity }));
 
-                const orderCreationResults: ResultAsync<
-                  OrderWithShop,
-                  DomainError
-                >[] = [];
-
-                for (const [shopId, items] of shopGroups) {
-                  const shopNote = shopNoteMap.get(shopId) ?? null;
-                  const subtotal = items.reduce(
-                    (sum, item) =>
-                      sum + item.variant.price * item.cartItem.quantity,
-                    0,
+          // Step 6: Execute stock deduction + coin deduction + order creation in transaction
+          return this.transactionUow
+            .executeInTransaction(() => {
+              // Deduct stock with pessimistic lock
+              return this.variantRepository
+                .deductStockWithLock(stockDeductionItems)
+                .andThen(() => {
+                  // Deduct coins with lock if using coins
+                  if (totalCoinToUse > 0) {
+                    return this.buyerCoinWalletRepository
+                      .debitCoinsWithLock(
+                        userId,
+                        totalCoinToUse,
+                        'order_payment',
+                        null, // Will be updated with order IDs after creation
+                        `Thanh toán đơn hàng bằng ${totalCoinToUse} xu`,
+                      )
+                      .map(() => totalCoinToUse);
+                  }
+                  return okAsync(0);
+                })
+                .andThen((coinUsedTotal) => {
+                  // Create orders for each shop
+                  const shopNoteMap = new Map(
+                    (input.shopNotes ?? []).map((n) => [n.shopId, n.note]),
                   );
 
-                  // Create order
-                  const order = Order.create({
-                    buyerId: userId,
-                    shopId,
-                    receiverName: address.recipientName,
-                    receiverPhone: address.recipientPhone,
-                    shippingAddress: address.addressLine,
-                    shippingWardId: address.wardId,
-                    shippingDistrictId: address.districtId,
-                    shippingProvinceId: address.provinceId,
-                    subtotal,
-                    shippingFee: 0, // TODO: Calculate shipping fee
-                    platformFee: 0, // TODO: Calculate platform fee
-                    platformFeePercent: 0,
-                    tierDiscountAmount: 0, // TODO: Apply tier discount
-                    tierDiscountPercent: 0,
-                    voucherDiscountAmount: 0, // TODO: Apply voucher
-                    coinUsed: 0, // TODO: Apply coin usage
-                    totalAmount: subtotal, // Simplified for now
-                    buyerTierCode: 'bronze', // TODO: Get from buyer profile
-                    coinMultiplier: 0.01, // TODO: Get from config
-                    paymentMethod: input.paymentMethod,
-                    buyerNote: shopNote,
-                  });
+                  // Pre-calculate coin distribution to handle rounding
+                  const shopIds = Array.from(shopGroups.keys());
+                  const coinDistribution = new Map<string, number>();
+                  let distributedCoins = 0;
 
-                  // Create order items
-                  const orderItems = items.map((item) =>
-                    OrderItem.create({
-                      orderId: order.id,
-                      productId: item.product.id,
-                      variantId: item.variant.id,
-                      productName: item.product.name,
-                      variantName: item.variant.name,
-                      productImageUrl: item.product.thumbnailUrl,
-                      unitPrice: item.variant.price,
-                      quantity: item.cartItem.quantity,
-                    }),
-                  );
+                  for (let i = 0; i < shopIds.length; i++) {
+                    const shopId = shopIds[i];
+                    const subtotal = shopSubtotals.get(shopId) ?? 0;
 
-                  // Save order and items
-                  const saveResult = this.orderRepository
-                    .saveOrderWithItems(order, orderItems)
-                    .andThen((savedOrder) =>
-                      okAsync<OrderWithShop, DomainError>({
-                        order: savedOrder,
-                        shop: items[0].shop,
+                    if (i === shopIds.length - 1) {
+                      // Last shop gets remaining coins to avoid rounding loss
+                      coinDistribution.set(
+                        shopId,
+                        coinUsedTotal - distributedCoins,
+                      );
+                    } else {
+                      const coinForShop =
+                        grandSubtotal > 0
+                          ? Math.floor(
+                              coinUsedTotal * (subtotal / grandSubtotal),
+                            )
+                          : 0;
+                      coinDistribution.set(shopId, coinForShop);
+                      distributedCoins += coinForShop;
+                    }
+                  }
+
+                  const orderCreationResults: ResultAsync<
+                    OrderWithShop,
+                    DomainError
+                  >[] = [];
+
+                  for (const [shopId, items] of shopGroups) {
+                    const shopNote = shopNoteMap.get(shopId) ?? null;
+                    const subtotal = shopSubtotals.get(shopId) ?? 0;
+
+                    // Calculate shipping fee and platform ship discount
+                    const shippingFee = SHIPPING_FEE_DEFAULT;
+                    const platformShipDiscount =
+                      subtotal >= shippingFreeThreshold
+                        ? SHIPPING_FEE_DEFAULT
+                        : 0;
+
+                    // Get pre-calculated coin distribution
+                    const coinUsedForShop = coinDistribution.get(shopId) ?? 0;
+
+                    // Calculate total amount
+                    const totalAmount =
+                      subtotal +
+                      shippingFee -
+                      platformShipDiscount -
+                      coinUsedForShop;
+
+                    // Create order
+                    const order = Order.create({
+                      buyerId: userId,
+                      shopId,
+                      receiverName: address.recipientName,
+                      receiverPhone: address.recipientPhone,
+                      shippingAddress: address.addressLine,
+                      shippingWardId: address.wardId,
+                      shippingDistrictId: address.districtId,
+                      shippingProvinceId: address.provinceId,
+                      subtotal,
+                      shippingFee,
+                      platformFee: 0, // TODO: Calculate platform fee
+                      platformFeePercent: 0,
+                      tierDiscountAmount: 0, // TODO: Apply tier discount
+                      tierDiscountPercent: 0,
+                      voucherDiscountAmount: 0, // TODO: Apply voucher
+                      coinUsed: coinUsedForShop,
+                      platformShipDiscount,
+                      totalAmount,
+                      buyerTierCode: 'bronze', // TODO: Get from buyer profile
+                      coinMultiplier: 0.01, // TODO: Get from config
+                      paymentMethod: input.paymentMethod,
+                      buyerNote: shopNote,
+                    });
+
+                    // Create order items
+                    const orderItems = items.map((item) =>
+                      OrderItem.create({
+                        orderId: order.id,
+                        productId: item.product.id,
+                        variantId: item.variant.id,
+                        productName: item.product.name,
+                        variantName: item.variant.name,
+                        productImageUrl: item.product.thumbnailUrl,
+                        unitPrice: item.variant.price,
+                        quantity: item.cartItem.quantity,
                       }),
                     );
 
-                  orderCreationResults.push(saveResult);
-                }
+                    // Save order and items
+                    const saveResult = this.orderRepository
+                      .saveOrderWithItems(order, orderItems)
+                      .andThen((savedOrder) =>
+                        okAsync<OrderWithShop, DomainError>({
+                          order: savedOrder,
+                          shop: items[0].shop,
+                        }),
+                      );
 
-                return ResultAsync.combine(orderCreationResults);
-              });
-          })
-          .map((createdOrders) => ({
+                    orderCreationResults.push(saveResult);
+                  }
+
+                  return ResultAsync.combine(orderCreationResults).map(
+                    (orders) => ({ orders, coinUsedTotal }),
+                  );
+                });
+            })
+            .map(({ orders: createdOrders, coinUsedTotal }) => ({
+              createdOrders,
+              selectedItems,
+              paymentMethod: input.paymentMethod,
+              coinUsedTotal,
+            }));
+        },
+      )
+      .andThen(
+        ({ createdOrders, selectedItems, paymentMethod, coinUsedTotal }) => {
+          // Step 7: Remove purchased items from cart using cart service
+          const cartItemIdsToRemove = selectedItems.map(
+            (item) => item.cartItem.id,
+          );
+
+          const removeFromCart =
+            cartItemIdsToRemove.length === 0
+              ? okAsync(undefined)
+              : this.cartService.removeItems(cartItemIdsToRemove);
+
+          return removeFromCart.map(() => ({
             createdOrders,
-            selectedItems,
-            paymentMethod: input.paymentMethod,
+            paymentMethod,
+            coinUsedTotal,
           }));
-      })
-      .andThen(({ createdOrders, selectedItems, paymentMethod }) => {
-        // Step 5: Remove purchased items from cart using cart service
-        const cartItemIdsToRemove = selectedItems.map(
-          (item) => item.cartItem.id,
-        );
-
-        const removeFromCart =
-          cartItemIdsToRemove.length === 0
-            ? okAsync(undefined)
-            : this.cartService.removeItems(cartItemIdsToRemove);
-
-        return removeFromCart.map(() => ({ createdOrders, paymentMethod }));
-      })
-      .andThen(({ createdOrders, paymentMethod }) => {
-        // Step 6: Process payment based on payment method
+        },
+      )
+      .andThen(({ createdOrders, paymentMethod, coinUsedTotal }) => {
+        // Step 8: Process payment based on payment method
         const totalAmount = createdOrders.reduce(
           (sum, o) => sum + o.order.totalAmount,
           0,
@@ -334,12 +480,18 @@ export class OrderService implements IOrderService {
 
         // For WALLET payment: debit wallet, create escrow, mark paid
         if (paymentMethod === PaymentMethod.WALLET) {
-          return this.processWalletPayment(createdOrders, totalAmount);
+          return this.processWalletPayment(createdOrders, totalAmount).map(
+            (result) => ({ ...result, coinUsed: coinUsedTotal }),
+          );
         }
 
         // For VNPAY payment: generate VNPay URL
         if (paymentMethod === PaymentMethod.VNPAY) {
-          return this.processVnpayPayment(createdOrders, totalAmount, orderIds);
+          return this.processVnpayPayment(
+            createdOrders,
+            totalAmount,
+            orderIds,
+          ).map((result) => ({ ...result, coinUsed: coinUsedTotal }));
         }
 
         // For WALLET_VNPAY payment: use wallet first, then VNPay for remainder
@@ -348,17 +500,21 @@ export class OrderService implements IOrderService {
             createdOrders,
             totalAmount,
             orderIds,
-          );
+          ).map((result) => ({ ...result, coinUsed: coinUsedTotal }));
         }
 
         // For COD payment: auto-confirm orders (no upfront payment required)
         if (paymentMethod === PaymentMethod.COD) {
-          return this.processCodPayment(createdOrders);
+          return this.processCodPayment(createdOrders).map((result) => ({
+            ...result,
+            coinUsed: coinUsedTotal,
+          }));
         }
 
         // Default: return orders without payment processing
         return okAsync<CreateOrderResult, DomainError>({
           orders: createdOrders,
+          coinUsed: coinUsedTotal,
         });
       });
   }
@@ -382,35 +538,52 @@ export class OrderService implements IOrderService {
         );
       }
 
-      // Debit wallet for total amount (combines all orders)
-      const orderIds = createdOrders.map((o) => o.order.id);
-      return this.walletService
-        .debitForOrder(orderIds.join(','), totalAmount)
-        .andThen(() => {
-          // Create escrow holds for each order
-          const escrowCreations = createdOrders.map((orderWithShop) =>
-            this.escrowService.createHold(
-              orderWithShop.order.id,
-              orderWithShop.order.shopId,
-              orderWithShop.order.totalAmount,
-            ),
-          );
+      // Get base platform fee percent
+      return this.systemConfigService
+        .getPlatformFeePercent()
+        .andThen((baseFeePercent) => {
+          // Debit wallet for total amount (combines all orders)
+          const orderIds = createdOrders.map((o) => o.order.id);
+          return this.walletService
+            .debitForOrder(orderIds.join(','), totalAmount)
+            .andThen(() => {
+              // Get badge discount for each shop and create escrow holds
+              const escrowCreations = createdOrders.map((orderWithShop) =>
+                this.badgeBenefitsService
+                  .getEffectivePlatformFeeDiscount(orderWithShop.order.shopId)
+                  .andThen((badgeDiscount) => {
+                    // Calculate final platform fee percent (base - badge discount, min 0)
+                    const platformFeePercent = Math.max(
+                      0,
+                      baseFeePercent - badgeDiscount,
+                    );
+                    return this.escrowService.createHold(
+                      orderWithShop.order.id,
+                      orderWithShop.order.shopId,
+                      orderWithShop.order.totalAmount,
+                      orderWithShop.order.subtotal,
+                      orderWithShop.order.coinUsed,
+                      platformFeePercent,
+                    );
+                  }),
+              );
 
-          return ResultAsync.combine(escrowCreations);
-        })
-        .andThen(() => {
-          // Mark all orders as paid and update in DB
-          const updateResults = createdOrders.map((orderWithShop) => {
-            orderWithShop.order.markAsPaid();
-            return this.orderRepository.save(orderWithShop.order);
-          });
+              return ResultAsync.combine(escrowCreations);
+            })
+            .andThen(() => {
+              // Mark all orders as paid and update in DB
+              const updateResults = createdOrders.map((orderWithShop) => {
+                orderWithShop.order.markAsPaid();
+                return this.orderRepository.save(orderWithShop.order);
+              });
 
-          return ResultAsync.combine(updateResults);
-        })
-        .map(() => ({
-          orders: createdOrders,
-          walletAmountUsed: totalAmount,
-        }));
+              return ResultAsync.combine(updateResults);
+            })
+            .map(() => ({
+              orders: createdOrders,
+              walletAmountUsed: totalAmount,
+            }));
+        });
     });
   }
 
@@ -512,7 +685,9 @@ export class OrderService implements IOrderService {
         // Shouldn't happen for newly created orders, but handle gracefully
         return okAsync(orderWithShop);
       }
-      return this.orderRepository.save(orderWithShop.order).map(() => orderWithShop);
+      return this.orderRepository
+        .save(orderWithShop.order)
+        .map(() => orderWithShop);
     });
 
     return ResultAsync.combine(updateResults).map((updatedOrders) => ({
@@ -559,6 +734,98 @@ export class OrderService implements IOrderService {
       });
   }
 
+  /**
+   * Verify VNPay payment status and sync order if needed.
+   * If VNPay confirms payment was successful but order shows pending,
+   * this will create escrow and mark order as paid.
+   *
+   * @returns { synced: true } if payment was found and order updated
+   * @returns { synced: false } if payment not found or not successful
+   */
+  private verifyAndSyncVnpayPayment(
+    order: Order,
+  ): ResultAsync<{ synced: boolean }, DomainError> {
+    // Only verify for VNPay payment methods with pending payment status
+    if (
+      ![PaymentMethod.VNPAY, PaymentMethod.WALLET_VNPAY].includes(
+        order.paymentMethod,
+      )
+    ) {
+      return okAsync({ synced: false });
+    }
+
+    if (order.paymentStatus !== PaymentStatus.PENDING) {
+      return okAsync({ synced: false });
+    }
+
+    // Find payment transaction for this order
+    return this.paymentTransactionRepository
+      .findByOrderId(order.id)
+      .andThen((transaction) => {
+        if (!transaction) {
+          return okAsync({ synced: false });
+        }
+
+        // Query VNPay to verify payment status
+        return this.vnpayService
+          .queryTransaction({
+            txnRef: transaction.vnpayTxnRef,
+            transactionDate: transaction.createdAt,
+            ipAddress: '127.0.0.1',
+          })
+          .andThen((vnpayResult) => {
+            if (!vnpayResult.isSuccess) {
+              // VNPay says not paid, no sync needed
+              return okAsync({ synced: false });
+            }
+
+            // VNPay confirms payment was successful, need to sync
+            this.logger.log(
+              `VNPay confirms payment for order ${order.id}, syncing...`,
+              'OrderService',
+            );
+
+            // Get platform fee and badge discount to create escrow
+            return ResultAsync.combine([
+              this.systemConfigService.getPlatformFeePercent(),
+              this.badgeBenefitsService.getEffectivePlatformFeeDiscount(
+                order.shopId,
+              ),
+            ]).andThen(([baseFeePercent, badgeDiscount]) => {
+              const platformFeePercent = Math.max(
+                0,
+                baseFeePercent - badgeDiscount,
+              );
+
+              // Create escrow hold
+              return this.escrowService
+                .createHold(
+                  order.id,
+                  order.shopId,
+                  order.totalAmount,
+                  order.subtotal,
+                  order.coinUsed,
+                  platformFeePercent,
+                )
+                .andThen(() => {
+                  // Mark order as paid
+                  order.markAsPaid();
+                  return this.orderRepository.updateOrder(order);
+                })
+                .map(() => ({ synced: true }));
+            });
+          })
+          .orElse((error) => {
+            // VNPay API error, log and continue without sync
+            this.logger.warn(
+              `VNPay query failed for order ${order.id}: ${error.message}`,
+              'OrderService',
+            );
+            return okAsync({ synced: false });
+          });
+      });
+  }
+
   @WithPosition()
   cancelMyOrder(
     orderId: string,
@@ -573,6 +840,7 @@ export class OrderService implements IOrderService {
       );
     }
 
+    // First verify the order belongs to the buyer (without lock)
     return this.orderRepository
       .findByIdForBuyer(orderId, userId)
       .andThen((result) => {
@@ -580,24 +848,56 @@ export class OrderService implements IOrderService {
           return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
         }
 
-        const { order } = result;
-        if (!order.canBuyerCancel()) {
-          return errAsync(createDomainError(ORDER_ERRORS.BUYER_CANNOT_CANCEL));
-        }
+        // Execute cancellation in UoW transaction
+        return this.transactionUow.executeInTransaction(() =>
+          // Lock the order to prevent race conditions
+          this.orderRepository.findByIdWithLock(orderId).andThen((order) => {
+            if (!order) {
+              return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
+            }
 
-        const cancelResult = order.cancel(CancelledBy.BUYER, reason);
-        if (cancelResult.isErr()) {
-          return errAsync(cancelResult.error);
-        }
+            // Re-check if buyer can cancel (status might have changed)
+            if (!order.canBuyerCancel()) {
+              return errAsync(
+                createDomainError(ORDER_ERRORS.BUYER_CANNOT_CANCEL),
+              );
+            }
 
-        // Process refund if order was paid
-        return this.processRefundIfNeeded(order, order.buyerId);
+            // If VNPay payment is pending, verify with VNPay first
+            return this.verifyAndSyncVnpayPayment(order).andThen(
+              ({ synced }) => {
+                if (synced) {
+                  // Payment status changed, inform user to reload
+                  return errAsync(
+                    createDomainError(
+                      ORDER_ERRORS.ORDER_PAYMENT_STATUS_CHANGED,
+                    ),
+                  );
+                }
+
+                // Proceed with cancellation
+                const cancelResult = order.cancel(CancelledBy.BUYER, reason);
+                if (cancelResult.isErr()) {
+                  return errAsync(cancelResult.error);
+                }
+
+                // Process refund based on payment status
+                return this.processRefundIfNeeded(order, order.buyerId);
+              },
+            );
+          }),
+        );
       });
   }
 
   /**
    * Process refund and stock restoration for a cancelled order.
-   * Restores stock to inventory and refunds escrow if order was paid.
+   * Restores stock to inventory, refunds escrow if order was paid,
+   * and always refunds coins if order used coins.
+   *
+   * Coins are always refunded because:
+   * - Buyer can only cancel when shop hasn't confirmed yet
+   * - If cancelled after confirmation, it's shop's decision → buyer gets coins back
    */
   private processRefundIfNeeded(
     order: Order,
@@ -605,40 +905,65 @@ export class OrderService implements IOrderService {
   ): ResultAsync<Order, DomainError> {
     // Step 1: Restore stock for cancelled order items
     return this.restoreStockForOrder(order).andThen(() => {
-      // Step 2: If order was not paid, just save the cancellation
-      if (order.paymentStatus !== PaymentStatus.PAID) {
-        return this.orderRepository.updateOrder(order);
-      }
+      // Step 2: Always refund coins if order used coins
+      const coinRefund: ResultAsync<void, DomainError> =
+        order.coinUsed > 0
+          ? this.buyerCoinWalletRepository
+              .creditCoinsRefund(
+                buyerId,
+                order.coinUsed,
+                'order_cancel_refund',
+                order.id,
+                `Hoàn ${order.coinUsed} xu từ đơn hàng ${order.orderCode}`,
+              )
+              .map(() => undefined)
+          : okAsync(undefined);
 
-      // Step 3: Find and refund escrow holds for this order
-      return this.escrowService
-        .findByOrderId(order.id)
-        .andThen((escrowHolds) => {
-          // Filter to only holding escrows (not already released/refunded)
-          const holdingEscrows = escrowHolds.filter(
-            (escrow) => escrow.status === EscrowStatus.HOLDING,
-          );
+      return coinRefund.andThen(() => {
+        // Step 3: If order was not paid, just save the cancellation
+        if (order.paymentStatus !== PaymentStatus.PAID) {
+          return this.orderRepository.updateOrder(order);
+        }
 
-          if (holdingEscrows.length === 0) {
-            // No escrow to refund, just mark as refunded and save
-            order.markAsRefunded();
-            return this.orderRepository.updateOrder(order);
-          }
+        // Step 4: Find and refund escrow holds for this order
+        return this.escrowService
+          .findByOrderId(order.id)
+          .andThen((escrowHolds) => {
+            // Filter to only holding escrows (not already released/refunded)
+            const holdingEscrows = escrowHolds.filter(
+              (escrow) => escrow.status === EscrowStatus.HOLDING,
+            );
 
-          // Refund each escrow hold to buyer
-          const refundResults = holdingEscrows.map((escrow) =>
-            this.escrowService.refundToBuyer(escrow.id, buyerId),
-          );
+            if (holdingEscrows.length === 0) {
+              // No escrow to refund, just mark as refunded and save
+              order.markAsRefunded();
+              return this.orderRepository.updateOrder(order);
+            }
 
-          return ResultAsync.combine(refundResults).andThen(() => {
-            // Mark order as refunded and save
-            order.markAsRefunded();
-            return this.orderRepository.updateOrder(order);
+            // Refund each escrow hold to buyer
+            const refundResults = holdingEscrows.map((escrow) =>
+              this.escrowService.refundToBuyer(escrow.id, buyerId),
+            );
+
+            return ResultAsync.combine(refundResults).andThen(() => {
+              // Mark order as refunded and save
+              order.markAsRefunded();
+              return this.orderRepository.updateOrder(order);
+            });
           });
-        });
+      });
     });
   }
 
+  /**
+   * Confirm delivery and complete order.
+   * All operations are wrapped in a single UoW transaction:
+   * 1. Update order status to COMPLETED
+   * 2. Credit coins to buyer (if any earned)
+   * 3. Release escrow to shop + platform
+   *
+   * If any step fails, all operations are rolled back.
+   */
   @WithPosition()
   confirmDelivery(orderId: string): ResultAsync<Order, DomainError> {
     const userId = this.getUserId();
@@ -650,6 +975,7 @@ export class OrderService implements IOrderService {
       );
     }
 
+    // First verify the order belongs to the buyer (without lock)
     return this.orderRepository
       .findByIdForBuyer(orderId, userId)
       .andThen((result) => {
@@ -657,28 +983,68 @@ export class OrderService implements IOrderService {
           return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
         }
 
-        const { order } = result;
-        const completeResult = order.complete();
-        if (completeResult.isErr()) {
-          return errAsync(
-            createDomainError(ORDER_ERRORS.CANNOT_CONFIRM_DELIVERY),
-          );
-        }
+        // Execute completion in UoW transaction with lock to prevent race conditions
+        // (e.g., buyer confirms at same time as auto-complete cronjob)
+        return this.transactionUow.executeInTransaction(() =>
+          // Lock the order to prevent concurrent modifications
+          this.orderRepository.findByIdWithLock(orderId).andThen((order) => {
+            if (!order) {
+              return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
+            }
 
-        // Save the order first
-        return this.orderRepository.updateOrder(order).andThen((savedOrder) => {
-          // Credit coins to buyer if any coins were earned
-          if (savedOrder.coinEarned > 0) {
-            return this.buyerService
-              .creditCoinsForOrder(
-                savedOrder.buyerId,
-                savedOrder.coinEarned,
-                savedOrder.id,
-              )
-              .map(() => savedOrder);
-          }
-          return okAsync(savedOrder);
-        });
+            // Re-check status after acquiring lock (may have changed)
+            const completeResult = order.complete();
+            if (completeResult.isErr()) {
+              return errAsync(
+                createDomainError(ORDER_ERRORS.CANNOT_CONFIRM_DELIVERY),
+              );
+            }
+
+            // Step 1: Update order status to COMPLETED
+            return this.orderRepository
+              .updateOrder(order)
+              .andThen((savedOrder) =>
+                // Step 2: Credit coins to buyer (if any earned)
+                (savedOrder.coinEarned > 0
+                  ? this.buyerService
+                      .creditCoinsForOrder(
+                        savedOrder.buyerId,
+                        savedOrder.coinEarned,
+                        savedOrder.id,
+                      )
+                      .map(() => undefined)
+                  : okAsync(undefined)
+                ).andThen(() =>
+                  // Step 3: Find and release escrow
+                  this.escrowService
+                    .findByOrderId(savedOrder.id)
+                    .andThen((escrowHolds) => {
+                      const holdingEscrows = escrowHolds.filter((e) =>
+                        e.isHolding(),
+                      );
+
+                      if (holdingEscrows.length === 0) {
+                        this.logger.warn(
+                          `No holding escrows found for order ${savedOrder.id}`,
+                          'OrderService',
+                        );
+                        return okAsync(savedOrder);
+                      }
+
+                      // Release each escrow (usually just one per order)
+                      // releaseToShop will participate in the outer transaction
+                      const releasePromises = holdingEscrows.map((escrow) =>
+                        this.escrowService.releaseToShop(escrow.id),
+                      );
+
+                      return ResultAsync.combine(releasePromises).map(
+                        () => savedOrder,
+                      );
+                    }),
+                ),
+              );
+          }),
+        );
       });
   }
 
@@ -751,32 +1117,12 @@ export class OrderService implements IOrderService {
   }
 
   @WithPosition()
-  markDelivered(orderId: string): ResultAsync<Order, DomainError> {
-    return this.getShopIdFromService().andThen((shopId) =>
-      this.orderRepository
-        .findByIdForShop(orderId, shopId)
-        .andThen((result) => {
-          if (!result) {
-            return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
-          }
-
-          const { order } = result;
-          const deliverResult = order.deliver();
-          if (deliverResult.isErr()) {
-            return errAsync(deliverResult.error);
-          }
-
-          return this.orderRepository.updateOrder(order);
-        }),
-    );
-  }
-
-  @WithPosition()
   cancelShopOrder(
     orderId: string,
     reason?: string,
   ): ResultAsync<Order, DomainError> {
     return this.getShopIdFromService().andThen((shopId) =>
+      // First verify the order belongs to the shop (without lock)
       this.orderRepository
         .findByIdForShop(orderId, shopId)
         .andThen((result) => {
@@ -784,18 +1130,47 @@ export class OrderService implements IOrderService {
             return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));
           }
 
-          const { order } = result;
-          if (!order.canShopCancel()) {
-            return errAsync(createDomainError(ORDER_ERRORS.SHOP_CANNOT_CANCEL));
-          }
+          // Execute cancellation in UoW transaction
+          return this.transactionUow.executeInTransaction(() =>
+            // Lock the order to prevent race conditions
+            this.orderRepository.findByIdWithLock(orderId).andThen((order) => {
+              if (!order) {
+                return errAsync(
+                  createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND),
+                );
+              }
 
-          const cancelResult = order.cancel(CancelledBy.SHOP, reason);
-          if (cancelResult.isErr()) {
-            return errAsync(cancelResult.error);
-          }
+              // Re-check if shop can cancel (status might have changed)
+              if (!order.canShopCancel()) {
+                return errAsync(
+                  createDomainError(ORDER_ERRORS.SHOP_CANNOT_CANCEL),
+                );
+              }
 
-          // Process refund if order was paid
-          return this.processRefundIfNeeded(order, order.buyerId);
+              // If VNPay payment is pending, verify with VNPay first
+              return this.verifyAndSyncVnpayPayment(order).andThen(
+                ({ synced }) => {
+                  if (synced) {
+                    // Payment status changed, inform user to reload
+                    return errAsync(
+                      createDomainError(
+                        ORDER_ERRORS.ORDER_PAYMENT_STATUS_CHANGED,
+                      ),
+                    );
+                  }
+
+                  // Proceed with cancellation
+                  const cancelResult = order.cancel(CancelledBy.SHOP, reason);
+                  if (cancelResult.isErr()) {
+                    return errAsync(cancelResult.error);
+                  }
+
+                  // Process refund based on payment status
+                  return this.processRefundIfNeeded(order, order.buyerId);
+                },
+              );
+            }),
+          );
         }),
     );
   }
@@ -823,59 +1198,99 @@ export class OrderService implements IOrderService {
 
   // ===================== SYSTEM/CRON METHODS =====================
 
+  /**
+   * Auto-complete orders that have been delivered for N days.
+   * Each order is processed in its own UoW transaction:
+   * 1. Update order status to COMPLETED
+   * 2. Credit coins to buyer (if any earned)
+   * 3. Release escrow to shop + platform
+   *
+   * @param autoCompleteDays - Number of days after delivery to auto-complete
+   */
   @WithPosition()
-  autoCompleteOrders(): ResultAsync<number, DomainError> {
+  autoCompleteOrders(
+    autoCompleteDays: number,
+  ): ResultAsync<number, DomainError> {
     return this.orderRepository
-      .findOrdersForAutoComplete(ORDER_AUTO_COMPLETE_DAYS)
+      .findOrdersForAutoComplete(autoCompleteDays)
       .andThen((orders) => {
         if (orders.length === 0) {
           return okAsync(0);
         }
 
-        const updateResults = orders.map((order) => {
+        let completedCount = 0;
+
+        // Process each order sequentially to avoid overwhelming the DB
+        const processOrder = (order: Order): ResultAsync<boolean, never> => {
           const completeResult = order.complete();
           if (completeResult.isErr()) {
+            this.logger.warn(
+              `Cannot auto-complete order ${order.id}: ${completeResult.error.message}`,
+              'OrderService',
+            );
             return okAsync(false);
           }
-          // Save order and credit coins
-          return this.orderRepository.updateOrder(order).andThen((savedOrder) => {
-            if (savedOrder.coinEarned > 0) {
-              return this.buyerService
-                .creditCoinsForOrder(
-                  savedOrder.buyerId,
-                  savedOrder.coinEarned,
-                  savedOrder.id,
-                )
-                .map(() => true);
-            }
-            return okAsync(true);
-          });
-        });
 
-        return ResultAsync.combine(updateResults).map(
-          (results) => results.filter((r) => r).length,
-        );
-      });
-  }
+          // Wrap all operations in a single UoW transaction
+          return this.transactionUow
+            .executeInTransaction(() =>
+              // Step 1: Update order status to COMPLETED
+              this.orderRepository.updateOrder(order).andThen((savedOrder) =>
+                // Step 2: Credit coins to buyer (if any earned)
+                (savedOrder.coinEarned > 0
+                  ? this.buyerService
+                      .creditCoinsForOrder(
+                        savedOrder.buyerId,
+                        savedOrder.coinEarned,
+                        savedOrder.id,
+                      )
+                      .map(() => undefined)
+                  : okAsync(undefined)
+                ).andThen(() =>
+                  // Step 3: Find and release escrow
+                  this.escrowService
+                    .findByOrderId(savedOrder.id)
+                    .andThen((escrowHolds) => {
+                      const holdingEscrows = escrowHolds.filter((e) =>
+                        e.isHolding(),
+                      );
 
-  @WithPosition()
-  processMissedRefunds(): ResultAsync<number, DomainError> {
-    // Find cancelled orders that still have PAID payment status
-    return this.orderRepository
-      .findCancelledOrdersNeedingRefund()
-      .andThen((orders) => {
-        if (orders.length === 0) {
-          return okAsync(0);
-        }
+                      if (holdingEscrows.length === 0) {
+                        return okAsync(savedOrder);
+                      }
 
-        // Process refund for each order
-        const refundResults = orders.map((order) =>
-          this.processRefundIfNeeded(order, order.buyerId).map(() => true),
-        );
+                      // Release each escrow
+                      const releasePromises = holdingEscrows.map((escrow) =>
+                        this.escrowService.releaseToShop(escrow.id),
+                      );
 
-        return ResultAsync.combine(refundResults).map(
-          (results) => results.filter((r) => r).length,
-        );
+                      return ResultAsync.combine(releasePromises).map(
+                        () => savedOrder,
+                      );
+                    }),
+                ),
+              ),
+            )
+            .map(() => {
+              completedCount++;
+              return true;
+            })
+            .orElse((error) => {
+              this.logger.error(
+                `Failed to auto-complete order ${order.id}: ${error.message}`,
+                'OrderService',
+              );
+              return okAsync(false);
+            });
+        };
+
+        // Process orders sequentially
+        return orders
+          .reduce(
+            (chain, order) => chain.andThen(() => processOrder(order)),
+            okAsync(true),
+          )
+          .map(() => completedCount);
       });
   }
 
@@ -899,14 +1314,30 @@ export class OrderService implements IOrderService {
         return okAsync(order);
       }
 
-      // Create escrow hold for shop
-      return this.escrowService
-        .createHold(order.id, order.shopId, order.totalAmount)
-        .andThen(() => {
-          // Mark order as paid
-          order.markAsPaid();
-          return this.orderRepository.updateOrder(order);
-        });
+      // Get base platform fee and badge discount to calculate final fee percent
+      return ResultAsync.combine([
+        this.systemConfigService.getPlatformFeePercent(),
+        this.badgeBenefitsService.getEffectivePlatformFeeDiscount(order.shopId),
+      ]).andThen(([baseFeePercent, badgeDiscount]) => {
+        // Calculate final platform fee percent (base - badge discount, min 0)
+        const platformFeePercent = Math.max(0, baseFeePercent - badgeDiscount);
+
+        // Create escrow hold for shop with fee calculation data
+        return this.escrowService
+          .createHold(
+            order.id,
+            order.shopId,
+            order.totalAmount,
+            order.subtotal,
+            order.coinUsed,
+            platformFeePercent,
+          )
+          .andThen(() => {
+            // Mark order as paid
+            order.markAsPaid();
+            return this.orderRepository.updateOrder(order);
+          });
+      });
     });
   }
 
@@ -925,7 +1356,9 @@ export class OrderService implements IOrderService {
   }
 
   @WithPosition()
-  cancelOrderDueToPaymentTimeout(orderId: string): ResultAsync<Order, DomainError> {
+  cancelOrderDueToPaymentTimeout(
+    orderId: string,
+  ): ResultAsync<Order, DomainError> {
     return this.orderRepository.findByIdWithItems(orderId).andThen((order) => {
       if (!order) {
         return errAsync(createDomainError(ORDER_ERRORS.ORDER_NOT_FOUND));

@@ -6,7 +6,12 @@ import { ShopAttributeCode } from 'src/database/typeorm/entities/shop/enums/shop
 import { ComparisonOperator } from 'src/database/typeorm/entities/shop/enums/comparison-operator.enum';
 import { ShopStatus } from 'src/database/typeorm/entities/shop/enums/shop-status.enum';
 import { ShopBadgeStatus } from 'src/database/typeorm/entities/shop/enums/shop-badge-status.enum';
-import { ORMShop, ORMShopBadge, ORMBadgeRequirement, ORMShopBadgeAssignment } from 'src/database/typeorm/entities/shop';
+import {
+  ORMShop,
+  ORMShopBadge,
+  ORMBadgeRequirement,
+  ORMShopBadgeAssignment,
+} from 'src/database/typeorm/entities/shop';
 import { v7 as uuidv7 } from 'uuid';
 
 /**
@@ -49,7 +54,8 @@ export class BadgeEligibilityCronjob {
       }
 
       // Get active requirements for preferred badge
-      const requirementRepo = this.dataSource.getRepository(ORMBadgeRequirement);
+      const requirementRepo =
+        this.dataSource.getRepository(ORMBadgeRequirement);
       const requirements = await requirementRepo.find({
         where: {
           badgeCode: ShopBadgeCode.PREFERRED,
@@ -63,7 +69,9 @@ export class BadgeEligibilityCronjob {
       );
 
       if (attributeRequirements.length === 0) {
-        this.logger.log('No attribute requirements for preferred badge. Skipping check.');
+        this.logger.log(
+          'No attribute requirements for preferred badge. Skipping check.',
+        );
         return;
       }
 
@@ -74,14 +82,18 @@ export class BadgeEligibilityCronjob {
         relations: ['badgeAssignments'],
       });
 
-      const badgeAssignmentRepo = this.dataSource.getRepository(ORMShopBadgeAssignment);
+      const badgeAssignmentRepo = this.dataSource.getRepository(
+        ORMShopBadgeAssignment,
+      );
 
       let granted = 0;
       let revoked = 0;
 
       for (const shop of shops) {
         const activePreferredBadge = shop.badgeAssignments?.find(
-          (ba) => ba.badgeCode === ShopBadgeCode.PREFERRED && ba.status === ShopBadgeStatus.ACTIVE,
+          (ba) =>
+            ba.badgeCode === ShopBadgeCode.PREFERRED &&
+            ba.status === ShopBadgeStatus.ACTIVE,
         );
 
         const meetsRequirements = this.checkShopMeetsRequirements(
@@ -92,7 +104,9 @@ export class BadgeEligibilityCronjob {
         if (meetsRequirements && !activePreferredBadge) {
           // Check if there's a disabled badge assignment to reactivate
           const disabledAssignment = shop.badgeAssignments?.find(
-            (ba) => ba.badgeCode === ShopBadgeCode.PREFERRED && ba.status === ShopBadgeStatus.DISABLED,
+            (ba) =>
+              ba.badgeCode === ShopBadgeCode.PREFERRED &&
+              ba.status === ShopBadgeStatus.DISABLED,
           );
 
           if (disabledAssignment) {
@@ -113,15 +127,20 @@ export class BadgeEligibilityCronjob {
             await badgeAssignmentRepo.save(newAssignment);
           }
           granted++;
-          this.logger.log(`Granted preferred badge to shop: ${shop.name} (${shop.id})`);
+          this.logger.log(
+            `Granted preferred badge to shop: ${shop.name} (${shop.id})`,
+          );
         } else if (!meetsRequirements && activePreferredBadge) {
           // Revoke badge by setting status to disabled
           activePreferredBadge.status = ShopBadgeStatus.DISABLED;
           activePreferredBadge.disabledAt = new Date();
-          activePreferredBadge.disabledReason = 'Không còn đạt yêu cầu badge Shop Yêu Thích';
+          activePreferredBadge.disabledReason =
+            'Không còn đạt yêu cầu badge Shop Yêu Thích';
           await badgeAssignmentRepo.save(activePreferredBadge);
           revoked++;
-          this.logger.log(`Revoked preferred badge from shop: ${shop.name} (${shop.id})`);
+          this.logger.log(
+            `Revoked preferred badge from shop: ${shop.name} (${shop.id})`,
+          );
         }
       }
 
@@ -129,7 +148,10 @@ export class BadgeEligibilityCronjob {
         `Preferred badge check complete. Granted: ${granted}, Revoked: ${revoked}`,
       );
     } catch (error) {
-      this.logger.error('Error during preferred badge eligibility check:', error);
+      this.logger.error(
+        'Error during preferred badge eligibility check:',
+        error,
+      );
     }
   }
 

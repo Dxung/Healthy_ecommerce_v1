@@ -14,17 +14,26 @@ export interface IUserFollowRepository {
   /**
    * Follow a user.
    */
-  follow(followerId: string, followingId: string): ResultAsync<void, DomainError>;
+  follow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Unfollow a user.
    */
-  unfollow(followerId: string, followingId: string): ResultAsync<void, DomainError>;
+  unfollow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Check if user is following another user.
    */
-  isFollowing(followerId: string, followingId: string): ResultAsync<boolean, DomainError>;
+  isFollowing(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<boolean, DomainError>;
 
   /**
    * Get users that a user is following.

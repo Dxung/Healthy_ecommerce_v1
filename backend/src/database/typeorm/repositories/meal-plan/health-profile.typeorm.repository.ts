@@ -22,7 +22,9 @@ export class OrmHealthProfileRepository implements IHealthProfileRepository {
   ) {}
 
   @WithPosition()
-  findByUserId(userId: string): ResultAsync<UserHealthProfile | null, DomainError> {
+  findByUserId(
+    userId: string,
+  ): ResultAsync<UserHealthProfile | null, DomainError> {
     const repo = this.getRepository();
     return ResultAsync.fromPromise(
       repo.findOne({ where: { userId } }),
@@ -33,14 +35,15 @@ export class OrmHealthProfileRepository implements IHealthProfileRepository {
   @WithPosition()
   findById(id: string): ResultAsync<UserHealthProfile | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMUserHealthProfileMapper.toDomain(orm) : null));
   }
 
   @WithPosition()
-  create(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError> {
+  create(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError> {
     const repo = this.getRepository();
     const orm = ORMUserHealthProfileMapper.toOrm(profile);
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
@@ -49,7 +52,9 @@ export class OrmHealthProfileRepository implements IHealthProfileRepository {
   }
 
   @WithPosition()
-  update(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError> {
+  update(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError> {
     const repo = this.getRepository();
     const orm = ORMUserHealthProfileMapper.toOrm(profile);
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
@@ -58,13 +63,15 @@ export class OrmHealthProfileRepository implements IHealthProfileRepository {
   }
 
   @WithPosition()
-  upsert(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError> {
+  upsert(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError> {
     const repo = this.getRepository();
     const orm = ORMUserHealthProfileMapper.toOrm(profile);
-    return ResultAsync.fromPromise(
-      repo.upsert(orm, ['userId']),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).andThen(() => this.findByUserId(profile.userId))
+    return ResultAsync.fromPromise(repo.upsert(orm, ['userId']), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    )
+      .andThen(() => this.findByUserId(profile.userId))
       .map((result) => result!);
   }
 

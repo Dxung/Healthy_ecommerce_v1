@@ -7,7 +7,8 @@ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 export class CreateReviewReplyArgumentDto {
   @ApiProperty({
     description: 'Reply text content',
-    example: 'Cảm ơn bạn đã ủng hộ. Chúng tôi rất vui khi bạn hài lòng với sản phẩm!',
+    example:
+      'Cảm ơn bạn đã ủng hộ. Chúng tôi rất vui khi bạn hài lòng với sản phẩm!',
   })
   @IsNotEmpty()
   @IsString()

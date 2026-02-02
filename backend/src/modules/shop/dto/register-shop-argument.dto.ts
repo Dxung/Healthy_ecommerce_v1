@@ -32,7 +32,8 @@ export class BadgeApplicationDocumentDto {
   imageUrl: string;
 
   @ApiProperty({
-    description: 'Document expiration date (ISO 8601 format) - required for badge applications',
+    description:
+      'Document expiration date (ISO 8601 format) - required for badge applications',
     example: '2027-12-31',
   })
   @IsNotEmpty()

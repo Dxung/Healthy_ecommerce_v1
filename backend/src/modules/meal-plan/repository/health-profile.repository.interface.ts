@@ -6,7 +6,9 @@ export interface IHealthProfileRepository {
   /**
    * Finds health profile by user ID.
    */
-  findByUserId(userId: string): ResultAsync<UserHealthProfile | null, DomainError>;
+  findByUserId(
+    userId: string,
+  ): ResultAsync<UserHealthProfile | null, DomainError>;
 
   /**
    * Finds health profile by its ID.
@@ -16,15 +18,21 @@ export interface IHealthProfileRepository {
   /**
    * Creates a health profile.
    */
-  create(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError>;
+  create(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError>;
 
   /**
    * Updates a health profile.
    */
-  update(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError>;
+  update(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError>;
 
   /**
    * Upserts (create or update) a health profile.
    */
-  upsert(profile: UserHealthProfile): ResultAsync<UserHealthProfile, DomainError>;
+  upsert(
+    profile: UserHealthProfile,
+  ): ResultAsync<UserHealthProfile, DomainError>;
 }

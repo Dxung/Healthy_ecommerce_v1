@@ -30,8 +30,7 @@ const statusTabs: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Tất cả' },
   { value: 'pending', label: 'Chờ xác nhận' },
   { value: 'confirmed', label: 'Đã xác nhận' },
-  { value: 'shipping', label: 'Đang giao' },
-  { value: 'delivered', label: 'Đã giao' },
+  { value: 'shipping', label: 'Đang vận chuyển' },
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];
@@ -39,7 +38,7 @@ const statusTabs: { value: OrderStatus | 'all'; label: string }[] = [
 const statusLabels: Record<OrderStatus, string> = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
+  shipping: 'Đang vận chuyển',
   delivered: 'Đã giao',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy',
@@ -131,23 +130,6 @@ export default function ShopOrdersPage() {
       setOperating(true);
       await apiClient.shipShopOrder(orderId);
       toast.success('Đã chuyển sang trạng thái giao hàng');
-      await fetchOrders();
-      if (selectedOrder?.id === orderId) {
-        await loadOrderDetail(orderId);
-      }
-    } catch (err) {
-      const error = err as ApiError;
-      toast.error(error.message || 'Cập nhật trạng thái thất bại');
-    } finally {
-      setOperating(false);
-    }
-  };
-
-  const handleMarkDelivered = async (orderId: string) => {
-    try {
-      setOperating(true);
-      await apiClient.markOrderDelivered(orderId);
-      toast.success('Đã đánh dấu giao hàng thành công');
       await fetchOrders();
       if (selectedOrder?.id === orderId) {
         await loadOrderDetail(orderId);
@@ -525,18 +507,9 @@ export default function ShopOrdersPage() {
                   </div>
                 )}
                 {selectedOrder.status === 'shipping' && (
-                  <Button
-                    className="w-full"
-                    onClick={() => handleMarkDelivered(selectedOrder.id)}
-                    disabled={operating}
-                  >
-                    {operating ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    ) : (
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                    )}
-                    Đã giao hàng
-                  </Button>
+                  <div className="text-sm text-gray-500 text-center py-2">
+                    Đang chờ khách hàng xác nhận nhận hàng
+                  </div>
                 )}
               </div>
             </div>

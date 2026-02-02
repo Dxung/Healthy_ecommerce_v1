@@ -92,7 +92,9 @@ export class Cart {
    * Checks if all items are selected
    */
   get allSelected(): boolean {
-    return this._items.length > 0 && this._items.every((item) => item.isSelected);
+    return (
+      this._items.length > 0 && this._items.every((item) => item.isSelected)
+    );
   }
 
   /**

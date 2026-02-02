@@ -8,7 +8,9 @@
  * @param phoneNumber - The phone number to validate (will be trimmed)
  * @returns true if valid Vietnamese phone format, false otherwise
  */
-export function isValidVietnamesePhone(phoneNumber: string | null | undefined): boolean {
+export function isValidVietnamesePhone(
+  phoneNumber: string | null | undefined,
+): boolean {
   if (!phoneNumber || typeof phoneNumber !== 'string') {
     return false;
   }
@@ -29,7 +31,9 @@ export function isValidVietnamesePhone(phoneNumber: string | null | undefined): 
  * @param phoneNumber - The phone number to normalize
  * @returns Trimmed phone number if valid, null if invalid
  */
-export function normalizeVietnamesePhone(phoneNumber: string | null | undefined): string | null {
+export function normalizeVietnamesePhone(
+  phoneNumber: string | null | undefined,
+): string | null {
   if (!phoneNumber || typeof phoneNumber !== 'string') {
     return null;
   }

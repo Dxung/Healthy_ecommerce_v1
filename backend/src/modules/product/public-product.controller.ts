@@ -369,7 +369,10 @@ export class PublicProductController {
    */
   private buildPublicProductResponse(
     product: Product,
-  ): ResultAsync<PublicProductDetailResponseDto, import('src/shared/types/domain-error.type').DomainError> {
+  ): ResultAsync<
+    PublicProductDetailResponseDto,
+    import('src/shared/types/domain-error.type').DomainError
+  > {
     // Load all additional data in parallel
     return ResultAsync.combine([
       this.categoryRepository.findAncestors(product.categoryId),

@@ -24,9 +24,8 @@ export class OrmExerciseLogRepository implements IExerciseLogRepository {
   @WithPosition()
   findById(id: string): ResultAsync<ExerciseLog | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMExerciseLogMapper.toDomain(orm) : null));
   }
 
@@ -62,7 +61,10 @@ export class OrmExerciseLogRepository implements IExerciseLogRepository {
       repo.find({
         where: {
           userId,
-          logDate: Between(this.formatDate(startDate), this.formatDate(endDate)) as any,
+          logDate: Between(
+            this.formatDate(startDate),
+            this.formatDate(endDate),
+          ) as any,
         },
         order: { logDate: 'ASC', createdAt: 'ASC' },
       }),

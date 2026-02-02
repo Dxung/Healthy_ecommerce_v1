@@ -31,7 +31,9 @@ export function parseDeviceInfo(userAgent: string, ip: string): DeviceInfo {
     const geo = geoip.lookup(cleanIp);
     if (geo && geo.country) {
       // Format: "City, Country" or just "Country" if city is unavailable
-      const rawLocation = geo.city ? `${geo.city}, ${geo.country}` : geo.country;
+      const rawLocation = geo.city
+        ? `${geo.city}, ${geo.country}`
+        : geo.country;
       // Map to Vietnamese names
       location = mapLocationToVietnamese(rawLocation);
     }

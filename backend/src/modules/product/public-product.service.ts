@@ -158,7 +158,9 @@ export class PublicProductService implements IPublicProductService {
       .findDescendantIds(categoryId)
       .andThen((descendantIds) => {
         const categoryIds = [categoryId, ...descendantIds];
-        return this.productRepository.findPublic(paginationParams, { categoryIds });
+        return this.productRepository.findPublic(paginationParams, {
+          categoryIds,
+        });
       });
   }
 

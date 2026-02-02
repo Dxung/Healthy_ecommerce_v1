@@ -76,10 +76,7 @@ export class ShopBadgeAssignment {
    * @param shopId - The shop to assign the badge to
    * @param expiresAt - Expiration date of the badge
    */
-  static createApproved(
-    shopId: string,
-    expiresAt: Date,
-  ): ShopBadgeAssignment {
+  static createApproved(shopId: string, expiresAt: Date): ShopBadgeAssignment {
     const id = uuidv7();
     const now = new Date();
 

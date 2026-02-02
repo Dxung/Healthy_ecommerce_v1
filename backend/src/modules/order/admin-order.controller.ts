@@ -1,15 +1,18 @@
 import {
   Controller,
   Get,
-  Patch,
   Param,
   Query,
-  Body,
   Inject,
   UseGuards,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import type { IAdminOrderService } from './admin-order.service.interface';
 import { ADMIN_ORDER_SERVICE } from './tokens/order.token';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -22,7 +25,6 @@ import {
   AdminOrderResponseDto,
   AdminOrderListResponseDto,
 } from './dto/admin-order-response.dto';
-import { AdminUpdateOrderStatusArgumentDto } from './dto/admin-update-status-argument.dto';
 
 @ApiTags('Admin - Order Management')
 @ApiBearerAuth()
@@ -92,32 +94,5 @@ export class AdminOrderController {
         );
       },
     );
-  }
-
-  @Patch(':id/status')
-  @Permissions('order:manage')
-  @ApiOperation({ summary: 'Update order status (admin)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Order status updated',
-    type: AdminOrderResponseDto,
-  })
-  @ApiResponse({ status: 400, description: 'Invalid status transition' })
-  @ApiResponse({ status: 404, description: 'Order not found' })
-  updateOrderStatus(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: AdminUpdateOrderStatusArgumentDto,
-  ): Promise<AdminOrderResponseDto> {
-    return this.adminOrderService
-      .updateOrderStatus(id, dto.status, dto.note)
-      .match(
-        (order) => new AdminOrderResponseDto(order),
-        (error) => {
-          throw OrderErrorHttpMapper.toHttpException(
-            error,
-            ExceptionSource.CONTROLLER,
-          );
-        },
-      );
   }
 }

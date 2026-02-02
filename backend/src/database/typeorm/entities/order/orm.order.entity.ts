@@ -25,8 +25,9 @@ import { CancelledBy } from './enums/cancelled-by.enum';
 @Index('idx_orders_order_code', ['orderCode'])
 @Index('idx_orders_buyer_id', ['buyerId'])
 @Index('idx_orders_shop_id', ['shopId'])
-@Index('idx_orders_status', ['status'])
 @Index('idx_orders_created_at', ['createdAt'])
+@Index('idx_orders_status_payment_status', ['status', 'paymentStatus'])
+@Index('idx_orders_delivered_at', ['deliveredAt'])
 export class ORMOrder {
   @PrimaryColumn({ type: 'uuid' })
   id: string;
@@ -49,38 +50,97 @@ export class ORMOrder {
   @Column({ name: 'shipping_address', type: 'text' })
   shippingAddress: string;
 
-  @Column({ name: 'shipping_ward_id', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'shipping_ward_id',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   shippingWardId: string | null;
 
-  @Column({ name: 'shipping_district_id', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'shipping_district_id',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   shippingDistrictId: string | null;
 
-  @Column({ name: 'shipping_province_id', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'shipping_province_id',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   shippingProvinceId: string | null;
 
   @Column({ name: 'subtotal', type: 'decimal', precision: 15, scale: 2 })
   subtotal: number;
 
-  @Column({ name: 'shipping_fee', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    name: 'shipping_fee',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
   shippingFee: number;
 
-  @Column({ name: 'platform_fee', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    name: 'platform_fee',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
   platformFee: number;
 
-  @Column({ name: 'platform_fee_percent', type: 'decimal', precision: 5, scale: 2 })
+  @Column({
+    name: 'platform_fee_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+  })
   platformFeePercent: number;
 
-  @Column({ name: 'tier_discount_amount', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    name: 'tier_discount_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
   tierDiscountAmount: number;
 
-  @Column({ name: 'tier_discount_percent', type: 'decimal', precision: 5, scale: 2, default: 0 })
+  @Column({
+    name: 'tier_discount_percent',
+    type: 'decimal',
+    precision: 5,
+    scale: 2,
+    default: 0,
+  })
   tierDiscountPercent: number;
 
-  @Column({ name: 'voucher_discount_amount', type: 'decimal', precision: 15, scale: 2, default: 0 })
+  @Column({
+    name: 'voucher_discount_amount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
   voucherDiscountAmount: number;
 
   @Column({ name: 'coin_used', type: 'bigint', default: 0 })
   coinUsed: number;
+
+  @Column({
+    name: 'platform_ship_discount',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  platformShipDiscount: number;
 
   @Column({ name: 'total_amount', type: 'decimal', precision: 15, scale: 2 })
   totalAmount: number;

@@ -15,14 +15,18 @@ import { ORMProductNutrition } from '../../entities/product/orm.product-nutritio
 import { ORMProductNutritionMapper } from '../../mappers/product-nutrition.mapper.orm';
 
 @Injectable()
-export class OrmProductNutritionRepository implements IProductNutritionRepository {
+export class OrmProductNutritionRepository
+  implements IProductNutritionRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  findByProductId(productId: string): ResultAsync<ProductNutrition | null, DomainError> {
+  findByProductId(
+    productId: string,
+  ): ResultAsync<ProductNutrition | null, DomainError> {
     const repo = this.getRepository();
     return ResultAsync.fromPromise(
       repo.findOne({ where: { productId } }),
@@ -33,14 +37,15 @@ export class OrmProductNutritionRepository implements IProductNutritionRepositor
   @WithPosition()
   findById(id: string): ResultAsync<ProductNutrition | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMProductNutritionMapper.toDomain(orm) : null));
   }
 
   @WithPosition()
-  create(nutrition: ProductNutrition): ResultAsync<ProductNutrition, DomainError> {
+  create(
+    nutrition: ProductNutrition,
+  ): ResultAsync<ProductNutrition, DomainError> {
     const repo = this.getRepository();
     const orm = ORMProductNutritionMapper.toOrm(nutrition);
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
@@ -49,7 +54,9 @@ export class OrmProductNutritionRepository implements IProductNutritionRepositor
   }
 
   @WithPosition()
-  update(nutrition: ProductNutrition): ResultAsync<ProductNutrition, DomainError> {
+  update(
+    nutrition: ProductNutrition,
+  ): ResultAsync<ProductNutrition, DomainError> {
     const repo = this.getRepository();
     const orm = ORMProductNutritionMapper.toOrm(nutrition);
     return ResultAsync.fromPromise(repo.save(orm), (error) =>
@@ -60,14 +67,15 @@ export class OrmProductNutritionRepository implements IProductNutritionRepositor
   @WithPosition()
   deleteByProductId(productId: string): ResultAsync<void, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.delete({ productId }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.delete({ productId }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map(() => undefined);
   }
 
   @WithPosition()
-  findByProductIds(productIds: string[]): ResultAsync<ProductNutrition[], DomainError> {
+  findByProductIds(
+    productIds: string[],
+  ): ResultAsync<ProductNutrition[], DomainError> {
     if (productIds.length === 0) {
       return ResultAsync.fromSafePromise(Promise.resolve([]));
     }

@@ -41,13 +41,4 @@ export interface IAdminOrderService {
   getOrderById(
     orderId: string,
   ): ResultAsync<OrderWithShopAndBuyer, DomainError>;
-
-  /**
-   * Admin force update order status
-   */
-  updateOrderStatus(
-    orderId: string,
-    newStatus: OrderStatus,
-    note?: string,
-  ): ResultAsync<OrderWithShopAndBuyer, DomainError>;
 }

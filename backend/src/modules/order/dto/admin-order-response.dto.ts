@@ -29,6 +29,7 @@ export class AdminOrderResponseDto {
   tierDiscountAmount: number;
   voucherDiscountAmount: number;
   coinUsed: number;
+  platformShipDiscount: number;
   totalAmount: number;
   coinEarned: number;
 
@@ -84,6 +85,7 @@ export class AdminOrderResponseDto {
     this.tierDiscountAmount = order.tierDiscountAmount;
     this.voucherDiscountAmount = order.voucherDiscountAmount;
     this.coinUsed = order.coinUsed;
+    this.platformShipDiscount = order.platformShipDiscount;
     this.totalAmount = order.totalAmount;
     this.coinEarned = order.coinEarned;
 

@@ -11,7 +11,7 @@ export class ORMPaymentTransactionMapper {
   static toDomain(ormPayment: ORMPaymentTransaction): PaymentTransaction {
     return new PaymentTransaction(
       ormPayment.id,
-      ormPayment.walletId,
+      ormPayment.topupId,
       ormPayment.orderId,
       ormPayment.type,
       Number(ormPayment.amount),
@@ -34,7 +34,7 @@ export class ORMPaymentTransactionMapper {
   static toOrm(domainPayment: PaymentTransaction): ORMPaymentTransaction {
     const ormPayment = new ORMPaymentTransaction();
     ormPayment.id = domainPayment.id;
-    ormPayment.walletId = domainPayment.walletId;
+    ormPayment.topupId = domainPayment.topupId;
     ormPayment.orderId = domainPayment.orderId;
     ormPayment.type = domainPayment.type;
     ormPayment.amount = domainPayment.amount;

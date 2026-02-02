@@ -27,18 +27,16 @@ export class OrmBrandRepository implements IBrandRepository {
   @WithPosition()
   findById(id: string): ResultAsync<Brand | null, DomainError> {
     const repo = this.getBrandRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMBrandMapper.toDomain(orm) : null));
   }
 
   @WithPosition()
   findBySlug(slug: string): ResultAsync<Brand | null, DomainError> {
     const repo = this.getBrandRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { slug } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { slug } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMBrandMapper.toDomain(orm) : null));
   }
 

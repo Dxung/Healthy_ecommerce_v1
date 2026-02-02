@@ -1,5 +1,10 @@
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 import type { IBuyerService } from './buyer.service.interface';
 import { BUYER_SERVICE } from './tokens/buyer.token';
 import { AuthGuard } from '../auth/guards/auth.guard';

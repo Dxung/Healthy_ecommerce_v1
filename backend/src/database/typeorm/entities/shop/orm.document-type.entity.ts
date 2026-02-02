@@ -23,7 +23,12 @@ export class ORMDocumentType {
   @Column({ name: 'description', type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'sample_image_url', type: 'varchar', length: 500, nullable: true })
+  @Column({
+    name: 'sample_image_url',
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+  })
   sampleImageUrl: string | null;
 
   @Column({ name: 'is_active', type: 'boolean', default: true })

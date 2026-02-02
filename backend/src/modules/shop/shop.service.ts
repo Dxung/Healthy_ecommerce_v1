@@ -71,124 +71,129 @@ export class ShopService implements IShopService {
     }
 
     // Step 2: Check if user already owns a shop
-    return this.shopRepository
-      .existsByUserId(userId)
-      .andThen((hasShop) => {
-        if (hasShop) {
-          return errAsync(
-            createDomainError(SHOP_ERRORS.ALREADY_HAS_SHOP, {
-              cause: 'User already owns a shop',
-            }),
-          );
-        }
-        return okAsync(undefined);
-      })
-      // Step 3: Handle phone verification
-      .andThen(() => this.userService.getCurrentUser())
-      .andThen((user) => {
-        const userHasPhone = user.phoneNumber !== null;
-        const tokenProvided = !!dto.firebaseOtpToken;
-
-        // Case 1: User has phone + token provided → REJECT (bypass attempt)
-        if (userHasPhone && tokenProvided) {
-          return errAsync(
-            createDomainError(SHOP_ERRORS.USER_ALREADY_HAS_PHONE, {
-              cause: 'User already has a phone number. OTP verification is not needed.',
-            }),
-          );
-        }
-
-        // Case 2: User has phone + no token → use user's phone from DB directly
-        if (userHasPhone && !tokenProvided) {
-          return okAsync(user.phoneNumber);
-        }
-
-        // Case 3: User has no phone + no token → ERROR (need phone verification)
-        if (!userHasPhone && !tokenProvided) {
-          return errAsync(
-            createDomainError(SHOP_ERRORS.PHONE_VERIFICATION_REQUIRED, {
-              cause: 'User has no phone number. OTP verification is required.',
-            }),
-          );
-        }
-
-        // Case 4: User has no phone + token provided → verify token
-        return this.firebaseVerificationService
-          .verifyTokenForPhone(dto.firebaseOtpToken!)
-          .andThen((otpResult) => {
-            // Validate phone matches dto.phone
-            if (otpResult.phone !== dto.phone) {
-              return errAsync(
-                createDomainError(AUTH_ERRORS.PHONE_MISMATCH, {
-                  cause: 'Phone number does not match OTP token',
-                }),
-              );
-            }
-            return okAsync(dto.phone);
-          })
-          .andThen((verifiedPhone) => {
-            // Update user's phone number
-            return this.userService
-              .setPhoneForCurrentUser(verifiedPhone)
-              .map(() => verifiedPhone);
-          });
-      })
-      // Step 4: Validate location hierarchy
-      .andThen((verifiedPhone) => {
-        return this.locationService
-          .validateLocation(dto.provinceId, dto.districtId, dto.wardId)
-          .andThen((isValid) => {
-            if (!isValid) {
-              return errAsync(
-                createDomainError(LOCATION_ERRORS.LOCATION_HIERARCHY_INVALID, {
-                  cause: 'Location validation failed',
-                }),
-              );
-            }
-            return okAsync(verifiedPhone);
-          });
-      })
-      // Step 5: Check shop name uniqueness via slug
-      .andThen((verifiedPhone) => {
-        const slug = Shop.generateSlug(dto.name);
-        return this.shopRepository.existsBySlug(slug).andThen((exists) => {
-          if (exists) {
+    return (
+      this.shopRepository
+        .existsByUserId(userId)
+        .andThen((hasShop) => {
+          if (hasShop) {
             return errAsync(
-              createDomainError(SHOP_ERRORS.SHOP_NAME_ALREADY_EXISTS, {
-                cause: 'Shop name (slug) already taken',
+              createDomainError(SHOP_ERRORS.ALREADY_HAS_SHOP, {
+                cause: 'User already owns a shop',
               }),
             );
           }
-          return okAsync({ slug, verifiedPhone });
-        });
-      })
-      // Step 6: Create shop and assign role in transaction
-      .andThen(({ slug, verifiedPhone }) => {
-        return this.uow.executeInTransaction(() => {
-          // Create shop domain model
-          const shop = Shop.createNew({
-            userId,
-            name: dto.name,
-            slug,
-            phone: verifiedPhone,
-            email: dto.email,
-            addressLine: dto.addressLine,
-            wardId: dto.wardId,
-            districtId: dto.districtId,
-            provinceId: dto.provinceId,
-          });
+          return okAsync(undefined);
+        })
+        // Step 3: Handle phone verification
+        .andThen(() => this.userService.getCurrentUser())
+        .andThen((user) => {
+          const userHasPhone = user.phoneNumber !== null;
+          const tokenProvided = !!dto.firebaseOtpToken;
 
-          // Save shop to database
-          return this.shopRepository
-            .create(shop)
-            .andThen((createdShop) => {
+          // Case 1: User has phone + token provided → REJECT (bypass attempt)
+          if (userHasPhone && tokenProvided) {
+            return errAsync(
+              createDomainError(SHOP_ERRORS.USER_ALREADY_HAS_PHONE, {
+                cause:
+                  'User already has a phone number. OTP verification is not needed.',
+              }),
+            );
+          }
+
+          // Case 2: User has phone + no token → use user's phone from DB directly
+          if (userHasPhone && !tokenProvided) {
+            return okAsync(user.phoneNumber);
+          }
+
+          // Case 3: User has no phone + no token → ERROR (need phone verification)
+          if (!userHasPhone && !tokenProvided) {
+            return errAsync(
+              createDomainError(SHOP_ERRORS.PHONE_VERIFICATION_REQUIRED, {
+                cause:
+                  'User has no phone number. OTP verification is required.',
+              }),
+            );
+          }
+
+          // Case 4: User has no phone + token provided → verify token
+          return this.firebaseVerificationService
+            .verifyTokenForPhone(dto.firebaseOtpToken!)
+            .andThen((otpResult) => {
+              // Validate phone matches dto.phone
+              if (otpResult.phone !== dto.phone) {
+                return errAsync(
+                  createDomainError(AUTH_ERRORS.PHONE_MISMATCH, {
+                    cause: 'Phone number does not match OTP token',
+                  }),
+                );
+              }
+              return okAsync(dto.phone);
+            })
+            .andThen((verifiedPhone) => {
+              // Update user's phone number
+              return this.userService
+                .setPhoneForCurrentUser(verifiedPhone)
+                .map(() => verifiedPhone);
+            });
+        })
+        // Step 4: Validate location hierarchy
+        .andThen((verifiedPhone) => {
+          return this.locationService
+            .validateLocation(dto.provinceId, dto.districtId, dto.wardId)
+            .andThen((isValid) => {
+              if (!isValid) {
+                return errAsync(
+                  createDomainError(
+                    LOCATION_ERRORS.LOCATION_HIERARCHY_INVALID,
+                    {
+                      cause: 'Location validation failed',
+                    },
+                  ),
+                );
+              }
+              return okAsync(verifiedPhone);
+            });
+        })
+        // Step 5: Check shop name uniqueness via slug
+        .andThen((verifiedPhone) => {
+          const slug = Shop.generateSlug(dto.name);
+          return this.shopRepository.existsBySlug(slug).andThen((exists) => {
+            if (exists) {
+              return errAsync(
+                createDomainError(SHOP_ERRORS.SHOP_NAME_ALREADY_EXISTS, {
+                  cause: 'Shop name (slug) already taken',
+                }),
+              );
+            }
+            return okAsync({ slug, verifiedPhone });
+          });
+        })
+        // Step 6: Create shop and assign role in transaction
+        .andThen(({ slug, verifiedPhone }) => {
+          return this.uow.executeInTransaction(() => {
+            // Create shop domain model
+            const shop = Shop.createNew({
+              userId,
+              name: dto.name,
+              slug,
+              phone: verifiedPhone,
+              email: dto.email,
+              addressLine: dto.addressLine,
+              wardId: dto.wardId,
+              districtId: dto.districtId,
+              provinceId: dto.provinceId,
+            });
+
+            // Save shop to database
+            return this.shopRepository.create(shop).andThen((createdShop) => {
               // Assign 'shop' role to the user
               return this.authorizationService
                 .assignRoleToUser(userId, 'shop', userId)
                 .map(() => createdShop);
             });
-        });
-      });
+          });
+        })
+    );
   }
 
   /**
@@ -210,5 +215,4 @@ export class ShopService implements IShopService {
     // Step 2: Find shop by user ID
     return this.shopRepository.findByUserId(store.userId);
   }
-
 }

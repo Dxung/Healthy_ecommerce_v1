@@ -5,7 +5,10 @@ import { ORMSystemConfig } from '../../entities/config';
 import { SystemConfigOrmMapper } from '../../mappers/system-config.mapper.orm';
 import { ISystemConfigRepository } from 'src/modules/system-config/repository/system-config.repository.interface';
 import { SystemConfig } from 'src/modules/system-config/models/system-config.model';
-import { createDomainError, DomainError } from 'src/shared/types/domain-error.type';
+import {
+  createDomainError,
+  DomainError,
+} from 'src/shared/types/domain-error.type';
 import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
 
 @Injectable()

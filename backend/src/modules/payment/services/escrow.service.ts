@@ -5,7 +5,6 @@ import { IWalletService } from './wallet.service.interface';
 import { IEscrowRepository } from '../repository/escrow.repository.interface';
 import { IWalletRepository } from '../repository/wallet.repository.interface';
 import { EscrowHold } from '../models/escrow-hold.model';
-import { PendingRelease } from '../models/pending-release.model';
 import { WalletOwnerType } from 'src/database/typeorm/entities/payment/enums/wallet-owner-type.enum';
 import { WALLET_SERVICE } from '../tokens/payment.token';
 import {
@@ -20,10 +19,8 @@ import { PAYMENT_ERRORS } from '../errors/payment.errors';
 import { CUSTOM_LOG } from 'src/shared/custom-loggers/tokens/custom-logger.token';
 import { ICustomLoggerService } from 'src/shared/custom-loggers/interfaces/custom-logger.service.interface';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
-import { IShopBadgeBenefitsService } from 'src/modules/shop/shop-badge-benefits.service.interface';
-import { SHOP_BADGE_BENEFITS_SERVICE } from 'src/modules/shop/tokens/shop.token';
-import { ISystemConfigService } from 'src/modules/system-config/system-config.service.interface';
-import { SYSTEM_CONFIG_SERVICE } from 'src/modules/system-config/tokens/system-config.token';
+import { IUow } from 'src/shared/unitOfWork/interfaces/uow.interface';
+import { UOW_TOKEN } from 'src/shared/unitOfWork/tokens/uow.token';
 
 @Injectable()
 export class EscrowService implements IEscrowService {
@@ -36,10 +33,8 @@ export class EscrowService implements IEscrowService {
     private readonly walletService: IWalletService,
     @Inject(CUSTOM_LOG)
     private readonly logger: ICustomLoggerService,
-    @Inject(SHOP_BADGE_BENEFITS_SERVICE)
-    private readonly badgeBenefitsService: IShopBadgeBenefitsService,
-    @Inject(SYSTEM_CONFIG_SERVICE)
-    private readonly systemConfigService: ISystemConfigService,
+    @Inject(UOW_TOKEN)
+    private readonly uow: IUow,
   ) {}
 
   @WithPosition()
@@ -47,11 +42,17 @@ export class EscrowService implements IEscrowService {
     orderId: string,
     shopId: string,
     amount: number,
+    orderSubtotal: number,
+    coinUsed: number,
+    platformFeePercent: number,
   ): ResultAsync<EscrowHold, DomainError> {
     const escrowHold = EscrowHold.create({
       orderId,
       shopId,
       amount,
+      orderSubtotal,
+      coinUsed,
+      platformFeePercent,
     });
 
     return this.escrowRepository.createHold(escrowHold);
@@ -62,6 +63,16 @@ export class EscrowService implements IEscrowService {
     return this.escrowRepository.findByOrderId(orderId);
   }
 
+  /**
+   * Release escrow to shop.
+   * NOTE: This method does NOT create its own transaction.
+   * Caller must wrap this in a UoW transaction (e.g., from confirmDelivery).
+   *
+   * Operations:
+   * - Update escrow status → RELEASED
+   * - Credit shop wallet
+   * - Credit/Debit platform wallet (fee)
+   */
   @WithPosition()
   releaseToShop(escrowId: string): ResultAsync<void, DomainError> {
     return this.escrowRepository.findById(escrowId).andThen((escrowHold) => {
@@ -76,38 +87,54 @@ export class EscrowService implements IEscrowService {
         return errAsync(releaseResult.error);
       }
 
-      // Get platform fee rate and badge discount
-      return ResultAsync.combine([
-        this.systemConfigService.getPlatformFeePercent(),
-        this.badgeBenefitsService.getEffectivePlatformFeeDiscount(
-          escrowHold.shopId,
-        ),
-      ]).andThen(([baseFeePercent, badgeDiscount]) => {
-        // Calculate effective platform fee with badge discount
-        // effectiveFeePercent = baseFeePercent * (1 - badgeDiscount/100)
-        const effectiveFeePercent = baseFeePercent * (1 - badgeDiscount / 100);
-        const platformFee = Math.round(
-          escrowHold.amount * (effectiveFeePercent / 100),
-        );
-        const netAmount = escrowHold.amount - platformFee;
+      // Calculate amounts using stored values from order creation time
+      // platformFee is calculated on orderSubtotal (original value before coin discount)
+      const platformFee = Math.round(
+        escrowHold.orderSubtotal * (escrowHold.platformFeePercent / 100),
+      );
+      // Shop receives: orderSubtotal - platformFee
+      const shopReceives = escrowHold.orderSubtotal - platformFee;
+      // Platform receives: escrowAmount - shopReceives
+      // Can be negative if coinUsed > platformFee (platform subsidizes shop)
+      const platformReceives = escrowHold.amount - shopReceives;
 
-        this.logger.log(
-          `Releasing escrow ${escrowId}: amount=${escrowHold.amount}, baseFee=${baseFeePercent}%, badgeDiscount=${badgeDiscount}%, effectiveFee=${effectiveFeePercent}%, platformFee=${platformFee}, netToShop=${netAmount}`,
-          'EscrowService',
-        );
+      this.logger.log(
+        `Releasing escrow ${escrowId}: escrowAmount=${escrowHold.amount}, orderSubtotal=${escrowHold.orderSubtotal}, coinUsed=${escrowHold.coinUsed}, feePercent=${escrowHold.platformFeePercent}%, platformFee=${platformFee}, shopReceives=${shopReceives}, platformReceives=${platformReceives}`,
+        'EscrowService',
+      );
 
-        // Update escrow and credit shop wallet with net amount
-        return this.escrowRepository
+      // Update escrow status
+      return (
+        this.escrowRepository
           .updateHold(escrowHold)
+          // Credit shop wallet
           .andThen(() =>
             this.walletService.creditShopFromEscrow(
               escrowHold.shopId,
               escrowHold.orderId,
-              netAmount,
+              shopReceives,
             ),
           )
-          .map(() => undefined);
-      });
+          // Credit or debit platform wallet
+          .andThen(() => {
+            if (platformReceives > 0) {
+              // Platform receives fee
+              return this.walletService.creditPlatformFromEscrow(
+                escrowHold.orderId,
+                platformReceives,
+              );
+            } else if (platformReceives < 0) {
+              // Platform subsidizes shop (coinUsed > platformFee)
+              return this.walletService.debitPlatformForEscrow(
+                escrowHold.orderId,
+                Math.abs(platformReceives),
+              );
+            }
+            // platformReceives === 0, no platform transaction needed
+            return okAsync(undefined as any);
+          })
+          .map(() => undefined)
+      );
     });
   }
 
@@ -116,166 +143,44 @@ export class EscrowService implements IEscrowService {
     escrowId: string,
     buyerId: string,
   ): ResultAsync<void, DomainError> {
-    return this.escrowRepository.findById(escrowId).andThen((escrowHold) => {
-      if (!escrowHold) {
-        return errAsync(
-          createDomainError(PAYMENT_ERRORS.ESCROW_NOT_FOUND, { cause: null }),
-        );
-      }
-
-      const refundResult = escrowHold.refund();
-      if (refundResult.isErr()) {
-        return errAsync(refundResult.error);
-      }
-
-      // Update escrow and credit buyer wallet
-      return this.escrowRepository
-        .updateHold(escrowHold)
-        .andThen(() =>
-          this.walletRepository.findByOwner(WalletOwnerType.BUYER, buyerId),
-        )
-        .andThen((wallet) => {
-          if (!wallet) {
-            return errAsync(
-              createDomainError(PAYMENT_ERRORS.WALLET_NOT_FOUND, {
-                cause: null,
-              }),
-            );
-          }
-
-          wallet.credit(escrowHold.amount);
-          return this.walletRepository.saveWallet(wallet);
-        })
-        .map(() => undefined);
-    });
-  }
-
-  @WithPosition()
-  createPendingRelease(
-    escrowHold: EscrowHold,
-    shopId: string,
-  ): ResultAsync<PendingRelease, DomainError> {
-    return this.walletRepository
-      .findOrCreateForShop(shopId)
-      .andThen((shopWallet) => {
-        const pendingRelease = PendingRelease.create({
-          escrowHoldId: escrowHold.id,
-          shopWalletId: shopWallet.id,
-          amount: escrowHold.amount,
-        });
-
-        return this.escrowRepository.createPendingRelease(pendingRelease);
-      });
-  }
-
-  @WithPosition()
-  processCompletedOrderReleases(): ResultAsync<number, DomainError> {
-    return this.escrowRepository
-      .findHoldingEscrowsForCompletedOrders()
-      .andThen((escrowsWithShops) => {
-        if (escrowsWithShops.length === 0) {
-          return okAsync(0);
+    // Wrap in transaction to ensure atomicity:
+    // - updateHold (escrow status → REFUNDED)
+    // - credit buyer wallet
+    // If any step fails, the entire operation is rolled back
+    return this.uow.executeInTransaction(() =>
+      this.escrowRepository.findById(escrowId).andThen((escrowHold) => {
+        if (!escrowHold) {
+          return errAsync(
+            createDomainError(PAYMENT_ERRORS.ESCROW_NOT_FOUND, { cause: null }),
+          );
         }
 
-        // Create pending releases for each escrow
-        const createReleases = escrowsWithShops.map(({ escrowHold, shopId }) =>
-          this.createPendingRelease(escrowHold, shopId),
-        );
-
-        return ResultAsync.combine(createReleases).map(
-          (releases) => releases.length,
-        );
-      });
-  }
-
-  @WithPosition()
-  processPendingReleasesWithRetry(): ResultAsync<number, DomainError> {
-    return this.escrowRepository
-      .findPendingReleasesForProcessing()
-      .andThen((pendingReleases) => {
-        if (pendingReleases.length === 0) {
-          return okAsync(0);
+        const refundResult = escrowHold.refund();
+        if (refundResult.isErr()) {
+          return errAsync(refundResult.error);
         }
 
-        let processedCount = 0;
-
-        const processRelease = (
-          release: PendingRelease,
-        ): ResultAsync<void, never> => {
-          release.startProcessing();
-
-          return this.escrowRepository
-            .updatePendingRelease(release)
-            .andThen(() => this.escrowRepository.findById(release.escrowHoldId))
-            .andThen((escrowHold) => {
-              if (!escrowHold || !escrowHold.isHolding()) {
-                release.complete();
-                return this.escrowRepository.updatePendingRelease(release);
-              }
-
-              return this.releaseToShop(escrowHold.id)
-                .andThen(() => {
-                  release.complete();
-                  processedCount++;
-                  return this.escrowRepository.updatePendingRelease(release);
-                })
-                .orElse((error) => {
-                  release.fail(error.message);
-                  this.logger.warn(
-                    `Failed to release escrow ${escrowHold.id}: ${error.message}`,
-                    'EscrowService',
-                  );
-                  return this.escrowRepository.updatePendingRelease(release);
-                });
-            })
-            .orElse((error) => {
-              release.fail(error.message);
-              this.logger.error(
-                `Error processing pending release ${release.id}: ${error.message}`,
-                'EscrowService',
-              );
-              return this.escrowRepository
-                .updatePendingRelease(release)
-                .map(() => undefined)
-                .orElse(() => okAsync(undefined));
-            })
-            .map(() => undefined);
-        };
-
-        // Process releases sequentially to avoid race conditions
-        return pendingReleases
-          .reduce(
-            (chain, release) => chain.andThen(() => processRelease(release)),
-            okAsync(undefined) as ResultAsync<void, never>,
+        // Update escrow and credit buyer wallet
+        // Both operations run in the same transaction
+        return this.escrowRepository
+          .updateHold(escrowHold)
+          .andThen(() =>
+            this.walletRepository.findByOwner(WalletOwnerType.BUYER, buyerId),
           )
-          .map(() => processedCount);
-      });
-  }
+          .andThen((wallet) => {
+            if (!wallet) {
+              return errAsync(
+                createDomainError(PAYMENT_ERRORS.WALLET_NOT_FOUND, {
+                  cause: null,
+                }),
+              );
+            }
 
-  @WithPosition()
-  retryFailedRelease(pendingReleaseId: string): ResultAsync<void, DomainError> {
-    return this.escrowRepository
-      .findPendingReleaseById(pendingReleaseId)
-      .andThen((release) => {
-        if (!release) {
-          return errAsync(
-            createDomainError(PAYMENT_ERRORS.PENDING_RELEASE_NOT_FOUND, {
-              cause: null,
-            }),
-          );
-        }
-
-        if (!release.isFailed()) {
-          return errAsync(
-            createDomainError(PAYMENT_ERRORS.PENDING_RELEASE_NOT_FAILED, {
-              cause: null,
-            }),
-          );
-        }
-
-        release.resetForRetry();
-        return this.escrowRepository.updatePendingRelease(release);
-      })
-      .map(() => undefined);
+            wallet.credit(escrowHold.amount);
+            return this.walletRepository.saveWallet(wallet);
+          })
+          .map(() => undefined);
+      }),
+    );
   }
 }

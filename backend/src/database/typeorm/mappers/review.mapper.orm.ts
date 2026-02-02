@@ -1,8 +1,4 @@
-import {
-  ORMReview,
-  ORMReviewImage,
-  ORMReviewReply,
-} from '../entities/product';
+import { ORMReview, ORMReviewImage, ORMReviewReply } from '../entities/product';
 import { Review } from 'src/modules/review/models/review.model';
 import { ReviewImage } from 'src/modules/review/models/review-image.model';
 import { ReviewReply } from 'src/modules/review/models/review-reply.model';

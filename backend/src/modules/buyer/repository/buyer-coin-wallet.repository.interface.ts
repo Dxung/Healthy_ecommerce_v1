@@ -14,7 +14,9 @@ export interface IBuyerCoinWalletRepository {
    * Finds a buyer's coin wallet by buyer ID.
    * Returns null if the wallet doesn't exist.
    */
-  findByBuyerId(buyerId: string): ResultAsync<BuyerCoinWallet | null, DomainError>;
+  findByBuyerId(
+    buyerId: string,
+  ): ResultAsync<BuyerCoinWallet | null, DomainError>;
 
   /**
    * Creates a new coin wallet for a buyer.
@@ -70,4 +72,30 @@ export interface IBuyerCoinWalletRepository {
     buyerId: string,
     pagination: PaginationParams,
   ): ResultAsync<PaginatedResult<CoinTransaction>, DomainError>;
+
+  /**
+   * Debits coins from buyer wallet with pessimistic lock.
+   * Must be called within a transaction.
+   * Fails if wallet doesn't exist or insufficient balance.
+   */
+  debitCoinsWithLock(
+    buyerId: string,
+    amount: number,
+    referenceType: string,
+    referenceId: string | null,
+    description: string | null,
+  ): ResultAsync<CoinTransaction, DomainError>;
+
+  /**
+   * Credits coins to buyer wallet as a refund.
+   * Creates wallet if it doesn't exist.
+   * Uses REFUNDED transaction type.
+   */
+  creditCoinsRefund(
+    buyerId: string,
+    amount: number,
+    referenceType: string,
+    referenceId: string | null,
+    description: string | null,
+  ): ResultAsync<CoinTransaction, DomainError>;
 }

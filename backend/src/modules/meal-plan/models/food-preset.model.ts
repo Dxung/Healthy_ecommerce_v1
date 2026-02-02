@@ -126,7 +126,8 @@ export class FoodPreset {
     isPublic?: boolean;
   }): void {
     if (params.name !== undefined) this._name = params.name;
-    if (params.description !== undefined) this._description = params.description;
+    if (params.description !== undefined)
+      this._description = params.description;
     if (params.imageUrl !== undefined) this._imageUrl = params.imageUrl;
     if (params.isPublic !== undefined) this._isPublic = params.isPublic;
     this._updatedAt = new Date();
@@ -143,11 +144,14 @@ export class FoodPreset {
     sugar?: number | null;
     sodium?: number | null;
   }): void {
-    if (params.servingSize !== undefined) this._servingSize = params.servingSize;
-    if (params.servingUnit !== undefined) this._servingUnit = params.servingUnit;
+    if (params.servingSize !== undefined)
+      this._servingSize = params.servingSize;
+    if (params.servingUnit !== undefined)
+      this._servingUnit = params.servingUnit;
     if (params.calories !== undefined) this._calories = params.calories;
     if (params.protein !== undefined) this._protein = params.protein;
-    if (params.carbohydrates !== undefined) this._carbohydrates = params.carbohydrates;
+    if (params.carbohydrates !== undefined)
+      this._carbohydrates = params.carbohydrates;
     if (params.fat !== undefined) this._fat = params.fat;
     if (params.fiber !== undefined) this._fiber = params.fiber;
     if (params.sugar !== undefined) this._sugar = params.sugar;

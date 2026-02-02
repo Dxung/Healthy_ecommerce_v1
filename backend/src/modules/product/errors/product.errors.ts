@@ -50,7 +50,8 @@ export const PRODUCT_ERRORS = {
   },
   PRODUCT_CANNOT_HARD_DELETE: {
     code: 'PRODUCT_CANNOT_HARD_DELETE',
-    message: 'Chỉ có thể xóa vĩnh viễn sản phẩm nháp. Sản phẩm đã xuất bản chỉ có thể xóa mềm.',
+    message:
+      'Chỉ có thể xóa vĩnh viễn sản phẩm nháp. Sản phẩm đã xuất bản chỉ có thể xóa mềm.',
   },
 
   // ======================== CATEGORY ERRORS ========================
@@ -154,15 +155,18 @@ export const PRODUCT_ERRORS = {
   },
   OFFICIAL_SHOP_BRAND_REQUIRED: {
     code: 'OFFICIAL_SHOP_BRAND_REQUIRED',
-    message: 'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm.',
+    message:
+      'Shop chính hãng phải chọn thương hiệu đã đăng ký khi tạo sản phẩm.',
   },
   OFFICIAL_SHOP_UNAUTHORIZED_BRAND: {
     code: 'OFFICIAL_SHOP_UNAUTHORIZED_BRAND',
-    message: 'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký.',
+    message:
+      'Shop chính hãng chỉ có thể tạo sản phẩm cho thương hiệu đã đăng ký.',
   },
   OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT: {
     code: 'OFFICIAL_SHOP_CANNOT_SHOW_NON_OFFICIAL_PRODUCT',
-    message: 'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng.',
+    message:
+      'Shop chính hãng không thể hiện sản phẩm của thương hiệu chưa đăng ký chính hãng.',
   },
 
   // ======================== ALLERGEN TAG ERRORS ========================

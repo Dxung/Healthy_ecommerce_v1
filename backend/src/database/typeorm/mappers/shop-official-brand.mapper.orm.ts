@@ -40,7 +40,9 @@ export class ORMShopOfficialBrandMapper {
   /**
    * Converts an array of ORM entities to domain models.
    */
-  static toDomainList(ormEntities: ORMShopOfficialBrand[]): ShopOfficialBrand[] {
+  static toDomainList(
+    ormEntities: ORMShopOfficialBrand[],
+  ): ShopOfficialBrand[] {
     return ormEntities.map((orm) => this.toDomain(orm));
   }
 }

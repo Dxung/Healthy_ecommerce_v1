@@ -7,7 +7,9 @@ export interface IAdminUserRoleService {
   /**
    * Get all roles assigned to a user
    */
-  getUserRoles(userId: string): ResultAsync<UserRoleAssignmentDto[], DomainError>;
+  getUserRoles(
+    userId: string,
+  ): ResultAsync<UserRoleAssignmentDto[], DomainError>;
 
   /**
    * Assign a role to a user
@@ -21,5 +23,8 @@ export interface IAdminUserRoleService {
   /**
    * Remove a role from a user
    */
-  removeRoleFromUser(userId: string, roleId: string): ResultAsync<void, DomainError>;
+  removeRoleFromUser(
+    userId: string,
+    roleId: string,
+  ): ResultAsync<void, DomainError>;
 }

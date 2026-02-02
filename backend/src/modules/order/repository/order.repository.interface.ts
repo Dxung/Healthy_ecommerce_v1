@@ -102,6 +102,13 @@ export interface IOrderRepository {
   findById(orderId: string): ResultAsync<Order | null, DomainError>;
 
   /**
+   * Find order by ID with pessimistic lock for update.
+   * Must be called within a transaction.
+   * Used to prevent race conditions during cancel/payment processing.
+   */
+  findByIdWithLock(orderId: string): ResultAsync<Order | null, DomainError>;
+
+  /**
    * Find order item by ID with its parent order
    */
   findOrderItemById(
@@ -176,10 +183,11 @@ export interface IOrderRepository {
   save(order: Order): ResultAsync<Order, DomainError>;
 
   /**
-   * Find orders that are delivered and past auto-complete deadline
+   * Find orders that are shipping and past auto-complete deadline
+   * (buyer hasn't confirmed receipt after X days)
    */
   findOrdersForAutoComplete(
-    daysAfterDelivery: number,
+    daysAfterShipped: number,
   ): ResultAsync<Order[], DomainError>;
 
   /**
@@ -214,14 +222,6 @@ export interface IOrderRepository {
   findByIdForAdmin(
     orderId: string,
   ): ResultAsync<OrderWithShopAndBuyer | null, DomainError>;
-
-  // ===================== REFUND PROCESSING =====================
-
-  /**
-   * Find cancelled orders that still have PAID payment status
-   * These are orders where refund processing may have failed
-   */
-  findCancelledOrdersNeedingRefund(): ResultAsync<Order[], DomainError>;
 
   // ===================== PAYMENT TIMEOUT =====================
 

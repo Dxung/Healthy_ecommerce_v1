@@ -41,7 +41,10 @@ export interface IEscrowRepository {
   /**
    * Find pending releases ready for processing
    */
-  findPendingReleasesForProcessing(): ResultAsync<PendingRelease[], DomainError>;
+  findPendingReleasesForProcessing(): ResultAsync<
+    PendingRelease[],
+    DomainError
+  >;
 
   /**
    * Update pending release

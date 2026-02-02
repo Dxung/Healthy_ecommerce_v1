@@ -2776,12 +2776,6 @@ export class ApiClient {
     });
   }
 
-  async markOrderDelivered(orderId: string): Promise<void> {
-    return this.request<void>(`/shop/orders/${orderId}/deliver`, {
-      method: 'POST',
-    });
-  }
-
   async cancelShopOrder(orderId: string, reason: string): Promise<void> {
     return this.request<void>(`/shop/orders/${orderId}/cancel`, {
       method: 'POST',

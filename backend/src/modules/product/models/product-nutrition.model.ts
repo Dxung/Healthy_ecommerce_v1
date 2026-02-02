@@ -158,16 +158,22 @@ export class ProductNutrition {
     allergens?: string[] | null;
     dietaryInfo?: string[] | null;
   }): void {
-    if (params.servingSize !== undefined) this._servingSize = params.servingSize;
-    if (params.servingUnit !== undefined) this._servingUnit = params.servingUnit;
-    if (params.servingsPerContainer !== undefined) this._servingsPerContainer = params.servingsPerContainer;
+    if (params.servingSize !== undefined)
+      this._servingSize = params.servingSize;
+    if (params.servingUnit !== undefined)
+      this._servingUnit = params.servingUnit;
+    if (params.servingsPerContainer !== undefined)
+      this._servingsPerContainer = params.servingsPerContainer;
     if (params.calories !== undefined) this._calories = params.calories;
     if (params.protein !== undefined) this._protein = params.protein;
-    if (params.carbohydrates !== undefined) this._carbohydrates = params.carbohydrates;
+    if (params.carbohydrates !== undefined)
+      this._carbohydrates = params.carbohydrates;
     if (params.fat !== undefined) this._fat = params.fat;
-    if (params.saturatedFat !== undefined) this._saturatedFat = params.saturatedFat;
+    if (params.saturatedFat !== undefined)
+      this._saturatedFat = params.saturatedFat;
     if (params.transFat !== undefined) this._transFat = params.transFat;
-    if (params.cholesterol !== undefined) this._cholesterol = params.cholesterol;
+    if (params.cholesterol !== undefined)
+      this._cholesterol = params.cholesterol;
     if (params.sodium !== undefined) this._sodium = params.sodium;
     if (params.fiber !== undefined) this._fiber = params.fiber;
     if (params.sugar !== undefined) this._sugar = params.sugar;
@@ -187,9 +193,11 @@ export class ProductNutrition {
     if (params.potassium !== undefined) this._potassium = params.potassium;
     if (params.magnesium !== undefined) this._magnesium = params.magnesium;
     if (params.zinc !== undefined) this._zinc = params.zinc;
-    if (params.otherNutrients !== undefined) this._otherNutrients = params.otherNutrients;
+    if (params.otherNutrients !== undefined)
+      this._otherNutrients = params.otherNutrients;
     if (params.allergens !== undefined) this._allergens = params.allergens;
-    if (params.dietaryInfo !== undefined) this._dietaryInfo = params.dietaryInfo;
+    if (params.dietaryInfo !== undefined)
+      this._dietaryInfo = params.dietaryInfo;
     this._updatedAt = new Date();
   }
 

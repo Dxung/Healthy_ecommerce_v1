@@ -37,7 +37,9 @@ export class BrandDocumentRequirementResponseDto {
   @ApiProperty({ description: 'Created date' })
   createdAt: Date;
 
-  static fromDomain(req: BrandDocumentRequirement): BrandDocumentRequirementResponseDto {
+  static fromDomain(
+    req: BrandDocumentRequirement,
+  ): BrandDocumentRequirementResponseDto {
     return {
       id: req.id,
       brandId: req.brandId,

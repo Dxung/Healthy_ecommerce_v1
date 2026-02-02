@@ -9,15 +9,17 @@ export class CheckoutPreparationResponseDto {
   hasInactiveItems: boolean;
   hasPriceChangedItems: boolean;
 
-  constructor(
-    selectedItems: CartItemWithDetails[],
-    hasInactiveItems: boolean,
-  ) {
+  constructor(selectedItems: CartItemWithDetails[], hasInactiveItems: boolean) {
     // Group items by shop
     const shopGroups = new Map<
       string,
       {
-        shop: { id: string; name: string; slug: string; logoUrl: string | null };
+        shop: {
+          id: string;
+          name: string;
+          slug: string;
+          logoUrl: string | null;
+        };
         items: CartItemWithDetails[];
       }
     >();
@@ -48,6 +50,8 @@ export class CheckoutPreparationResponseDto {
       0,
     );
     this.hasInactiveItems = hasInactiveItems;
-    this.hasPriceChangedItems = selectedItems.some((item) => item.hasPriceChanged);
+    this.hasPriceChangedItems = selectedItems.some(
+      (item) => item.hasPriceChanged,
+    );
   }
 }

@@ -37,4 +37,22 @@ export interface ISystemConfigService {
    * Update platform fee percentage (convenience method)
    */
   updatePlatformFeePercent(percent: number): ResultAsync<number, DomainError>;
+
+  /**
+   * Get coin max usage percentage (convenience method)
+   * Returns the maximum percentage of order value that can be paid with coins
+   */
+  getCoinMaxUsagePercent(): ResultAsync<number, DomainError>;
+
+  /**
+   * Get shipping free threshold (convenience method)
+   * Returns the minimum order subtotal value for free shipping (platform absorbs cost)
+   */
+  getShippingFreeThreshold(): ResultAsync<number, DomainError>;
+
+  /**
+   * Get order auto-complete days (convenience method)
+   * Returns the number of days after delivery to auto-complete order if buyer doesn't confirm
+   */
+  getOrderAutoCompleteDays(): ResultAsync<number, DomainError>;
 }

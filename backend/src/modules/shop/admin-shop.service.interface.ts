@@ -2,7 +2,10 @@ import type { ResultAsync } from 'neverthrow';
 import type { DomainError } from 'src/shared/types/domain-error.type';
 import type { Shop } from './models/shop.model';
 import type { ShopStatus } from 'src/database/typeorm/entities/shop/enums/shop-status.enum';
-import type { PaginatedResult, PaginationParams } from 'src/shared/types/pagination.type';
+import type {
+  PaginatedResult,
+  PaginationParams,
+} from 'src/shared/types/pagination.type';
 
 export interface AdminShopFilters {
   status?: ShopStatus;

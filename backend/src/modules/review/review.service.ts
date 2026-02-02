@@ -24,7 +24,10 @@ import {
 import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
 import { PaginatedResult } from 'src/shared/types/pagination.type';
 import { OrderStatus } from 'src/database/typeorm/entities/order/enums/order-status.enum';
-import { CONFIG_KEYS, DEFAULT_CONFIG } from 'src/modules/system-config/system-config.constants';
+import {
+  CONFIG_KEYS,
+  DEFAULT_CONFIG,
+} from 'src/modules/system-config/system-config.constants';
 import type { ISystemConfigService } from 'src/modules/system-config/system-config.service.interface';
 import { SYSTEM_CONFIG_SERVICE } from 'src/modules/system-config/tokens/system-config.token';
 
@@ -75,32 +78,36 @@ export class ReviewService implements IReviewService {
       }
 
       // Get order item with order to get product and shop IDs
-      return this.orderRepository.findOrderItemById(orderItemId).andThen((result) => {
-        if (!result) {
-          return errAsync(createDomainError(REVIEW_ERRORS.ORDER_ITEM_NOT_FOUND));
-        }
+      return this.orderRepository
+        .findOrderItemById(orderItemId)
+        .andThen((result) => {
+          if (!result) {
+            return errAsync(
+              createDomainError(REVIEW_ERRORS.ORDER_ITEM_NOT_FOUND),
+            );
+          }
 
-        const { item, order } = result;
+          const { item, order } = result;
 
-        // Create review
-        const review = Review.create({
-          orderItemId,
-          userId,
-          productId: item.productId,
-          shopId: order.shopId,
-          rating,
-          content,
-          imageUrls,
+          // Create review
+          const review = Review.create({
+            orderItemId,
+            userId,
+            productId: item.productId,
+            shopId: order.shopId,
+            rating,
+            content,
+            imageUrls,
+          });
+
+          // Save review
+          return this.reviewRepository.create(review).andThen((savedReview) => {
+            // Recalculate ratings
+            return this.recalculateProductRating(savedReview.productId)
+              .andThen(() => this.recalculateShopRating(savedReview.shopId))
+              .map(() => savedReview);
+          });
         });
-
-        // Save review
-        return this.reviewRepository.create(review).andThen((savedReview) => {
-          // Recalculate ratings
-          return this.recalculateProductRating(savedReview.productId)
-            .andThen(() => this.recalculateShopRating(savedReview.shopId))
-            .map(() => savedReview);
-        });
-      });
     });
   }
 
@@ -139,7 +146,9 @@ export class ReviewService implements IReviewService {
 
         // Check if review can be modified
         if (!review.canBeModified()) {
-          return errAsync(createDomainError(REVIEW_ERRORS.REVIEW_CANNOT_MODIFY));
+          return errAsync(
+            createDomainError(REVIEW_ERRORS.REVIEW_CANNOT_MODIFY),
+          );
         }
 
         // Check review window
@@ -203,7 +212,9 @@ export class ReviewService implements IReviewService {
 
         // Check if review can be modified
         if (!review.canBeModified()) {
-          return errAsync(createDomainError(REVIEW_ERRORS.REVIEW_CANNOT_MODIFY));
+          return errAsync(
+            createDomainError(REVIEW_ERRORS.REVIEW_CANNOT_MODIFY),
+          );
         }
 
         // Check review window
@@ -287,42 +298,44 @@ export class ReviewService implements IReviewService {
     }
 
     // Get order item with order
-    return this.orderRepository.findOrderItemById(orderItemId).andThen((result) => {
-      if (!result) {
-        return okAsync({ canReview: false, reason: 'order_item_not_found' });
-      }
+    return this.orderRepository
+      .findOrderItemById(orderItemId)
+      .andThen((result) => {
+        if (!result) {
+          return okAsync({ canReview: false, reason: 'order_item_not_found' });
+        }
 
-      const { order } = result;
+        const { order } = result;
 
-      // Check buyer
-      if (order.buyerId !== userId) {
-        return okAsync({ canReview: false, reason: 'not_buyer' });
-      }
+        // Check buyer
+        if (order.buyerId !== userId) {
+          return okAsync({ canReview: false, reason: 'not_buyer' });
+        }
 
-      // Check order status
-      if (order.status !== OrderStatus.COMPLETED) {
-        return okAsync({ canReview: false, reason: 'order_not_completed' });
-      }
+        // Check order status
+        if (order.status !== OrderStatus.COMPLETED) {
+          return okAsync({ canReview: false, reason: 'order_not_completed' });
+        }
 
-      // TODO: Check refund status via refund_requests table when implemented
+        // TODO: Check refund status via refund_requests table when implemented
 
-      // Check existing review
-      return this.reviewRepository
-        .findByOrderItemId(orderItemId)
-        .andThen((existingReview) => {
-          if (existingReview) {
-            return okAsync({ canReview: false, reason: 'already_reviewed' });
-          }
-
-          // Check review window
-          return this.isWithinReviewWindow(orderItemId).map((isWithin) => {
-            if (!isWithin) {
-              return { canReview: false, reason: 'window_expired' };
+        // Check existing review
+        return this.reviewRepository
+          .findByOrderItemId(orderItemId)
+          .andThen((existingReview) => {
+            if (existingReview) {
+              return okAsync({ canReview: false, reason: 'already_reviewed' });
             }
-            return { canReview: true };
+
+            // Check review window
+            return this.isWithinReviewWindow(orderItemId).map((isWithin) => {
+              if (!isWithin) {
+                return { canReview: false, reason: 'window_expired' };
+              }
+              return { canReview: true };
+            });
           });
-        });
-    });
+      });
   }
 
   // ======================== REFUND INTEGRATION ========================
@@ -351,25 +364,28 @@ export class ReviewService implements IReviewService {
 
   @WithPosition()
   recalculateProductRating(productId: string): ResultAsync<void, DomainError> {
-    return this.reviewRepository.calculateProductRating(productId).andThen(
-      (result) =>
+    return this.reviewRepository
+      .calculateProductRating(productId)
+      .andThen((result) =>
         this.productRepository.updateRating(
           productId,
           Math.round(result.averageRating * 100) / 100,
           result.totalRatings,
         ),
-    );
+      );
   }
 
   @WithPosition()
   recalculateShopRating(shopId: string): ResultAsync<void, DomainError> {
-    return this.reviewRepository.calculateShopRating(shopId).andThen((result) =>
-      this.shopRepository.updateRating(
-        shopId,
-        Math.round(result.averageRating * 100) / 100,
-        result.totalRatings,
-      ),
-    );
+    return this.reviewRepository
+      .calculateShopRating(shopId)
+      .andThen((result) =>
+        this.shopRepository.updateRating(
+          shopId,
+          Math.round(result.averageRating * 100) / 100,
+          result.totalRatings,
+        ),
+      );
   }
 
   // ======================== SHOP REPLY OPERATIONS ========================
@@ -397,7 +413,9 @@ export class ReviewService implements IReviewService {
 
         // Check if review already has a reply
         if (review.reply) {
-          return errAsync(createDomainError(REVIEW_ERRORS.REPLY_ALREADY_EXISTS));
+          return errAsync(
+            createDomainError(REVIEW_ERRORS.REPLY_ALREADY_EXISTS),
+          );
         }
 
         // Verify user owns the shop
@@ -431,21 +449,23 @@ export class ReviewService implements IReviewService {
       );
     }
 
-    return this.reviewRepository.findReplyByReviewId(reviewId).andThen((reply) => {
-      if (!reply) {
-        return errAsync(createDomainError(REVIEW_ERRORS.REPLY_NOT_FOUND));
-      }
-
-      // Verify user owns the shop
-      return this.shopRepository.findByUserId(userId).andThen((shop) => {
-        if (!shop || shop.id !== reply.shopId) {
-          return errAsync(createDomainError(REVIEW_ERRORS.NOT_SHOP_OWNER));
+    return this.reviewRepository
+      .findReplyByReviewId(reviewId)
+      .andThen((reply) => {
+        if (!reply) {
+          return errAsync(createDomainError(REVIEW_ERRORS.REPLY_NOT_FOUND));
         }
 
-        reply.updateContent(content);
-        return this.reviewRepository.updateReply(reply);
+        // Verify user owns the shop
+        return this.shopRepository.findByUserId(userId).andThen((shop) => {
+          if (!shop || shop.id !== reply.shopId) {
+            return errAsync(createDomainError(REVIEW_ERRORS.NOT_SHOP_OWNER));
+          }
+
+          reply.updateContent(content);
+          return this.reviewRepository.updateReply(reply);
+        });
       });
-    });
   }
 
   @WithPosition()
@@ -459,20 +479,22 @@ export class ReviewService implements IReviewService {
       );
     }
 
-    return this.reviewRepository.findReplyByReviewId(reviewId).andThen((reply) => {
-      if (!reply) {
-        return errAsync(createDomainError(REVIEW_ERRORS.REPLY_NOT_FOUND));
-      }
-
-      // Verify user owns the shop
-      return this.shopRepository.findByUserId(userId).andThen((shop) => {
-        if (!shop || shop.id !== reply.shopId) {
-          return errAsync(createDomainError(REVIEW_ERRORS.NOT_SHOP_OWNER));
+    return this.reviewRepository
+      .findReplyByReviewId(reviewId)
+      .andThen((reply) => {
+        if (!reply) {
+          return errAsync(createDomainError(REVIEW_ERRORS.REPLY_NOT_FOUND));
         }
 
-        return this.reviewRepository.deleteReply(reply.id);
+        // Verify user owns the shop
+        return this.shopRepository.findByUserId(userId).andThen((shop) => {
+          if (!shop || shop.id !== reply.shopId) {
+            return errAsync(createDomainError(REVIEW_ERRORS.NOT_SHOP_OWNER));
+          }
+
+          return this.reviewRepository.deleteReply(reply.id);
+        });
       });
-    });
   }
 
   // ======================== SHOP REVIEW MANAGEMENT ========================
@@ -516,7 +538,9 @@ export class ReviewService implements IReviewService {
       .getConfig(CONFIG_KEYS.REVIEW_WINDOW_DAYS)
       .match(
         (config) =>
-          config ? parseInt(config.value, 10) : DEFAULT_CONFIG[CONFIG_KEYS.REVIEW_WINDOW_DAYS],
+          config
+            ? parseInt(config.value, 10)
+            : DEFAULT_CONFIG[CONFIG_KEYS.REVIEW_WINDOW_DAYS],
         () => DEFAULT_CONFIG[CONFIG_KEYS.REVIEW_WINDOW_DAYS],
       );
     return result;
@@ -525,25 +549,26 @@ export class ReviewService implements IReviewService {
   private isWithinReviewWindow(
     orderItemId: string,
   ): ResultAsync<boolean, DomainError> {
-    return this.orderRepository.findOrderItemById(orderItemId).andThen((result) => {
-      if (!result) {
-        return okAsync(false);
-      }
+    return this.orderRepository
+      .findOrderItemById(orderItemId)
+      .andThen((result) => {
+        if (!result) {
+          return okAsync(false);
+        }
 
-      const { order } = result;
-      if (!order.completedAt) {
-        return okAsync(false);
-      }
+        const { order } = result;
+        if (!order.completedAt) {
+          return okAsync(false);
+        }
 
-      return ResultAsync.fromPromise(
-        this.getReviewWindowDays(),
-        () => createDomainError(SHARED_ERRORS.SYSTEM_ERROR),
-      ).map((days) => {
-        const deadline = new Date(order.completedAt!);
-        deadline.setDate(deadline.getDate() + days);
-        return new Date() <= deadline;
+        return ResultAsync.fromPromise(this.getReviewWindowDays(), () =>
+          createDomainError(SHARED_ERRORS.SYSTEM_ERROR),
+        ).map((days) => {
+          const deadline = new Date(order.completedAt!);
+          deadline.setDate(deadline.getDate() + days);
+          return new Date() <= deadline;
+        });
       });
-    });
   }
 
   private updateReviewImages(

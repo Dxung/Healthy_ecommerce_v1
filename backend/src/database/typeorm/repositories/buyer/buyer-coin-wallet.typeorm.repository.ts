@@ -25,14 +25,18 @@ import { ORMBuyerCoinTransaction } from '../../entities/buyer/orm.buyer-coin-tra
 import { ORMBuyerCoinWalletMapper } from '../../mappers/buyer-coin-wallet.mapper.orm';
 
 @Injectable()
-export class OrmBuyerCoinWalletRepository implements IBuyerCoinWalletRepository {
+export class OrmBuyerCoinWalletRepository
+  implements IBuyerCoinWalletRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  findByBuyerId(buyerId: string): ResultAsync<BuyerCoinWallet | null, DomainError> {
+  findByBuyerId(
+    buyerId: string,
+  ): ResultAsync<BuyerCoinWallet | null, DomainError> {
     const repo = this.getWalletRepository();
 
     return ResultAsync.fromPromise(
@@ -164,6 +168,94 @@ export class OrmBuyerCoinWalletRepository implements IBuyerCoinWalletRepository 
     ).map(([orms, total]) => {
       const items = ORMBuyerCoinWalletMapper.transactionsToDomain(orms);
       return createPaginatedResult(items, total, page, limit);
+    });
+  }
+
+  @WithPosition()
+  debitCoinsWithLock(
+    buyerId: string,
+    amount: number,
+    referenceType: string,
+    referenceId: string | null,
+    description: string | null,
+  ): ResultAsync<CoinTransaction, DomainError> {
+    const em = this.getEntityManager();
+    if (!em) {
+      return errAsync(
+        createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
+          cause: 'debitCoinsWithLock must be called within a transaction',
+        }),
+      );
+    }
+
+    const walletRepo = em.getRepository(ORMBuyerCoinWallet);
+
+    return ResultAsync.fromPromise(
+      walletRepo.findOne({
+        where: { buyerId },
+        lock: { mode: 'pessimistic_write' },
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).andThen((ormWallet) => {
+      if (!ormWallet) {
+        return errAsync(
+          createDomainError(BUYER_ERRORS.COIN_WALLET_NOT_FOUND, {
+            cause: 'Buyer coin wallet not found',
+          }),
+        );
+      }
+
+      const wallet = ORMBuyerCoinWalletMapper.toDomain(ormWallet);
+
+      if (!wallet.hasEnoughBalance(amount)) {
+        return errAsync(
+          createDomainError(BUYER_ERRORS.INSUFFICIENT_COIN_BALANCE, {
+            cause: 'Insufficient coin balance',
+          }),
+        );
+      }
+
+      const transaction = wallet.debitCoins(
+        amount,
+        referenceType,
+        referenceId,
+        description,
+      );
+
+      // Save wallet and transaction
+      const updatedOrm = ORMBuyerCoinWalletMapper.toOrm(wallet);
+      const transactionOrm =
+        ORMBuyerCoinWalletMapper.transactionToOrm(transaction);
+
+      return ResultAsync.fromPromise(
+        Promise.all([
+          walletRepo.save(updatedOrm),
+          em.getRepository(ORMBuyerCoinTransaction).save(transactionOrm),
+        ]),
+        (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+      ).map(() => transaction);
+    });
+  }
+
+  @WithPosition()
+  creditCoinsRefund(
+    buyerId: string,
+    amount: number,
+    referenceType: string,
+    referenceId: string | null,
+    description: string | null,
+  ): ResultAsync<CoinTransaction, DomainError> {
+    return this.getOrCreate(buyerId).andThen((wallet) => {
+      const transaction = wallet.refundCoins(
+        amount,
+        referenceType,
+        referenceId,
+        description,
+      );
+
+      return this.update(wallet).andThen(() =>
+        this.createTransaction(transaction),
+      );
     });
   }
 

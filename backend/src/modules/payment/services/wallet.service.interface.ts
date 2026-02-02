@@ -21,6 +21,7 @@ export interface PaginatedTransactionsResult {
 export interface TopupResult {
   paymentUrl: string;
   txnRef: string;
+  topupId: string;
   transactionId: string;
 }
 
@@ -72,6 +73,27 @@ export interface IWalletService {
 
   creditShopFromEscrow(
     shopId: string,
+    orderId: string,
+    amount: number,
+  ): ResultAsync<WalletTransaction, DomainError>;
+
+  /**
+   * Credit platform wallet from escrow release (platform fee)
+   * @param orderId - Order ID for reference
+   * @param amount - Platform fee amount to credit
+   */
+  creditPlatformFromEscrow(
+    orderId: string,
+    amount: number,
+  ): ResultAsync<WalletTransaction, DomainError>;
+
+  /**
+   * Debit platform wallet for escrow (when platform needs to subsidize shop)
+   * This happens when coinUsed > platformFee
+   * @param orderId - Order ID for reference
+   * @param amount - Amount to debit from platform
+   */
+  debitPlatformForEscrow(
     orderId: string,
     amount: number,
   ): ResultAsync<WalletTransaction, DomainError>;

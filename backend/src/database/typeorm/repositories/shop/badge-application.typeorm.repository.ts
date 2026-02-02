@@ -8,7 +8,10 @@ import { BadgeApplication } from 'src/modules/shop/models/badge-application.mode
 import { AsyncLocalStorage } from 'async_hooks';
 import { ITypeORMAlsStore } from 'src/shared/als/interfaces/als-store.interface';
 import { DataSource } from 'typeorm';
-import { ORMBadgeApplication, ORMBadgeApplicationDocument } from '../../entities/shop';
+import {
+  ORMBadgeApplication,
+  ORMBadgeApplicationDocument,
+} from '../../entities/shop';
 import { BadgeApplicationStatus } from '../../entities/shop/enums/badge-application-status.enum';
 import { BadgeApplicationType } from '../../entities/shop/enums/badge-application-type.enum';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
@@ -25,14 +28,18 @@ import {
 } from 'src/shared/types/pagination.type';
 
 @Injectable()
-export class OrmBadgeApplicationRepository implements IBadgeApplicationRepository {
+export class OrmBadgeApplicationRepository
+  implements IBadgeApplicationRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  create(application: BadgeApplication): ResultAsync<BadgeApplication, DomainError> {
+  create(
+    application: BadgeApplication,
+  ): ResultAsync<BadgeApplication, DomainError> {
     const repo = this.getApplicationRepository();
     const docRepo = this.getDocumentRepository();
     const ormApplication = ORMBadgeApplicationMapper.toOrm(application);
@@ -94,7 +101,9 @@ export class OrmBadgeApplicationRepository implements IBadgeApplicationRepositor
   }
 
   @WithPosition()
-  findPendingVerifiedByShop(shopId: string): ResultAsync<BadgeApplication | null, DomainError> {
+  findPendingVerifiedByShop(
+    shopId: string,
+  ): ResultAsync<BadgeApplication | null, DomainError> {
     const repo = this.getApplicationRepository();
     return ResultAsync.fromPromise(
       repo.findOne({
@@ -136,7 +145,9 @@ export class OrmBadgeApplicationRepository implements IBadgeApplicationRepositor
   }
 
   @WithPosition()
-  update(application: BadgeApplication): ResultAsync<BadgeApplication, DomainError> {
+  update(
+    application: BadgeApplication,
+  ): ResultAsync<BadgeApplication, DomainError> {
     const repo = this.getApplicationRepository();
 
     return ResultAsync.fromPromise(

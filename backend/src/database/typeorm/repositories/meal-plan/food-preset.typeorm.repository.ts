@@ -50,9 +50,8 @@ export class OrmFoodPresetRepository implements IFoodPresetRepository {
   @WithPosition()
   findById(id: string): ResultAsync<FoodPreset | null, DomainError> {
     const repo = this.getPresetRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMFoodPresetMapper.toDomain(orm) : null));
   }
 
@@ -144,11 +143,13 @@ export class OrmFoodPresetRepository implements IFoodPresetRepository {
 
     // Get top 5 presets from followed users (for suggestions)
     const getSuggestedPromise = hasFollowedUsers
-      ? repo.find({
-          where: { isPublic: true, creatorId: In(followedUserIds) },
-          order: { upvoteCount: 'DESC', createdAt: 'DESC' },
-          take: 5,
-        }).catch(() => [])
+      ? repo
+          .find({
+            where: { isPublic: true, creatorId: In(followedUserIds) },
+            order: { upvoteCount: 'DESC', createdAt: 'DESC' },
+            take: 5,
+          })
+          .catch(() => [])
       : Promise.resolve([]);
 
     // If no search term, return suggestions + regular results
@@ -380,7 +381,10 @@ export class OrmFoodPresetRepository implements IFoodPresetRepository {
   }
 
   @WithPosition()
-  addFavorite(userId: string, presetId: string): ResultAsync<void, DomainError> {
+  addFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError> {
     const repo = this.getFavoriteRepository();
     const favorite = new ORMFavoritePreset();
     favorite.id = uuidv7();
@@ -394,11 +398,13 @@ export class OrmFoodPresetRepository implements IFoodPresetRepository {
   }
 
   @WithPosition()
-  removeFavorite(userId: string, presetId: string): ResultAsync<void, DomainError> {
+  removeFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError> {
     const repo = this.getFavoriteRepository();
-    return ResultAsync.fromPromise(
-      repo.delete({ userId, presetId }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.delete({ userId, presetId }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map(() => undefined);
   }
 
@@ -419,7 +425,10 @@ export class OrmFoodPresetRepository implements IFoodPresetRepository {
   }
 
   @WithPosition()
-  isFavorite(userId: string, presetId: string): ResultAsync<boolean, DomainError> {
+  isFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<boolean, DomainError> {
     const repo = this.getFavoriteRepository();
     return ResultAsync.fromPromise(
       repo.exists({ where: { userId, presetId } }),

@@ -6,7 +6,9 @@ export interface IProductNutritionRepository {
   /**
    * Finds nutrition info by product ID.
    */
-  findByProductId(productId: string): ResultAsync<ProductNutrition | null, DomainError>;
+  findByProductId(
+    productId: string,
+  ): ResultAsync<ProductNutrition | null, DomainError>;
 
   /**
    * Finds nutrition info by its ID.
@@ -16,12 +18,16 @@ export interface IProductNutritionRepository {
   /**
    * Creates nutrition info for a product.
    */
-  create(nutrition: ProductNutrition): ResultAsync<ProductNutrition, DomainError>;
+  create(
+    nutrition: ProductNutrition,
+  ): ResultAsync<ProductNutrition, DomainError>;
 
   /**
    * Updates existing nutrition info.
    */
-  update(nutrition: ProductNutrition): ResultAsync<ProductNutrition, DomainError>;
+  update(
+    nutrition: ProductNutrition,
+  ): ResultAsync<ProductNutrition, DomainError>;
 
   /**
    * Deletes nutrition info by product ID.
@@ -31,5 +37,7 @@ export interface IProductNutritionRepository {
   /**
    * Finds nutrition info for multiple products.
    */
-  findByProductIds(productIds: string[]): ResultAsync<ProductNutrition[], DomainError>;
+  findByProductIds(
+    productIds: string[],
+  ): ResultAsync<ProductNutrition[], DomainError>;
 }

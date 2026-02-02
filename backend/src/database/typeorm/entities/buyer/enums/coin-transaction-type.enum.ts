@@ -5,4 +5,5 @@
 export enum CoinTransactionType {
   EARNED = 'earned',
   SPENT = 'spent',
+  REFUNDED = 'refunded',
 }

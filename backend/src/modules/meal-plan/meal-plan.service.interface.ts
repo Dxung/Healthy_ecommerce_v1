@@ -5,7 +5,10 @@ import type { FoodPreset } from './models/food-preset.model';
 import type { DailyMealLog } from './models/daily-meal-log.model';
 import type { ExerciseLog } from './models/exercise-log.model';
 import type { DailySummary } from './models/daily-summary.model';
-import type { PaginatedPresets, SearchPresetsWithPriorityResult } from './repository/food-preset.repository.interface';
+import type {
+  PaginatedPresets,
+  SearchPresetsWithPriorityResult,
+} from './repository/food-preset.repository.interface';
 import type { DietPreferenceInfo } from './repository/diet-preference.repository.interface';
 import type { AllergenExclusionInfo } from './repository/allergen-exclusion.repository.interface';
 import type { UserFollowInfo } from './repository/user-follow.repository.interface';
@@ -52,14 +55,18 @@ export interface IMealPlanService {
    */
   getSettings(userId: string): ResultAsync<MealPlanSettings, DomainError>;
 
-  getDietPreferences(userId: string): ResultAsync<DietPreferenceInfo[], DomainError>;
+  getDietPreferences(
+    userId: string,
+  ): ResultAsync<DietPreferenceInfo[], DomainError>;
 
   setDietPreferences(
     userId: string,
     dietTagIds: string[],
   ): ResultAsync<void, DomainError>;
 
-  getAllergenExclusions(userId: string): ResultAsync<AllergenExclusionInfo[], DomainError>;
+  getAllergenExclusions(
+    userId: string,
+  ): ResultAsync<AllergenExclusionInfo[], DomainError>;
 
   setAllergenExclusions(
     userId: string,
@@ -68,15 +75,23 @@ export interface IMealPlanService {
 
   // ======================== Daily Summary ========================
 
-  getDailySummary(userId: string, date: Date): ResultAsync<DailySummary, DomainError>;
+  getDailySummary(
+    userId: string,
+    date: Date,
+  ): ResultAsync<DailySummary, DomainError>;
 
   getHistory(
     userId: string,
     startDate: Date,
     endDate: Date,
-  ): ResultAsync<{ date: Date; totalConsumed: number; totalBurned: number }[], DomainError>;
+  ): ResultAsync<
+    { date: Date; totalConsumed: number; totalBurned: number }[],
+    DomainError
+  >;
 
-  getStreak(userId: string): ResultAsync<{ current: number; longest: number }, DomainError>;
+  getStreak(
+    userId: string,
+  ): ResultAsync<{ current: number; longest: number }, DomainError>;
 
   // ======================== Meal Logs ========================
 
@@ -110,7 +125,10 @@ export interface IMealPlanService {
 
   // ======================== Exercise Logs ========================
 
-  addExercise(userId: string, dto: AddExerciseDto): ResultAsync<ExerciseLog, DomainError>;
+  addExercise(
+    userId: string,
+    dto: AddExerciseDto,
+  ): ResultAsync<ExerciseLog, DomainError>;
 
   updateExercise(
     userId: string,
@@ -118,13 +136,19 @@ export interface IMealPlanService {
     dto: UpdateExerciseDto,
   ): ResultAsync<ExerciseLog, DomainError>;
 
-  deleteExerciseLog(userId: string, logId: string): ResultAsync<void, DomainError>;
+  deleteExerciseLog(
+    userId: string,
+    logId: string,
+  ): ResultAsync<void, DomainError>;
 
   // ======================== Presets ========================
 
   getMyPresets(userId: string): ResultAsync<FoodPreset[], DomainError>;
 
-  createPreset(userId: string, dto: CreatePresetDto): ResultAsync<FoodPreset, DomainError>;
+  createPreset(
+    userId: string,
+    dto: CreatePresetDto,
+  ): ResultAsync<FoodPreset, DomainError>;
 
   updatePreset(
     userId: string,
@@ -132,7 +156,10 @@ export interface IMealPlanService {
     dto: UpdatePresetDto,
   ): ResultAsync<FoodPreset, DomainError>;
 
-  deletePreset(userId: string, presetId: string): ResultAsync<void, DomainError>;
+  deletePreset(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError>;
 
   searchCommunityPresets(params: {
     userId: string;
@@ -155,17 +182,29 @@ export interface IMealPlanService {
 
   addFavorite(userId: string, presetId: string): ResultAsync<void, DomainError>;
 
-  removeFavorite(userId: string, presetId: string): ResultAsync<void, DomainError>;
+  removeFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError>;
 
   // ======================== Follows ========================
 
-  follow(followerId: string, followingId: string): ResultAsync<void, DomainError>;
+  follow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError>;
 
-  unfollow(followerId: string, followingId: string): ResultAsync<void, DomainError>;
+  unfollow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError>;
 
   getFollowing(userId: string): ResultAsync<UserFollowInfo[], DomainError>;
 
   getFollowers(userId: string): ResultAsync<UserFollowInfo[], DomainError>;
 
-  isFollowing(followerId: string, followingId: string): ResultAsync<boolean, DomainError>;
+  isFollowing(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<boolean, DomainError>;
 }

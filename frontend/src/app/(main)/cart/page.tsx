@@ -304,99 +304,105 @@ export default function CartPage() {
 
   if (isEmpty) {
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <ShoppingCart className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-medium text-gray-900 mb-2">Giỏ hàng trống</h2>
-        <p className="text-gray-500 mb-6">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
-        <Link href="/">
-          <Button>
-            <Package className="w-5 h-5 mr-2" />
-            Khám phá sản phẩm
-          </Button>
-        </Link>
+      <div className="min-h-screen bg-gray-100 py-12">
+        <div className="max-w-[1200px] mx-auto px-4 text-center">
+          <div className="bg-white rounded-lg shadow-sm py-12 px-4">
+            <ShoppingCart className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+            <h2 className="text-xl font-medium text-gray-900 mb-2">Giỏ hàng trống</h2>
+            <p className="text-gray-500 mb-6">Hãy thêm sản phẩm vào giỏ hàng để tiếp tục mua sắm</p>
+            <Link href="/">
+              <Button>
+                <Package className="w-5 h-5 mr-2" />
+                Khám phá sản phẩm
+              </Button>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 pb-32">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Giỏ hàng ({cart.totalQuantity})
-        </h1>
-      </div>
-
-      {/* Inactive Items Warning */}
-      {inactiveItems.length > 0 && (
+    <div className="min-h-screen bg-gray-100 py-6 pb-32">
+      <div className="max-w-[1200px] mx-auto px-4">
+        {/* Header */}
         <div className="mb-6">
-          <InactiveItemsSection
-            items={inactiveItems}
-            onRemoveInactive={handleRemoveInactive}
-            disabled={operating}
-          />
+          <h1 className="text-2xl font-bold text-gray-900">
+            Giỏ hàng ({cart.totalQuantity})
+          </h1>
         </div>
-      )}
 
-      {/* Cart Header (Table Header) with Select All */}
-      {activeShops.length > 0 && (
-        <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-gray-50 rounded-t-lg border-b text-sm font-medium text-gray-500">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              checked={allSelected}
-              onChange={(e) => handleToggleSelectAll(e.target.checked)}
-              disabled={operating || totalActiveItems === 0}
-              className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary disabled:opacity-50"
+        {/* Inactive Items Warning */}
+        {inactiveItems.length > 0 && (
+          <div className="mb-6">
+            <InactiveItemsSection
+              items={inactiveItems}
+              onRemoveInactive={handleRemoveInactive}
+              disabled={operating}
             />
           </div>
-          <div className="flex-1">Sản phẩm</div>
-          <div className="w-24 text-right">Đơn giá</div>
-          <div className="w-28 text-center">Số lượng</div>
-          <div className="w-28 text-right">Thành tiền</div>
-          <div className="w-10" /> {/* Delete button space */}
-        </div>
-      )}
+        )}
 
-      {/* Shop Groups */}
-      <div className="space-y-4">
-        {activeShops.map((shopGroup) => (
-          <CartShopGroup
-            key={shopGroup.shop.id}
-            shopGroup={shopGroup}
-            onToggleShopSelect={handleToggleShopSelect}
-            onToggleItemSelect={handleToggleItemSelect}
-            onUpdateQuantity={handleUpdateQuantity}
-            onRemoveItem={handleRemoveItem}
-            disabled={operating}
-          />
-        ))}
+        {/* Cart Header (Table Header) with Select All */}
+        {activeShops.length > 0 && (
+          <div className="hidden md:flex items-center gap-4 px-4 py-3 bg-white rounded-lg shadow-sm text-sm font-medium text-gray-500 mb-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={(e) => handleToggleSelectAll(e.target.checked)}
+                disabled={operating || totalActiveItems === 0}
+                className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary disabled:opacity-50"
+              />
+            </div>
+            <div className="flex-1">Sản phẩm</div>
+            <div className="w-24 text-right">Đơn giá</div>
+            <div className="w-28 text-center">Số lượng</div>
+            <div className="w-28 text-right">Thành tiền</div>
+            <div className="w-10" /> {/* Delete button space */}
+          </div>
+        )}
+
+        {/* Shop Groups */}
+        <div className="space-y-4">
+          {activeShops.map((shopGroup) => (
+            <CartShopGroup
+              key={shopGroup.shop.id}
+              shopGroup={shopGroup}
+              onToggleShopSelect={handleToggleShopSelect}
+              onToggleItemSelect={handleToggleItemSelect}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemoveItem={handleRemoveItem}
+              disabled={operating}
+            />
+          ))}
+        </div>
+
+        {/* Empty active items */}
+        {activeShops.length === 0 && inactiveItems.length > 0 && (
+          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">
+              Tất cả sản phẩm trong giỏ hàng đều không khả dụng.
+              <br />
+              Vui lòng xóa và thêm sản phẩm mới.
+            </p>
+          </div>
+        )}
+
+        {/* Sticky Bottom Bar */}
+        <CartStickyBar
+          totalItems={totalActiveItems}
+          selectedCount={selectedCount}
+          selectedTotal={selectedTotal}
+          allSelected={allSelected}
+          hasInactiveItems={inactiveItems.length > 0}
+          onToggleSelectAll={handleToggleSelectAll}
+          onRemoveSelected={handleRemoveSelected}
+          onRemoveInactive={handleRemoveInactive}
+          disabled={operating}
+        />
       </div>
-
-      {/* Empty active items */}
-      {activeShops.length === 0 && inactiveItems.length > 0 && (
-        <div className="text-center py-12">
-          <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">
-            Tất cả sản phẩm trong giỏ hàng đều không khả dụng.
-            <br />
-            Vui lòng xóa và thêm sản phẩm mới.
-          </p>
-        </div>
-      )}
-
-      {/* Sticky Bottom Bar */}
-      <CartStickyBar
-        totalItems={totalActiveItems}
-        selectedCount={selectedCount}
-        selectedTotal={selectedTotal}
-        allSelected={allSelected}
-        hasInactiveItems={inactiveItems.length > 0}
-        onToggleSelectAll={handleToggleSelectAll}
-        onRemoveSelected={handleRemoveSelected}
-        onRemoveInactive={handleRemoveInactive}
-        disabled={operating}
-      />
     </div>
   );
 }

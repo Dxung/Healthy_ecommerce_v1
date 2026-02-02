@@ -5,6 +5,9 @@
 /** Days after delivery to auto-complete order if buyer doesn't confirm */
 export const ORDER_AUTO_COMPLETE_DAYS = 3;
 
+/** Default shipping fee in VND */
+export const SHIPPING_FEE_DEFAULT = 20000;
+
 /**
  * Maximum time (in minutes) allowed for payment before order is auto-cancelled.
  * Default: 30 minutes. Can be overridden by env var ORDER_PAYMENT_TIMEOUT_MINUTES.

@@ -15,14 +15,29 @@ import {
   PRODUCT_NUTRITION_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import { IHealthProfileRepository } from './repository/health-profile.repository.interface';
-import { IFoodPresetRepository, SearchPresetsWithPriorityResult } from './repository/food-preset.repository.interface';
+import {
+  IFoodPresetRepository,
+  SearchPresetsWithPriorityResult,
+} from './repository/food-preset.repository.interface';
 import { IMealLogRepository } from './repository/meal-log.repository.interface';
 import { IExerciseLogRepository } from './repository/exercise-log.repository.interface';
-import { IUserFollowRepository, UserFollowInfo } from './repository/user-follow.repository.interface';
-import { IDietPreferenceRepository, DietPreferenceInfo } from './repository/diet-preference.repository.interface';
-import { IAllergenExclusionRepository, AllergenExclusionInfo } from './repository/allergen-exclusion.repository.interface';
+import {
+  IUserFollowRepository,
+  UserFollowInfo,
+} from './repository/user-follow.repository.interface';
+import {
+  IDietPreferenceRepository,
+  DietPreferenceInfo,
+} from './repository/diet-preference.repository.interface';
+import {
+  IAllergenExclusionRepository,
+  AllergenExclusionInfo,
+} from './repository/allergen-exclusion.repository.interface';
 import { IProductNutritionRepository } from 'src/modules/product/repository/product-nutrition.repository.interface';
-import { IMealPlanService, MealPlanSettings } from './meal-plan.service.interface';
+import {
+  IMealPlanService,
+  MealPlanSettings,
+} from './meal-plan.service.interface';
 import { UserHealthProfile } from './models/user-health-profile.model';
 import { FoodPreset } from './models/food-preset.model';
 import { DailyMealLog } from './models/daily-meal-log.model';
@@ -67,7 +82,9 @@ export class MealPlanService implements IMealPlanService {
 
   // ======================== Health Profile ========================
 
-  getHealthProfile(userId: string): ResultAsync<UserHealthProfile, DomainError> {
+  getHealthProfile(
+    userId: string,
+  ): ResultAsync<UserHealthProfile, DomainError> {
     return this.healthProfileRepo.findByUserId(userId).andThen((profile) => {
       if (profile) {
         return ok(profile);
@@ -100,7 +117,9 @@ export class MealPlanService implements IMealPlanService {
   }
 
   calculateTdee(userId: string): ResultAsync<number | null, DomainError> {
-    return this.getHealthProfile(userId).map((profile) => profile.calculateTDEE());
+    return this.getHealthProfile(userId).map((profile) =>
+      profile.calculateTDEE(),
+    );
   }
 
   // ======================== Settings ========================
@@ -117,7 +136,9 @@ export class MealPlanService implements IMealPlanService {
     }));
   }
 
-  getDietPreferences(userId: string): ResultAsync<DietPreferenceInfo[], DomainError> {
+  getDietPreferences(
+    userId: string,
+  ): ResultAsync<DietPreferenceInfo[], DomainError> {
     return this.dietPrefRepo.getByUserId(userId);
   }
 
@@ -128,7 +149,9 @@ export class MealPlanService implements IMealPlanService {
     return this.dietPrefRepo.setPreferences(userId, dietTagIds);
   }
 
-  getAllergenExclusions(userId: string): ResultAsync<AllergenExclusionInfo[], DomainError> {
+  getAllergenExclusions(
+    userId: string,
+  ): ResultAsync<AllergenExclusionInfo[], DomainError> {
     return this.allergenExclRepo.getByUserId(userId);
   }
 
@@ -141,7 +164,10 @@ export class MealPlanService implements IMealPlanService {
 
   // ======================== Daily Summary ========================
 
-  getDailySummary(userId: string, date: Date): ResultAsync<DailySummary, DomainError> {
+  getDailySummary(
+    userId: string,
+    date: Date,
+  ): ResultAsync<DailySummary, DomainError> {
     return ResultAsync.combine([
       this.mealLogRepo.findByUserAndDate(userId, date),
       this.exerciseLogRepo.findByUserAndDate(userId, date),
@@ -156,7 +182,10 @@ export class MealPlanService implements IMealPlanService {
     userId: string,
     startDate: Date,
     endDate: Date,
-  ): ResultAsync<{ date: Date; totalConsumed: number; totalBurned: number }[], DomainError> {
+  ): ResultAsync<
+    { date: Date; totalConsumed: number; totalBurned: number }[],
+    DomainError
+  > {
     return ResultAsync.combine([
       this.mealLogRepo.findByUserAndDateRange(userId, startDate, endDate),
       this.exerciseLogRepo.findByUserAndDateRange(userId, startDate, endDate),
@@ -190,7 +219,9 @@ export class MealPlanService implements IMealPlanService {
     });
   }
 
-  getStreak(userId: string): ResultAsync<{ current: number; longest: number }, DomainError> {
+  getStreak(
+    userId: string,
+  ): ResultAsync<{ current: number; longest: number }, DomainError> {
     return this.getHealthProfile(userId).map((profile) => ({
       current: profile.currentStreak,
       longest: profile.longestStreak,
@@ -203,34 +234,38 @@ export class MealPlanService implements IMealPlanService {
     userId: string,
     dto: AddMealFromProductDto,
   ): ResultAsync<DailyMealLog, DomainError> {
-    return this.nutritionRepo.findByProductId(dto.productId).andThen((nutrition) => {
-      if (!nutrition) {
-        return err(createDomainError(MEAL_PLAN_ERRORS.PRODUCT_NO_NUTRITION));
-      }
+    return this.nutritionRepo
+      .findByProductId(dto.productId)
+      .andThen((nutrition) => {
+        if (!nutrition) {
+          return err(createDomainError(MEAL_PLAN_ERRORS.PRODUCT_NO_NUTRITION));
+        }
 
-      const log = DailyMealLog.createFromProduct({
-        userId,
-        logDate: dto.logDate,
-        mealType: dto.mealType,
-        productId: dto.productId,
-        foodName: `Product ${dto.productId}`, // Will be enriched later
-        quantity: dto.quantity,
-        servingSize: nutrition.servingSize,
-        servingUnit: nutrition.servingUnit,
-        caloriesPerServing: nutrition.calories ?? 0,
-        proteinPerServing: nutrition.protein,
-        carbsPerServing: nutrition.carbohydrates,
-        fatPerServing: nutrition.fat,
-        fiberPerServing: nutrition.fiber,
-        sugarPerServing: nutrition.sugar,
-        sodiumPerServing: nutrition.sodium,
-        notes: dto.notes,
+        const log = DailyMealLog.createFromProduct({
+          userId,
+          logDate: dto.logDate,
+          mealType: dto.mealType,
+          productId: dto.productId,
+          foodName: `Product ${dto.productId}`, // Will be enriched later
+          quantity: dto.quantity,
+          servingSize: nutrition.servingSize,
+          servingUnit: nutrition.servingUnit,
+          caloriesPerServing: nutrition.calories ?? 0,
+          proteinPerServing: nutrition.protein,
+          carbsPerServing: nutrition.carbohydrates,
+          fatPerServing: nutrition.fat,
+          fiberPerServing: nutrition.fiber,
+          sugarPerServing: nutrition.sugar,
+          sodiumPerServing: nutrition.sodium,
+          notes: dto.notes,
+        });
+
+        return this.mealLogRepo
+          .create(log)
+          .andThen((savedLog) =>
+            this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
+          );
       });
-
-      return this.mealLogRepo.create(log).andThen((savedLog) =>
-        this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
-      );
-    });
   }
 
   addMealFromPreset(
@@ -292,9 +327,11 @@ export class MealPlanService implements IMealPlanService {
       notes: dto.notes,
     });
 
-    return this.mealLogRepo.create(log).andThen((savedLog) =>
-      this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
-    );
+    return this.mealLogRepo
+      .create(log)
+      .andThen((savedLog) =>
+        this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
+      );
   }
 
   addQuickMeal(
@@ -310,9 +347,11 @@ export class MealPlanService implements IMealPlanService {
       notes: dto.notes,
     });
 
-    return this.mealLogRepo.create(log).andThen((savedLog) =>
-      this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
-    );
+    return this.mealLogRepo
+      .create(log)
+      .andThen((savedLog) =>
+        this.updateStreakAfterLog(userId, dto.logDate).map(() => savedLog),
+      );
   }
 
   updateMealLog(
@@ -352,22 +391,26 @@ export class MealPlanService implements IMealPlanService {
 
     // For PRODUCT source, get nutrition from product
     if (log.sourceType === MealSourceType.PRODUCT && log.productId) {
-      return this.nutritionRepo.findByProductId(log.productId).andThen((nutrition) => {
-        if (!nutrition) {
-          // Fallback: calculate from existing logged values
-          return ok(this.recalculateFromExistingValues(log, oldQuantity, newQuantity));
-        }
+      return this.nutritionRepo
+        .findByProductId(log.productId)
+        .andThen((nutrition) => {
+          if (!nutrition) {
+            // Fallback: calculate from existing logged values
+            return ok(
+              this.recalculateFromExistingValues(log, oldQuantity, newQuantity),
+            );
+          }
 
-        log.updateQuantity(newQuantity, nutrition.calories ?? 0, {
-          proteinPerServing: nutrition.protein,
-          carbsPerServing: nutrition.carbohydrates,
-          fatPerServing: nutrition.fat,
-          fiberPerServing: nutrition.fiber,
-          sugarPerServing: nutrition.sugar,
-          sodiumPerServing: nutrition.sodium,
+          log.updateQuantity(newQuantity, nutrition.calories ?? 0, {
+            proteinPerServing: nutrition.protein,
+            carbsPerServing: nutrition.carbohydrates,
+            fatPerServing: nutrition.fat,
+            fiberPerServing: nutrition.fiber,
+            sugarPerServing: nutrition.sugar,
+            sodiumPerServing: nutrition.sodium,
+          });
+          return ok(log);
         });
-        return ok(log);
-      });
     }
 
     // For PRESET source, get nutrition from preset
@@ -375,7 +418,9 @@ export class MealPlanService implements IMealPlanService {
       return this.presetRepo.findById(log.presetId).andThen((preset) => {
         if (!preset) {
           // Fallback: calculate from existing logged values
-          return ok(this.recalculateFromExistingValues(log, oldQuantity, newQuantity));
+          return ok(
+            this.recalculateFromExistingValues(log, oldQuantity, newQuantity),
+          );
         }
 
         log.updateQuantity(newQuantity, preset.calories, {
@@ -391,7 +436,9 @@ export class MealPlanService implements IMealPlanService {
     }
 
     // For CUSTOM and QUICK: calculate from existing logged values
-    return okAsync(this.recalculateFromExistingValues(log, oldQuantity, newQuantity));
+    return okAsync(
+      this.recalculateFromExistingValues(log, oldQuantity, newQuantity),
+    );
   }
 
   private recalculateFromExistingValues(
@@ -401,12 +448,18 @@ export class MealPlanService implements IMealPlanService {
   ): DailyMealLog {
     // Calculate per-serving values from existing logged values
     const caloriesPerServing = log.caloriesLogged / oldQuantity;
-    const proteinPerServing = log.proteinLogged !== null ? log.proteinLogged / oldQuantity : null;
-    const carbsPerServing = log.carbsLogged !== null ? log.carbsLogged / oldQuantity : null;
-    const fatPerServing = log.fatLogged !== null ? log.fatLogged / oldQuantity : null;
-    const fiberPerServing = log.fiberLogged !== null ? log.fiberLogged / oldQuantity : null;
-    const sugarPerServing = log.sugarLogged !== null ? log.sugarLogged / oldQuantity : null;
-    const sodiumPerServing = log.sodiumLogged !== null ? log.sodiumLogged / oldQuantity : null;
+    const proteinPerServing =
+      log.proteinLogged !== null ? log.proteinLogged / oldQuantity : null;
+    const carbsPerServing =
+      log.carbsLogged !== null ? log.carbsLogged / oldQuantity : null;
+    const fatPerServing =
+      log.fatLogged !== null ? log.fatLogged / oldQuantity : null;
+    const fiberPerServing =
+      log.fiberLogged !== null ? log.fiberLogged / oldQuantity : null;
+    const sugarPerServing =
+      log.sugarLogged !== null ? log.sugarLogged / oldQuantity : null;
+    const sodiumPerServing =
+      log.sodiumLogged !== null ? log.sodiumLogged / oldQuantity : null;
 
     log.updateQuantity(newQuantity, caloriesPerServing, {
       proteinPerServing,
@@ -431,7 +484,10 @@ export class MealPlanService implements IMealPlanService {
     });
   }
 
-  private updateStreakAfterLog(userId: string, logDate: Date): ResultAsync<void, DomainError> {
+  private updateStreakAfterLog(
+    userId: string,
+    logDate: Date,
+  ): ResultAsync<void, DomainError> {
     return this.healthProfileRepo.findByUserId(userId).andThen((profile) => {
       if (!profile) {
         return ok(undefined);
@@ -443,7 +499,10 @@ export class MealPlanService implements IMealPlanService {
 
   // ======================== Exercise Logs ========================
 
-  addExercise(userId: string, dto: AddExerciseDto): ResultAsync<ExerciseLog, DomainError> {
+  addExercise(
+    userId: string,
+    dto: AddExerciseDto,
+  ): ResultAsync<ExerciseLog, DomainError> {
     const log = ExerciseLog.create({
       userId,
       logDate: dto.logDate,
@@ -478,7 +537,10 @@ export class MealPlanService implements IMealPlanService {
     });
   }
 
-  deleteExerciseLog(userId: string, logId: string): ResultAsync<void, DomainError> {
+  deleteExerciseLog(
+    userId: string,
+    logId: string,
+  ): ResultAsync<void, DomainError> {
     return this.exerciseLogRepo.findById(logId).andThen((log) => {
       if (!log) {
         return err(createDomainError(MEAL_PLAN_ERRORS.EXERCISE_LOG_NOT_FOUND));
@@ -496,7 +558,10 @@ export class MealPlanService implements IMealPlanService {
     return this.presetRepo.findByCreatorId(userId);
   }
 
-  createPreset(userId: string, dto: CreatePresetDto): ResultAsync<FoodPreset, DomainError> {
+  createPreset(
+    userId: string,
+    dto: CreatePresetDto,
+  ): ResultAsync<FoodPreset, DomainError> {
     const preset = FoodPreset.create({
       creatorId: userId,
       name: dto.name,
@@ -552,7 +617,10 @@ export class MealPlanService implements IMealPlanService {
     });
   }
 
-  deletePreset(userId: string, presetId: string): ResultAsync<void, DomainError> {
+  deletePreset(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError> {
     return this.presetRepo.findById(presetId).andThen((preset) => {
       if (!preset) {
         return err(createDomainError(MEAL_PLAN_ERRORS.PRESET_NOT_FOUND));
@@ -605,7 +673,10 @@ export class MealPlanService implements IMealPlanService {
     return this.presetRepo.getFavorites(userId);
   }
 
-  addFavorite(userId: string, presetId: string): ResultAsync<void, DomainError> {
+  addFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError> {
     return this.presetRepo.findById(presetId).andThen((preset) => {
       if (!preset) {
         return err(createDomainError(MEAL_PLAN_ERRORS.PRESET_NOT_FOUND));
@@ -614,20 +685,29 @@ export class MealPlanService implements IMealPlanService {
     });
   }
 
-  removeFavorite(userId: string, presetId: string): ResultAsync<void, DomainError> {
+  removeFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError> {
     return this.presetRepo.removeFavorite(userId, presetId);
   }
 
   // ======================== Follows ========================
 
-  follow(followerId: string, followingId: string): ResultAsync<void, DomainError> {
+  follow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError> {
     if (followerId === followingId) {
       return errAsync(createDomainError(MEAL_PLAN_ERRORS.CANNOT_FOLLOW_SELF));
     }
     return this.followRepo.follow(followerId, followingId);
   }
 
-  unfollow(followerId: string, followingId: string): ResultAsync<void, DomainError> {
+  unfollow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError> {
     return this.followRepo.unfollow(followerId, followingId);
   }
 
@@ -639,7 +719,10 @@ export class MealPlanService implements IMealPlanService {
     return this.followRepo.getFollowers(userId);
   }
 
-  isFollowing(followerId: string, followingId: string): ResultAsync<boolean, DomainError> {
+  isFollowing(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<boolean, DomainError> {
     return this.followRepo.isFollowing(followerId, followingId);
   }
 }

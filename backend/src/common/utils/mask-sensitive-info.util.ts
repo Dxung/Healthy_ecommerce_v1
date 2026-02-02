@@ -45,7 +45,9 @@ export function maskPhoneNumber(phoneNumber: string | null): string | null {
     const visibleDigits = 2;
     const maskedLength = Math.max(0, remainingDigits.length - visibleDigits);
 
-    return '+84' + '*'.repeat(maskedLength) + remainingDigits.slice(-visibleDigits);
+    return (
+      '+84' + '*'.repeat(maskedLength) + remainingDigits.slice(-visibleDigits)
+    );
   }
 
   // Fallback: show only last 2 digits (for edge cases without country code)

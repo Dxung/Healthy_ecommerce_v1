@@ -129,7 +129,10 @@ export class NutritionInfoDto {
   @ApiPropertyOptional({ description: 'Serving unit name', nullable: true })
   servingUnitName: string | null;
 
-  @ApiPropertyOptional({ description: 'Serving unit abbreviation', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Serving unit abbreviation',
+    nullable: true,
+  })
   servingUnitAbbreviation: string | null;
 
   @ApiPropertyOptional({ description: 'Calories (kcal)', nullable: true })

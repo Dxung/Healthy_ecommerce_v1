@@ -13,7 +13,8 @@ export class ORMBadgeApplicationMapper {
    * Converts an ORM entity to a domain model.
    */
   static toDomain(orm: ORMBadgeApplication): BadgeApplication {
-    const documents = orm.documents?.map((doc) => this.documentToDomain(doc)) ?? [];
+    const documents =
+      orm.documents?.map((doc) => this.documentToDomain(doc)) ?? [];
 
     return new BadgeApplication(
       orm.id,
@@ -55,7 +56,9 @@ export class ORMBadgeApplicationMapper {
   /**
    * Converts document ORM to domain.
    */
-  static documentToDomain(orm: ORMBadgeApplicationDocument): BadgeApplicationDocument {
+  static documentToDomain(
+    orm: ORMBadgeApplicationDocument,
+  ): BadgeApplicationDocument {
     return {
       id: orm.id,
       applicationId: orm.applicationId,
@@ -69,7 +72,9 @@ export class ORMBadgeApplicationMapper {
   /**
    * Converts document domain to ORM.
    */
-  static documentToOrm(domain: BadgeApplicationDocument): ORMBadgeApplicationDocument {
+  static documentToOrm(
+    domain: BadgeApplicationDocument,
+  ): ORMBadgeApplicationDocument {
     const orm = new ORMBadgeApplicationDocument();
     orm.id = domain.id;
     orm.applicationId = domain.applicationId;

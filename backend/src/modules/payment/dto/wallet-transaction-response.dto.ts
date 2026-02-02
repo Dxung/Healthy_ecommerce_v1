@@ -49,7 +49,9 @@ export class WalletTransactionResponseDto {
     }).format(amount)}`;
   }
 
-  static fromList(transactions: WalletTransaction[]): WalletTransactionResponseDto[] {
+  static fromList(
+    transactions: WalletTransaction[],
+  ): WalletTransactionResponseDto[] {
     return transactions.map((t) => new WalletTransactionResponseDto(t));
   }
 }

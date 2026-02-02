@@ -63,15 +63,22 @@ export class AdminBadgeApplicationController {
       limit: query.limit ?? 10,
     };
 
-    return this.badgeApplicationService.getAllApplications(filters, pagination).match(
-      (result) => ({
-        ...result,
-        items: result.items.map((app) => BadgeApplicationResponseDto.fromDomain(app)),
-      }),
-      (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
-      },
-    );
+    return this.badgeApplicationService
+      .getAllApplications(filters, pagination)
+      .match(
+        (result) => ({
+          ...result,
+          items: result.items.map((app) =>
+            BadgeApplicationResponseDto.fromDomain(app),
+          ),
+        }),
+        (error) => {
+          throw ShopErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   /**
@@ -83,11 +90,16 @@ export class AdminBadgeApplicationController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Get badge application by ID (admin)' })
   @ApiResponse({ status: 200, type: BadgeApplicationResponseDto })
-  async getApplicationById(@Param('id') id: string): Promise<BadgeApplicationResponseDto> {
+  async getApplicationById(
+    @Param('id') id: string,
+  ): Promise<BadgeApplicationResponseDto> {
     return this.badgeApplicationService.getApplicationById(id).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -100,12 +112,21 @@ export class AdminBadgeApplicationController {
   @Permissions('admin:badge-application:approve')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Approve badge application (admin)' })
-  @ApiResponse({ status: 200, description: 'Application approved', type: BadgeApplicationResponseDto })
-  async approveApplication(@Param('id') id: string): Promise<BadgeApplicationResponseDto> {
+  @ApiResponse({
+    status: 200,
+    description: 'Application approved',
+    type: BadgeApplicationResponseDto,
+  })
+  async approveApplication(
+    @Param('id') id: string,
+  ): Promise<BadgeApplicationResponseDto> {
     return this.badgeApplicationService.approveApplication(id).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -118,7 +139,11 @@ export class AdminBadgeApplicationController {
   @Permissions('admin:badge-application:reject')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reject badge application (admin)' })
-  @ApiResponse({ status: 200, description: 'Application rejected', type: BadgeApplicationResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Application rejected',
+    type: BadgeApplicationResponseDto,
+  })
   async rejectApplication(
     @Param('id') id: string,
     @Body() dto: RejectBadgeApplicationArgumentDto,
@@ -126,7 +151,10 @@ export class AdminBadgeApplicationController {
     return this.badgeApplicationService.rejectApplication(id, dto.reason).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -145,12 +173,20 @@ export class AdminBadgeApplicationController {
   async getBrandDocumentRequirements(
     @Param('brandId') brandId: string,
   ): Promise<BrandDocumentRequirementResponseDto[]> {
-    return this.badgeApplicationService.getBrandDocumentRequirements(brandId).match(
-      (requirements) => requirements.map((r) => BrandDocumentRequirementResponseDto.fromDomain(r)),
-      (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
-      },
-    );
+    return this.badgeApplicationService
+      .getBrandDocumentRequirements(brandId)
+      .match(
+        (requirements) =>
+          requirements.map((r) =>
+            BrandDocumentRequirementResponseDto.fromDomain(r),
+          ),
+        (error) => {
+          throw ShopErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   /**
@@ -166,12 +202,18 @@ export class AdminBadgeApplicationController {
     @Param('brandId') brandId: string,
     @Body() dto: AddBrandRequirementArgumentDto,
   ): Promise<BrandDocumentRequirementResponseDto> {
-    return this.badgeApplicationService.addBrandDocumentRequirement(brandId, dto).match(
-      (requirement) => BrandDocumentRequirementResponseDto.fromDomain(requirement),
-      (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
-      },
-    );
+    return this.badgeApplicationService
+      .addBrandDocumentRequirement(brandId, dto)
+      .match(
+        (requirement) =>
+          BrandDocumentRequirementResponseDto.fromDomain(requirement),
+        (error) => {
+          throw ShopErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 
   /**
@@ -186,11 +228,16 @@ export class AdminBadgeApplicationController {
   async removeBrandDocumentRequirement(
     @Param('requirementId') requirementId: string,
   ): Promise<void> {
-    return this.badgeApplicationService.removeBrandDocumentRequirement(requirementId).match(
-      () => undefined,
-      (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
-      },
-    );
+    return this.badgeApplicationService
+      .removeBrandDocumentRequirement(requirementId)
+      .match(
+        () => undefined,
+        (error) => {
+          throw ShopErrorHttpMapper.toHttpException(
+            error,
+            ExceptionSource.CONTROLLER,
+          );
+        },
+      );
   }
 }

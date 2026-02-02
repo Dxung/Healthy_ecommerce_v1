@@ -54,9 +54,7 @@ export class ShopInfoResponseDto {
     this.status = shop.status;
     this.isRefundDebt = shop.isRefundDebt;
     this.isAdminSuspended = shop.isAdminSuspended;
-    this.badges = shop
-      .getActiveBadges()
-      .map((badge) => badge.badgeCode);
+    this.badges = shop.getActiveBadges().map((badge) => badge.badgeCode);
     this.createdAt = shop.createdAt.toISOString();
     this.updatedAt = shop.updatedAt.toISOString();
   }

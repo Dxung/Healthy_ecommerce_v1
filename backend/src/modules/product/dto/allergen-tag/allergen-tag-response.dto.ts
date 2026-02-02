@@ -14,7 +14,10 @@ export class AllergenTagResponseDto {
   @ApiProperty({ description: 'URL-friendly slug' })
   slug: string;
 
-  @ApiPropertyOptional({ description: 'Allergen tag description', nullable: true })
+  @ApiPropertyOptional({
+    description: 'Allergen tag description',
+    nullable: true,
+  })
   description: string | null;
 
   @ApiPropertyOptional({ description: 'Icon URL', nullable: true })

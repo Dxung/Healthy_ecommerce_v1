@@ -30,6 +30,13 @@ export interface IPaymentTransactionRepository {
   ): ResultAsync<PaymentTransaction | null, DomainError>;
 
   /**
+   * Find payment transaction by topup ID
+   */
+  findByTopupId(
+    topupId: string,
+  ): ResultAsync<PaymentTransaction | null, DomainError>;
+
+  /**
    * Update payment transaction
    */
   update(
@@ -42,11 +49,4 @@ export interface IPaymentTransactionRepository {
   save(
     transaction: PaymentTransaction,
   ): ResultAsync<PaymentTransaction, DomainError>;
-
-  /**
-   * Cancel expired pending payments (older than specified minutes)
-   */
-  cancelExpiredPayments(
-    expiredMinutes: number,
-  ): ResultAsync<number, DomainError>;
 }

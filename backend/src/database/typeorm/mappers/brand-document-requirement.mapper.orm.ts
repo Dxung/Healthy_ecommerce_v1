@@ -36,7 +36,9 @@ export class ORMBrandDocumentRequirementMapper {
   /**
    * Converts an array of ORM entities to domain models.
    */
-  static toDomainList(ormEntities: ORMBrandDocumentRequirement[]): BrandDocumentRequirement[] {
+  static toDomainList(
+    ormEntities: ORMBrandDocumentRequirement[],
+  ): BrandDocumentRequirement[] {
     return ormEntities.map((orm) => this.toDomain(orm));
   }
 }

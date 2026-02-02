@@ -45,7 +45,9 @@ export class ProductOptionResponseDto {
     this.id = option.id;
     this.name = option.name;
     this.sortOrder = option.sortOrder;
-    this.values = option.values.map((v) => new ProductOptionValueResponseDto(v));
+    this.values = option.values.map(
+      (v) => new ProductOptionValueResponseDto(v),
+    );
   }
 
   static fromList(options: ProductOption[]): ProductOptionResponseDto[] {

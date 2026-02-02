@@ -129,8 +129,12 @@ export class DailySummaryResponseDto {
     this.totalSugar = summary.totalSugar;
     this.totalSodium = summary.totalSodium;
     this.macrosDistribution = summary.getMacrosDistribution();
-    this.mealsByType = summary.getMealsByType().map((s) => new MealTypeSummaryDto(s));
-    this.exerciseLogs = summary.exerciseLogs.map((log) => new ExerciseLogResponseDto(log));
+    this.mealsByType = summary
+      .getMealsByType()
+      .map((s) => new MealTypeSummaryDto(s));
+    this.exerciseLogs = summary.exerciseLogs.map(
+      (log) => new ExerciseLogResponseDto(log),
+    );
   }
 }
 

@@ -32,6 +32,7 @@ import { OrmReviewRepository } from './typeorm/repositories/review/review.typeor
 import { OrmWalletRepository } from './typeorm/repositories/payment/wallet.typeorm.repository';
 import { OrmEscrowRepository } from './typeorm/repositories/payment/escrow.typeorm.repository';
 import { OrmPaymentTransactionRepository } from './typeorm/repositories/payment/payment-transaction.typeorm.repository';
+import { OrmTopupRepository } from './typeorm/repositories/payment/topup.typeorm.repository';
 import { OrmSystemConfigRepository } from './typeorm/repositories/config/system-config.typeorm.repository';
 import {
   OrmHealthProfileRepository,
@@ -77,6 +78,7 @@ import {
   WALLET_REPOSITORY,
   ESCROW_REPOSITORY,
   PAYMENT_TRANSACTION_REPOSITORY,
+  TOPUP_REPOSITORY,
   SYSTEM_CONFIG_REPOSITORY,
   HEALTH_PROFILE_REPOSITORY,
   FOOD_PRESET_REPOSITORY,
@@ -227,6 +229,10 @@ import { AlsModule } from 'src/shared/als/als.module';
       useClass: OrmPaymentTransactionRepository,
     },
     {
+      provide: TOPUP_REPOSITORY,
+      useClass: OrmTopupRepository,
+    },
+    {
       provide: SYSTEM_CONFIG_REPOSITORY,
       useClass: OrmSystemConfigRepository,
     },
@@ -306,6 +312,7 @@ import { AlsModule } from 'src/shared/als/als.module';
     WALLET_REPOSITORY,
     ESCROW_REPOSITORY,
     PAYMENT_TRANSACTION_REPOSITORY,
+    TOPUP_REPOSITORY,
     SYSTEM_CONFIG_REPOSITORY,
     HEALTH_PROFILE_REPOSITORY,
     FOOD_PRESET_REPOSITORY,

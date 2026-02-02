@@ -59,7 +59,10 @@ export class UserHealthProfile {
     const today = new Date();
     let age = today.getFullYear() - this._birthDate.getFullYear();
     const monthDiff = today.getMonth() - this._birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < this._birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < this._birthDate.getDate())
+    ) {
       age--;
     }
     return age;
@@ -77,7 +80,7 @@ export class UserHealthProfile {
     }
 
     const s = this._gender === Gender.MALE ? 5 : -161;
-    return (10 * this._weightKg) + (6.25 * this._heightCm) - (5 * age) + s;
+    return 10 * this._weightKg + 6.25 * this._heightCm - 5 * age + s;
   }
 
   /**
@@ -149,7 +152,9 @@ export class UserHealthProfile {
       const lastLog = new Date(this._lastLogDate);
       lastLog.setHours(0, 0, 0, 0);
 
-      const daysDiff = Math.floor((logDay.getTime() - lastLog.getTime()) / (1000 * 60 * 60 * 24));
+      const daysDiff = Math.floor(
+        (logDay.getTime() - lastLog.getTime()) / (1000 * 60 * 60 * 24),
+      );
 
       if (daysDiff === 1) {
         // Consecutive day
@@ -186,7 +191,8 @@ export class UserHealthProfile {
     if (params.heightCm !== undefined) this._heightCm = params.heightCm;
     if (params.birthDate !== undefined) this._birthDate = params.birthDate;
     if (params.gender !== undefined) this._gender = params.gender;
-    if (params.activityLevel !== undefined) this._activityLevel = params.activityLevel;
+    if (params.activityLevel !== undefined)
+      this._activityLevel = params.activityLevel;
     this._updatedAt = new Date();
   }
 
@@ -196,8 +202,10 @@ export class UserHealthProfile {
     isCalorieTargetManual?: boolean;
   }): void {
     if (params.goalType !== undefined) this._goalType = params.goalType;
-    if (params.calorieTarget !== undefined) this._calorieTarget = params.calorieTarget;
-    if (params.isCalorieTargetManual !== undefined) this._isCalorieTargetManual = params.isCalorieTargetManual;
+    if (params.calorieTarget !== undefined)
+      this._calorieTarget = params.calorieTarget;
+    if (params.isCalorieTargetManual !== undefined)
+      this._isCalorieTargetManual = params.isCalorieTargetManual;
     this._updatedAt = new Date();
   }
 

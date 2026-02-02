@@ -50,7 +50,8 @@ export const USER_ERRORS = {
   },
   MAX_ADDRESSES_REACHED: {
     code: 'USER_MAX_ADDRESSES_REACHED',
-    message: 'Bạn đã đạt giới hạn tối đa 10 địa chỉ. Vui lòng xóa địa chỉ cũ trước khi thêm mới.',
+    message:
+      'Bạn đã đạt giới hạn tối đa 10 địa chỉ. Vui lòng xóa địa chỉ cũ trước khi thêm mới.',
   },
   AVATAR_UPLOAD_FAILED: {
     code: 'USER_AVATAR_UPLOAD_FAILED',
@@ -78,7 +79,8 @@ export const USER_ERRORS = {
   },
   CANNOT_MODIFY_OWN_ACCOUNT: {
     code: 'USER_CANNOT_MODIFY_OWN_ACCOUNT',
-    message: 'Bạn không thể thực hiện hành động này trên tài khoản của chính mình.',
+    message:
+      'Bạn không thể thực hiện hành động này trên tài khoản của chính mình.',
   },
   CANNOT_MODIFY_SUPER_ADMIN: {
     code: 'USER_CANNOT_MODIFY_SUPER_ADMIN',

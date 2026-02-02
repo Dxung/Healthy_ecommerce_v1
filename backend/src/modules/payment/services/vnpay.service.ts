@@ -154,7 +154,9 @@ export class VnpayService implements IVnpayService {
 
     // Generate HMAC-SHA512 signature
     const hmac = crypto.createHmac('sha512', this.config.hashSecret);
-    const secureHash = hmac.update(Buffer.from(dataToSign, 'utf-8')).digest('hex');
+    const secureHash = hmac
+      .update(Buffer.from(dataToSign, 'utf-8'))
+      .digest('hex');
 
     // Add signature to params
     const requestBody = {

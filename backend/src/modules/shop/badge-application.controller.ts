@@ -54,12 +54,21 @@ export class BadgeApplicationController {
   @Permissions('shop:register')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Register a new shop (single-step)' })
-  @ApiResponse({ status: 201, description: 'Shop created successfully', type: ShopInfoResponseDto })
-  async registerShop(@Body() dto: RegisterShopArgumentDto): Promise<ShopInfoResponseDto> {
+  @ApiResponse({
+    status: 201,
+    description: 'Shop created successfully',
+    type: ShopInfoResponseDto,
+  })
+  async registerShop(
+    @Body() dto: RegisterShopArgumentDto,
+  ): Promise<ShopInfoResponseDto> {
     return this.shopService.registerShop(dto).match(
       (shop) => new ShopInfoResponseDto(shop),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -77,7 +86,10 @@ export class BadgeApplicationController {
     return this.badgeApplicationService.getVerifiedRequirements().match(
       (requirements) => requirements,
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -90,14 +102,21 @@ export class BadgeApplicationController {
   @Permissions('shop:badge:apply')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Apply for Verified badge' })
-  @ApiResponse({ status: 201, description: 'Application submitted', type: BadgeApplicationResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Application submitted',
+    type: BadgeApplicationResponseDto,
+  })
   async applyForVerifiedBadge(
     @Body() dto: ApplyVerifiedBadgeArgumentDto,
   ): Promise<BadgeApplicationResponseDto> {
     return this.badgeApplicationService.applyForVerifiedBadge(dto).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -114,7 +133,10 @@ export class BadgeApplicationController {
     return this.badgeApplicationService.getOfficialRequirements().match(
       (requirements) => requirements,
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -127,14 +149,21 @@ export class BadgeApplicationController {
   @Permissions('shop:badge:apply')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Apply for Official badge for a brand' })
-  @ApiResponse({ status: 201, description: 'Application submitted', type: BadgeApplicationResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Application submitted',
+    type: BadgeApplicationResponseDto,
+  })
   async applyForOfficialBadge(
     @Body() dto: ApplyOfficialBadgeArgumentDto,
   ): Promise<BadgeApplicationResponseDto> {
     return this.badgeApplicationService.applyForOfficialBadge(dto).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -149,9 +178,13 @@ export class BadgeApplicationController {
   @ApiResponse({ status: 200, type: [BadgeApplicationListItemDto] })
   async getMyApplications(): Promise<BadgeApplicationListItemDto[]> {
     return this.badgeApplicationService.getMyApplications().match(
-      (applications) => applications.map((app) => BadgeApplicationListItemDto.fromDomain(app)),
+      (applications) =>
+        applications.map((app) => BadgeApplicationListItemDto.fromDomain(app)),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -164,12 +197,21 @@ export class BadgeApplicationController {
   @Permissions('shop:badge:apply')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel a pending badge application' })
-  @ApiResponse({ status: 200, description: 'Application cancelled', type: BadgeApplicationResponseDto })
-  async cancelApplication(@Param('id') id: string): Promise<BadgeApplicationResponseDto> {
+  @ApiResponse({
+    status: 200,
+    description: 'Application cancelled',
+    type: BadgeApplicationResponseDto,
+  })
+  async cancelApplication(
+    @Param('id') id: string,
+  ): Promise<BadgeApplicationResponseDto> {
     return this.badgeApplicationService.cancelApplication(id).match(
       (application) => BadgeApplicationResponseDto.fromDomain(application),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -186,9 +228,13 @@ export class BadgeApplicationController {
   @ApiResponse({ status: 200, type: [ShopBadgeAssignmentResponseDto] })
   async getMyBadges(): Promise<ShopBadgeAssignmentResponseDto[]> {
     return this.badgeApplicationService.getMyBadges().match(
-      (badges) => badges.map((b) => ShopBadgeAssignmentResponseDto.fromDomain(b)),
+      (badges) =>
+        badges.map((b) => ShopBadgeAssignmentResponseDto.fromDomain(b)),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }
@@ -205,7 +251,10 @@ export class BadgeApplicationController {
     return this.badgeApplicationService.getMyOfficialBrands().match(
       (brands) => brands.map((b) => ShopOfficialBrandResponseDto.fromDomain(b)),
       (error) => {
-        throw ShopErrorHttpMapper.toHttpException(error, ExceptionSource.CONTROLLER);
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
       },
     );
   }

@@ -34,6 +34,7 @@ export class ORMOrderMapper {
       Number(ormOrder.tierDiscountPercent),
       Number(ormOrder.voucherDiscountAmount),
       Number(ormOrder.coinUsed),
+      Number(ormOrder.platformShipDiscount),
       Number(ormOrder.totalAmount),
       ormOrder.buyerTierCode,
       Number(ormOrder.coinMultiplier),
@@ -81,6 +82,7 @@ export class ORMOrderMapper {
     ormOrder.tierDiscountPercent = domainOrder.tierDiscountPercent;
     ormOrder.voucherDiscountAmount = domainOrder.voucherDiscountAmount;
     ormOrder.coinUsed = domainOrder.coinUsed;
+    ormOrder.platformShipDiscount = domainOrder.platformShipDiscount;
     ormOrder.totalAmount = domainOrder.totalAmount;
     ormOrder.buyerTierCode = domainOrder.buyerTierCode;
     ormOrder.coinMultiplier = domainOrder.coinMultiplier;

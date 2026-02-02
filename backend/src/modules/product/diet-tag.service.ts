@@ -43,7 +43,9 @@ export class DietTagService implements IDietTagService {
   }
 
   @WithPosition()
-  createDietTag(dto: CreateDietTagArgumentDto): ResultAsync<DietTag, DomainError> {
+  createDietTag(
+    dto: CreateDietTagArgumentDto,
+  ): ResultAsync<DietTag, DomainError> {
     // Check if slug already exists
     return this.dietTagRepository
       .slugExists(dto.slug)
@@ -78,16 +80,18 @@ export class DietTagService implements IDietTagService {
       .andThen((dietTag) => {
         // Check if slug already exists (exclude current diet tag)
         if (dto.slug) {
-          return this.dietTagRepository.slugExists(dto.slug, id).andThen((exists) => {
-            if (exists) {
-              return errAsync(
-                createDomainError(PRODUCT_ERRORS.DIET_TAG_SLUG_EXISTS, {
-                  cause: `Slug "${dto.slug}" already exists`,
-                }),
-              );
-            }
-            return okAsync(dietTag);
-          });
+          return this.dietTagRepository
+            .slugExists(dto.slug, id)
+            .andThen((exists) => {
+              if (exists) {
+                return errAsync(
+                  createDomainError(PRODUCT_ERRORS.DIET_TAG_SLUG_EXISTS, {
+                    cause: `Slug "${dto.slug}" already exists`,
+                  }),
+                );
+              }
+              return okAsync(dietTag);
+            });
         }
         return okAsync(dietTag);
       })
@@ -101,7 +105,9 @@ export class DietTagService implements IDietTagService {
           dietTag.updateInfo(
             dto.name ?? dietTag.name,
             dto.slug ?? dietTag.slug,
-            dto.description !== undefined ? dto.description : dietTag.description,
+            dto.description !== undefined
+              ? dto.description
+              : dietTag.description,
           );
         }
 

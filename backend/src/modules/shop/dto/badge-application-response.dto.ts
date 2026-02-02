@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BadgeApplication, BadgeApplicationDocument } from '../models/badge-application.model';
+import {
+  BadgeApplication,
+  BadgeApplicationDocument,
+} from '../models/badge-application.model';
 import { BadgeApplicationStatus } from 'src/database/typeorm/entities/shop/enums/badge-application-status.enum';
 import { BadgeApplicationType } from 'src/database/typeorm/entities/shop/enums/badge-application-type.enum';
 
@@ -22,7 +25,9 @@ export class BadgeApplicationDocumentResponseDto {
   @ApiProperty({ description: 'Document created date' })
   createdAt: Date;
 
-  static fromDomain(doc: BadgeApplicationDocument): BadgeApplicationDocumentResponseDto {
+  static fromDomain(
+    doc: BadgeApplicationDocument,
+  ): BadgeApplicationDocumentResponseDto {
     return {
       id: doc.id,
       documentTypeId: doc.documentTypeId,
@@ -91,7 +96,9 @@ export class BadgeApplicationResponseDto {
       reviewedAt: app.reviewedAt,
       createdAt: app.createdAt,
       updatedAt: app.updatedAt,
-      documents: app.documents.map((doc) => BadgeApplicationDocumentResponseDto.fromDomain(doc)),
+      documents: app.documents.map((doc) =>
+        BadgeApplicationDocumentResponseDto.fromDomain(doc),
+      ),
     };
   }
 }

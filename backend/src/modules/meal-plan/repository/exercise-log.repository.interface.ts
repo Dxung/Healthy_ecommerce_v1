@@ -11,7 +11,10 @@ export interface IExerciseLogRepository {
   /**
    * Finds all exercise logs for a user on a specific date.
    */
-  findByUserAndDate(userId: string, date: Date): ResultAsync<ExerciseLog[], DomainError>;
+  findByUserAndDate(
+    userId: string,
+    date: Date,
+  ): ResultAsync<ExerciseLog[], DomainError>;
 
   /**
    * Finds all exercise logs for a user within a date range.
@@ -40,5 +43,8 @@ export interface IExerciseLogRepository {
   /**
    * Get total calories burned for a user on a specific date.
    */
-  getTotalCaloriesBurnedForDate(userId: string, date: Date): ResultAsync<number, DomainError>;
+  getTotalCaloriesBurnedForDate(
+    userId: string,
+    date: Date,
+  ): ResultAsync<number, DomainError>;
 }

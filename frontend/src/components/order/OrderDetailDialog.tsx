@@ -33,7 +33,7 @@ interface OrderDetailDialogProps {
 const statusLabels: Record<OrderStatus, string> = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
+  shipping: 'Đang vận chuyển',
   delivered: 'Đã giao',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy',
@@ -133,7 +133,7 @@ export function OrderDetailDialog({
   };
 
   const canCancel = order?.status === 'pending';
-  const canConfirmDelivery = order?.status === 'delivered';
+  const canConfirmDelivery = order?.status === 'shipping';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

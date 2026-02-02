@@ -68,12 +68,16 @@ export class DailyMealLog {
       params.servingSize,
       params.servingUnit,
       params.caloriesPerServing * params.quantity,
-      params.proteinPerServing ? params.proteinPerServing * params.quantity : null,
+      params.proteinPerServing
+        ? params.proteinPerServing * params.quantity
+        : null,
       params.carbsPerServing ? params.carbsPerServing * params.quantity : null,
       params.fatPerServing ? params.fatPerServing * params.quantity : null,
       params.fiberPerServing ? params.fiberPerServing * params.quantity : null,
       params.sugarPerServing ? params.sugarPerServing * params.quantity : null,
-      params.sodiumPerServing ? params.sodiumPerServing * params.quantity : null,
+      params.sodiumPerServing
+        ? params.sodiumPerServing * params.quantity
+        : null,
       params.notes ?? null,
       now,
       now,
@@ -115,12 +119,16 @@ export class DailyMealLog {
       params.servingSize,
       params.servingUnit,
       params.caloriesPerServing * params.quantity,
-      params.proteinPerServing ? params.proteinPerServing * params.quantity : null,
+      params.proteinPerServing
+        ? params.proteinPerServing * params.quantity
+        : null,
       params.carbsPerServing ? params.carbsPerServing * params.quantity : null,
       params.fatPerServing ? params.fatPerServing * params.quantity : null,
       params.fiberPerServing ? params.fiberPerServing * params.quantity : null,
       params.sugarPerServing ? params.sugarPerServing * params.quantity : null,
-      params.sodiumPerServing ? params.sodiumPerServing * params.quantity : null,
+      params.sodiumPerServing
+        ? params.sodiumPerServing * params.quantity
+        : null,
       params.notes ?? null,
       now,
       now,
@@ -221,33 +229,49 @@ export class DailyMealLog {
 
   // ======================== UPDATE METHODS ========================
 
-  updateQuantity(quantity: number, caloriesPerServing: number, params?: {
-    proteinPerServing?: number | null;
-    carbsPerServing?: number | null;
-    fatPerServing?: number | null;
-    fiberPerServing?: number | null;
-    sugarPerServing?: number | null;
-    sodiumPerServing?: number | null;
-  }): void {
+  updateQuantity(
+    quantity: number,
+    caloriesPerServing: number,
+    params?: {
+      proteinPerServing?: number | null;
+      carbsPerServing?: number | null;
+      fatPerServing?: number | null;
+      fiberPerServing?: number | null;
+      sugarPerServing?: number | null;
+      sodiumPerServing?: number | null;
+    },
+  ): void {
     this._quantity = quantity;
     this._caloriesLogged = caloriesPerServing * quantity;
     if (params?.proteinPerServing !== undefined) {
-      this._proteinLogged = params.proteinPerServing ? params.proteinPerServing * quantity : null;
+      this._proteinLogged = params.proteinPerServing
+        ? params.proteinPerServing * quantity
+        : null;
     }
     if (params?.carbsPerServing !== undefined) {
-      this._carbsLogged = params.carbsPerServing ? params.carbsPerServing * quantity : null;
+      this._carbsLogged = params.carbsPerServing
+        ? params.carbsPerServing * quantity
+        : null;
     }
     if (params?.fatPerServing !== undefined) {
-      this._fatLogged = params.fatPerServing ? params.fatPerServing * quantity : null;
+      this._fatLogged = params.fatPerServing
+        ? params.fatPerServing * quantity
+        : null;
     }
     if (params?.fiberPerServing !== undefined) {
-      this._fiberLogged = params.fiberPerServing ? params.fiberPerServing * quantity : null;
+      this._fiberLogged = params.fiberPerServing
+        ? params.fiberPerServing * quantity
+        : null;
     }
     if (params?.sugarPerServing !== undefined) {
-      this._sugarLogged = params.sugarPerServing ? params.sugarPerServing * quantity : null;
+      this._sugarLogged = params.sugarPerServing
+        ? params.sugarPerServing * quantity
+        : null;
     }
     if (params?.sodiumPerServing !== undefined) {
-      this._sodiumLogged = params.sodiumPerServing ? params.sodiumPerServing * quantity : null;
+      this._sodiumLogged = params.sodiumPerServing
+        ? params.sodiumPerServing * quantity
+        : null;
     }
     this._updatedAt = new Date();
   }

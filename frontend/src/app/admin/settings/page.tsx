@@ -10,20 +10,20 @@ import { Input } from '@/components/ui/input';
 const CONFIG_LABELS: Record<string, string> = {
   platform_fee_percent: 'Phí nền tảng (%)',
   review_window_days: 'Số ngày đánh giá',
-  escrow_hold_days: 'Số ngày giữ tiền',
   coin_earn_rate_percent: 'Tỷ lệ tích xu (%)',
   coin_max_usage_percent: 'Giới hạn dùng xu (%)',
   default_max_product_slots: 'Số sản phẩm tối đa (shop chưa badge)',
+  order_auto_complete_days: 'Số ngày tự động hoàn thành',
 };
 
 // Config key to unit/suffix mapping
 const CONFIG_UNITS: Record<string, string> = {
   platform_fee_percent: '%',
   review_window_days: 'ngày',
-  escrow_hold_days: 'ngày',
   coin_earn_rate_percent: '%',
   coin_max_usage_percent: '%',
   default_max_product_slots: 'sản phẩm',
+  order_auto_complete_days: 'ngày',
 };
 
 interface EditingState {
@@ -289,10 +289,10 @@ export default function AdminSettingsPage() {
           <li>Các thay đổi sẽ có hiệu lực ngay lập tức</li>
           <li>Phí nền tảng: Phần trăm thu từ mỗi đơn hàng khi shop nhận tiền</li>
           <li>Số ngày đánh giá: Thời gian buyer có thể đánh giá sau khi đơn hoàn thành</li>
-          <li>Số ngày giữ tiền: Thời gian chờ trước khi chuyển tiền cho shop sau khi đơn hoàn thành</li>
           <li>Tỷ lệ tích xu: Phần trăm giá trị đơn hàng được quy đổi thành xu</li>
           <li>Giới hạn dùng xu: Phần trăm tối đa giá trị đơn có thể thanh toán bằng xu</li>
           <li>Số sản phẩm tối đa: Giới hạn số sản phẩm shop chưa có badge có thể đăng bán</li>
+          <li>Số ngày tự động hoàn thành: Số ngày sau khi giao hàng để hệ thống tự động hoàn thành đơn nếu buyer không xác nhận</li>
         </ul>
       </div>
     </div>

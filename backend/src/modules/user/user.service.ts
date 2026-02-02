@@ -220,7 +220,9 @@ export class UserService implements IUserService {
               user.changeEmail(dto.email!);
 
               // Save user and return void
-              return this.userCoreRepository.updateUser(user).map(() => undefined);
+              return this.userCoreRepository
+                .updateUser(user)
+                .map(() => undefined);
             });
         }
 

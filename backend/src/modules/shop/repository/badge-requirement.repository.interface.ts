@@ -12,7 +12,9 @@ export interface IBadgeRequirementRepository {
    * @param requirement - The requirement to create
    * @returns The created requirement
    */
-  create(requirement: BadgeRequirement): ResultAsync<BadgeRequirement, DomainError>;
+  create(
+    requirement: BadgeRequirement,
+  ): ResultAsync<BadgeRequirement, DomainError>;
 
   /**
    * Gets all requirements for a badge.
@@ -52,7 +54,9 @@ export interface IBadgeRequirementRepository {
    * @param requirement - The requirement with updated data
    * @returns The updated requirement
    */
-  update(requirement: BadgeRequirement): ResultAsync<BadgeRequirement, DomainError>;
+  update(
+    requirement: BadgeRequirement,
+  ): ResultAsync<BadgeRequirement, DomainError>;
 
   /**
    * Deletes a requirement.

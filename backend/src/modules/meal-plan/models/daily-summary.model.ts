@@ -66,7 +66,10 @@ export class DailySummary {
    * Total protein consumed.
    */
   get totalProtein(): number {
-    return this._mealLogs.reduce((sum, log) => sum + (log.proteinLogged ?? 0), 0);
+    return this._mealLogs.reduce(
+      (sum, log) => sum + (log.proteinLogged ?? 0),
+      0,
+    );
   }
 
   /**
@@ -101,7 +104,10 @@ export class DailySummary {
    * Total sodium consumed.
    */
   get totalSodium(): number {
-    return this._mealLogs.reduce((sum, log) => sum + (log.sodiumLogged ?? 0), 0);
+    return this._mealLogs.reduce(
+      (sum, log) => sum + (log.sodiumLogged ?? 0),
+      0,
+    );
   }
 
   /**
@@ -122,7 +128,10 @@ export class DailySummary {
       return {
         mealType,
         totalCalories: logs.reduce((sum, log) => sum + log.caloriesLogged, 0),
-        totalProtein: logs.reduce((sum, log) => sum + (log.proteinLogged ?? 0), 0),
+        totalProtein: logs.reduce(
+          (sum, log) => sum + (log.proteinLogged ?? 0),
+          0,
+        ),
         totalCarbs: logs.reduce((sum, log) => sum + (log.carbsLogged ?? 0), 0),
         totalFat: logs.reduce((sum, log) => sum + (log.fatLogged ?? 0), 0),
         logs,
@@ -135,16 +144,16 @@ export class DailySummary {
    */
   getMacrosDistribution(): { protein: number; carbs: number; fat: number } {
     const totalMacroCalories =
-      (this.totalProtein * 4) + (this.totalCarbs * 4) + (this.totalFat * 9);
+      this.totalProtein * 4 + this.totalCarbs * 4 + this.totalFat * 9;
 
     if (totalMacroCalories === 0) {
       return { protein: 0, carbs: 0, fat: 0 };
     }
 
     return {
-      protein: Math.round((this.totalProtein * 4 / totalMacroCalories) * 100),
-      carbs: Math.round((this.totalCarbs * 4 / totalMacroCalories) * 100),
-      fat: Math.round((this.totalFat * 9 / totalMacroCalories) * 100),
+      protein: Math.round(((this.totalProtein * 4) / totalMacroCalories) * 100),
+      carbs: Math.round(((this.totalCarbs * 4) / totalMacroCalories) * 100),
+      fat: Math.round(((this.totalFat * 9) / totalMacroCalories) * 100),
     };
   }
 

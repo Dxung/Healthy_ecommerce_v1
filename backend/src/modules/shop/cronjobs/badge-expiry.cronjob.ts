@@ -3,7 +3,11 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { DataSource, LessThan, IsNull } from 'typeorm';
 import { ShopBadgeCode } from 'src/database/typeorm/entities/shop/enums/shop-badge-code.enum';
 import { ShopBadgeStatus } from 'src/database/typeorm/entities/shop/enums/shop-badge-status.enum';
-import { ORMShopBadgeAssignment, ORMShopOfficialBrand, ORMShop } from 'src/database/typeorm/entities/shop';
+import {
+  ORMShopBadgeAssignment,
+  ORMShopOfficialBrand,
+  ORMShop,
+} from 'src/database/typeorm/entities/shop';
 import { ORMProduct } from 'src/database/typeorm/entities/product';
 
 /**
@@ -72,7 +76,9 @@ export class BadgeExpiryCronjob {
       );
     }
 
-    this.logger.log(`Verified badge expiry check: ${disabledCount} badges disabled`);
+    this.logger.log(
+      `Verified badge expiry check: ${disabledCount} badges disabled`,
+    );
   }
 
   /**
@@ -80,7 +86,8 @@ export class BadgeExpiryCronjob {
    * Also updates products and OFFICIAL badge status.
    */
   private async checkOfficialBrandExpiry(): Promise<void> {
-    const officialBrandRepo = this.dataSource.getRepository(ORMShopOfficialBrand);
+    const officialBrandRepo =
+      this.dataSource.getRepository(ORMShopOfficialBrand);
     const badgeRepo = this.dataSource.getRepository(ORMShopBadgeAssignment);
     const shopRepo = this.dataSource.getRepository(ORMShop);
     const now = new Date();
@@ -109,7 +116,11 @@ export class BadgeExpiryCronjob {
       );
 
       // Update all products of this brand in this shop to not be official
-      await this.updateProductOfficialStatus(brand.shopId, brand.brandId, false);
+      await this.updateProductOfficialStatus(
+        brand.shopId,
+        brand.brandId,
+        false,
+      );
     }
 
     // For each affected shop, check if they still have any active official brands
@@ -138,9 +149,7 @@ export class BadgeExpiryCronjob {
         },
       });
 
-      const hasActive = activeOfficialBrands.some(
-        (b) => b.expiresAt > now,
-      );
+      const hasActive = activeOfficialBrands.some((b) => b.expiresAt > now);
 
       if (!hasActive) {
         // No more active official brands - disable OFFICIAL badge

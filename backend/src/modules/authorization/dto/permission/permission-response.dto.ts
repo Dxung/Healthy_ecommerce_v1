@@ -34,6 +34,8 @@ export class PermissionResponseDto {
   }
 
   static fromList(permissions: Permission[]): PermissionResponseDto[] {
-    return permissions.map((permission) => new PermissionResponseDto(permission));
+    return permissions.map(
+      (permission) => new PermissionResponseDto(permission),
+    );
   }
 }

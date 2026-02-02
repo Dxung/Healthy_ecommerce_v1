@@ -1,4 +1,13 @@
-import { IsOptional, IsEnum, IsInt, Min, Max, IsDateString, IsString, IsUUID } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+  IsDateString,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { OrderStatus } from 'src/database/typeorm/entities/order/enums/order-status.enum';
 

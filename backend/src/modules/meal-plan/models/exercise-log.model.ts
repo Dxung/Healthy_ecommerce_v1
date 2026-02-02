@@ -58,9 +58,12 @@ export class ExerciseLog {
     caloriesBurned?: number;
     notes?: string | null;
   }): void {
-    if (params.exerciseName !== undefined) this._exerciseName = params.exerciseName;
-    if (params.durationMinutes !== undefined) this._durationMinutes = params.durationMinutes;
-    if (params.caloriesBurned !== undefined) this._caloriesBurned = params.caloriesBurned;
+    if (params.exerciseName !== undefined)
+      this._exerciseName = params.exerciseName;
+    if (params.durationMinutes !== undefined)
+      this._durationMinutes = params.durationMinutes;
+    if (params.caloriesBurned !== undefined)
+      this._caloriesBurned = params.caloriesBurned;
     if (params.notes !== undefined) this._notes = params.notes;
     this._updatedAt = new Date();
   }

@@ -17,6 +17,9 @@ export class EscrowHold {
     private readonly _orderId: string,
     private readonly _shopId: string,
     private readonly _amount: number,
+    private readonly _orderSubtotal: number,
+    private readonly _coinUsed: number,
+    private readonly _platformFeePercent: number,
     private _status: EscrowStatus,
     private _releasedAt: Date | null,
     private readonly _createdAt: Date,
@@ -25,11 +28,18 @@ export class EscrowHold {
 
   /**
    * Creates a new escrow hold
+   * @param params.amount - The actual amount held (totalAmount paid by buyer)
+   * @param params.orderSubtotal - Original order value before coin discount
+   * @param params.coinUsed - Coins used by buyer
+   * @param params.platformFeePercent - Platform fee percent (already includes badge discount)
    */
   static create(params: {
     orderId: string;
     shopId: string;
     amount: number;
+    orderSubtotal: number;
+    coinUsed: number;
+    platformFeePercent: number;
   }): EscrowHold {
     const now = new Date();
     return new EscrowHold(
@@ -37,6 +47,9 @@ export class EscrowHold {
       params.orderId,
       params.shopId,
       params.amount,
+      params.orderSubtotal,
+      params.coinUsed,
+      params.platformFeePercent,
       EscrowStatus.HOLDING,
       null,
       now,
@@ -100,6 +113,18 @@ export class EscrowHold {
 
   get amount(): number {
     return this._amount;
+  }
+
+  get orderSubtotal(): number {
+    return this._orderSubtotal;
+  }
+
+  get coinUsed(): number {
+    return this._coinUsed;
+  }
+
+  get platformFeePercent(): number {
+    return this._platformFeePercent;
   }
 
   get status(): EscrowStatus {

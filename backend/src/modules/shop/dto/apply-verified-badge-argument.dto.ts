@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { BadgeApplicationDocumentDto } from './register-shop-argument.dto';
 

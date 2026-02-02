@@ -136,43 +136,50 @@ export class CartService implements ICartService {
         return okAsync(variant);
       })
       .andThen((variant) =>
-        this.cartRepository.findOrCreateByUserId(userId).andThen((cart) =>
-          this.cartRepository
-            .findCartItemByVariantId(cart.id, variantId)
-            .andThen((existingItem) => {
-              if (existingItem) {
-                // Update quantity
-                const newQuantity = existingItem.quantity + quantity;
-                if (newQuantity > variant.stockQuantity) {
-                  return errAsync(
-                    createDomainError(CART_ERRORS.INSUFFICIENT_STOCK),
+        this.cartRepository.findOrCreateByUserId(userId).andThen((cart) => {
+          // If selectItem is true (Buy Now), deselect all other items first
+          const deselectFirst = selectItem
+            ? this.cartRepository.updateAllItemsSelection(cart.id, false)
+            : okAsync(undefined);
+
+          return deselectFirst.andThen(() =>
+            this.cartRepository
+              .findCartItemByVariantId(cart.id, variantId)
+              .andThen((existingItem) => {
+                if (existingItem) {
+                  // Update quantity
+                  const newQuantity = existingItem.quantity + quantity;
+                  if (newQuantity > variant.stockQuantity) {
+                    return errAsync(
+                      createDomainError(CART_ERRORS.INSUFFICIENT_STOCK),
+                    );
+                  }
+                  existingItem.updateQuantity(newQuantity);
+                  // Select item if requested (for "Buy Now" feature)
+                  if (selectItem) {
+                    existingItem.select();
+                  }
+                  return this.cartRepository
+                    .updateItem(existingItem)
+                    .map((updated) => ({ cartItemId: updated.id }));
+                } else {
+                  // Create new item
+                  const newItem = CartItem.createNew(
+                    cart.id,
+                    variant.product.shopId,
+                    variant.product.id,
+                    variantId,
+                    quantity,
+                    variant.price,
+                    selectItem, // Select item if requested (for "Buy Now" feature)
                   );
+                  return this.cartRepository
+                    .addItem(newItem)
+                    .map((added) => ({ cartItemId: added.id }));
                 }
-                existingItem.updateQuantity(newQuantity);
-                // Select item if requested (for "Buy Now" feature)
-                if (selectItem) {
-                  existingItem.select();
-                }
-                return this.cartRepository
-                  .updateItem(existingItem)
-                  .map((updated) => ({ cartItemId: updated.id }));
-              } else {
-                // Create new item
-                const newItem = CartItem.createNew(
-                  cart.id,
-                  variant.product.shopId,
-                  variant.product.id,
-                  variantId,
-                  quantity,
-                  variant.price,
-                  selectItem, // Select item if requested (for "Buy Now" feature)
-                );
-                return this.cartRepository
-                  .addItem(newItem)
-                  .map((added) => ({ cartItemId: added.id }));
-              }
-            }),
-        ),
+              }),
+          );
+        }),
       );
   }
 
@@ -483,5 +490,4 @@ export class CartService implements ICartService {
         }),
       );
   }
-
 }

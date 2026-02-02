@@ -6,13 +6,17 @@ export class ORMUserHealthProfileMapper {
     // Ensure birthDate is a proper Date object (PostgreSQL date type may return string)
     let birthDate: Date | null = null;
     if (orm.birthDate) {
-      birthDate = orm.birthDate instanceof Date ? orm.birthDate : new Date(orm.birthDate);
+      birthDate =
+        orm.birthDate instanceof Date ? orm.birthDate : new Date(orm.birthDate);
     }
 
     // Ensure lastLogDate is a proper Date object
     let lastLogDate: Date | null = null;
     if (orm.lastLogDate) {
-      lastLogDate = orm.lastLogDate instanceof Date ? orm.lastLogDate : new Date(orm.lastLogDate);
+      lastLogDate =
+        orm.lastLogDate instanceof Date
+          ? orm.lastLogDate
+          : new Date(orm.lastLogDate);
     }
 
     return new UserHealthProfile(

@@ -132,7 +132,9 @@ export interface IReviewRepository {
    * @param productId - The product ID.
    * @returns The average rating and total count.
    */
-  calculateProductRating(productId: string): ResultAsync<RatingResult, DomainError>;
+  calculateProductRating(
+    productId: string,
+  ): ResultAsync<RatingResult, DomainError>;
 
   /**
    * Calculates the average rating and total count for a shop.
@@ -149,7 +151,9 @@ export interface IReviewRepository {
    * @param reviewId - The review ID.
    * @returns The ReviewReply domain model or null if not found.
    */
-  findReplyByReviewId(reviewId: string): ResultAsync<ReviewReply | null, DomainError>;
+  findReplyByReviewId(
+    reviewId: string,
+  ): ResultAsync<ReviewReply | null, DomainError>;
 
   /**
    * Finds a review reply by its ID.

@@ -14,6 +14,9 @@ export class ORMEscrowHoldMapper {
       ormEscrow.orderId,
       ormEscrow.shopId,
       Number(ormEscrow.amount),
+      Number(ormEscrow.orderSubtotal),
+      Number(ormEscrow.coinUsed),
+      Number(ormEscrow.platformFeePercent),
       ormEscrow.status,
       ormEscrow.releasedAt,
       ormEscrow.createdAt,
@@ -30,6 +33,9 @@ export class ORMEscrowHoldMapper {
     ormEscrow.orderId = domainEscrow.orderId;
     ormEscrow.shopId = domainEscrow.shopId;
     ormEscrow.amount = domainEscrow.amount;
+    ormEscrow.orderSubtotal = domainEscrow.orderSubtotal;
+    ormEscrow.coinUsed = domainEscrow.coinUsed;
+    ormEscrow.platformFeePercent = domainEscrow.platformFeePercent;
     ormEscrow.status = domainEscrow.status;
     ormEscrow.releasedAt = domainEscrow.releasedAt;
     ormEscrow.createdAt = domainEscrow.createdAt;

@@ -32,7 +32,12 @@ export class ORMDistrict {
   @Column({ name: 'type', type: 'varchar', length: 20, nullable: true })
   type: string | null;
 
-  @Column({ name: 'name_with_type', type: 'varchar', length: 150, nullable: true })
+  @Column({
+    name: 'name_with_type',
+    type: 'varchar',
+    length: 150,
+    nullable: true,
+  })
   nameWithType: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

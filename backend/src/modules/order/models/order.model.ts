@@ -47,6 +47,7 @@ export class Order {
     private readonly _tierDiscountPercent: number,
     private readonly _voucherDiscountAmount: number,
     private readonly _coinUsed: number,
+    private readonly _platformShipDiscount: number,
     private readonly _totalAmount: number,
     private readonly _buyerTierCode: string,
     private readonly _coinMultiplier: number,
@@ -101,6 +102,7 @@ export class Order {
     tierDiscountPercent?: number;
     voucherDiscountAmount?: number;
     coinUsed?: number;
+    platformShipDiscount?: number;
     totalAmount: number;
     buyerTierCode: string;
     coinMultiplier: number;
@@ -127,6 +129,7 @@ export class Order {
       params.tierDiscountPercent ?? 0,
       params.voucherDiscountAmount ?? 0,
       params.coinUsed ?? 0,
+      params.platformShipDiscount ?? 0,
       params.totalAmount,
       params.buyerTierCode,
       params.coinMultiplier,
@@ -180,23 +183,11 @@ export class Order {
   }
 
   /**
-   * Order is delivered
-   */
-  deliver(): Result<void, DomainError> {
-    if (this._status !== OrderStatus.SHIPPING) {
-      return err(createDomainError(ORDER_ERRORS.INVALID_STATUS_TRANSITION));
-    }
-    this._status = OrderStatus.DELIVERED;
-    this._deliveredAt = new Date();
-    this._updatedAt = new Date();
-    return ok(undefined);
-  }
-
-  /**
    * Buyer confirms receipt / Auto-complete
+   * Flow: SHIPPING → COMPLETED (no DELIVERED status)
    */
   complete(): Result<void, DomainError> {
-    if (this._status !== OrderStatus.DELIVERED) {
+    if (this._status !== OrderStatus.SHIPPING) {
       return err(createDomainError(ORDER_ERRORS.INVALID_STATUS_TRANSITION));
     }
     this._status = OrderStatus.COMPLETED;
@@ -218,7 +209,6 @@ export class Order {
       OrderStatus.PENDING,
       OrderStatus.CONFIRMED,
       OrderStatus.SHIPPING,
-      OrderStatus.DELIVERED,
     ].includes(this._status);
   }
 
@@ -268,85 +258,6 @@ export class Order {
   markAsRefunded(): void {
     this._paymentStatus = PaymentStatus.REFUNDED;
     this._updatedAt = new Date();
-  }
-
-  /**
-   * Admin force status change (bypass normal flow restrictions)
-   * Valid transitions:
-   * - PENDING -> CONFIRMED, CANCELLED
-   * - CONFIRMED -> SHIPPING, CANCELLED
-   * - SHIPPING -> DELIVERED, CANCELLED
-   * - DELIVERED -> COMPLETED, CANCELLED, REFUNDING
-   * - COMPLETED -> REFUNDING
-   * - REFUNDING -> REFUNDED, COMPLETED
-   * - CANCELLED -> (no transitions)
-   * - REFUNDED -> (no transitions)
-   */
-  adminForceStatus(
-    newStatus: OrderStatus,
-    adminNote?: string,
-    adminId?: string,
-  ): Result<void, DomainError> {
-    const validTransitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
-      [OrderStatus.CONFIRMED]: [OrderStatus.SHIPPING, OrderStatus.CANCELLED],
-      [OrderStatus.SHIPPING]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-      [OrderStatus.DELIVERED]: [
-        OrderStatus.COMPLETED,
-        OrderStatus.CANCELLED,
-        OrderStatus.REFUNDING,
-      ],
-      [OrderStatus.COMPLETED]: [OrderStatus.REFUNDING],
-      [OrderStatus.REFUNDING]: [OrderStatus.REFUNDED, OrderStatus.COMPLETED],
-      [OrderStatus.CANCELLED]: [],
-      [OrderStatus.REFUNDED]: [],
-    };
-
-    const allowedTransitions = validTransitions[this._status];
-    if (!allowedTransitions.includes(newStatus)) {
-      return err(createDomainError(ORDER_ERRORS.INVALID_STATUS_TRANSITION));
-    }
-
-    const now = new Date();
-    const previousStatus = this._status;
-    this._status = newStatus;
-    this._updatedAt = now;
-
-    // Set timestamp fields based on new status
-    switch (newStatus) {
-      case OrderStatus.CONFIRMED:
-        this._confirmedAt = now;
-        break;
-      case OrderStatus.SHIPPING:
-        this._shippedAt = now;
-        break;
-      case OrderStatus.DELIVERED:
-        this._deliveredAt = now;
-        break;
-      case OrderStatus.COMPLETED:
-        this._completedAt = now;
-        // 1000 VND = 1 coin, multiplied by tier multiplier
-        this._coinEarned = Math.floor(
-          Math.floor(this._totalAmount / 1000) * this._coinMultiplier,
-        );
-        break;
-      case OrderStatus.CANCELLED:
-        this._cancelledAt = now;
-        this._cancelledBy = CancelledBy.SYSTEM;
-        this._cancelledByAdminId = adminId ?? null;
-        this._cancelReason = adminNote ?? 'Đơn hàng bị hủy bởi Admin';
-        break;
-    }
-
-    // Append admin note to shop note
-    if (adminNote && newStatus !== OrderStatus.CANCELLED) {
-      const notePrefix = `[Admin: ${previousStatus} -> ${newStatus}]`;
-      this._shopNote = this._shopNote
-        ? `${this._shopNote}\n${notePrefix} ${adminNote}`
-        : `${notePrefix} ${adminNote}`;
-    }
-
-    return ok(undefined);
   }
 
   /**
@@ -443,6 +354,10 @@ export class Order {
 
   get coinUsed(): number {
     return this._coinUsed;
+  }
+
+  get platformShipDiscount(): number {
+    return this._platformShipDiscount;
   }
 
   get totalAmount(): number {

@@ -75,6 +75,8 @@ export class MealPlanSettingsResponseDto {
   ) {
     this.healthProfile = healthProfile;
     this.dietPreferences = dietPreferences.map((p) => new DietPreferenceDto(p));
-    this.allergenExclusions = allergenExclusions.map((e) => new AllergenExclusionDto(e));
+    this.allergenExclusions = allergenExclusions.map(
+      (e) => new AllergenExclusionDto(e),
+    );
   }
 }

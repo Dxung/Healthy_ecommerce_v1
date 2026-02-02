@@ -32,8 +32,7 @@ const ORDER_STATUSES: { value: OrderStatus | ''; label: string }[] = [
   { value: '', label: 'Tất cả' },
   { value: 'pending', label: 'Chờ xác nhận' },
   { value: 'confirmed', label: 'Đã xác nhận' },
-  { value: 'shipping', label: 'Đang giao' },
-  { value: 'delivered', label: 'Đã giao' },
+  { value: 'shipping', label: 'Đang vận chuyển' },
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
   { value: 'refunding', label: 'Đang hoàn tiền' },
@@ -45,7 +44,7 @@ const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] => {
   const transitions: Record<OrderStatus, OrderStatus[]> = {
     pending: ['confirmed', 'cancelled'],
     confirmed: ['shipping', 'cancelled'],
-    shipping: ['delivered', 'cancelled'],
+    shipping: ['completed', 'cancelled'],
     delivered: ['completed', 'cancelled', 'refunding'],
     completed: ['refunding'],
     refunding: ['refunded', 'completed'],
@@ -85,7 +84,7 @@ const getStatusLabel = (status: OrderStatus): string => {
     case 'confirmed':
       return 'Đã xác nhận';
     case 'shipping':
-      return 'Đang giao';
+      return 'Đang vận chuyển';
     case 'delivered':
       return 'Đã giao';
     case 'completed':

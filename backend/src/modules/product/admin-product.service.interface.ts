@@ -1,7 +1,10 @@
 import type { ResultAsync } from 'neverthrow';
 import type { Product } from './models/product.model';
 import type { DomainError } from 'src/shared/types/domain-error.type';
-import type { PaginatedResult, PaginationParams } from 'src/shared/types/pagination.type';
+import type {
+  PaginatedResult,
+  PaginationParams,
+} from 'src/shared/types/pagination.type';
 import type { ProductStatus } from 'src/database/typeorm/entities/product/enums/product-status.enum';
 
 /**

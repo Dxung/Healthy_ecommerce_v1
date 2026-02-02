@@ -44,11 +44,7 @@ export class Brand {
 
   // ======================== UPDATE METHODS ========================
 
-  updateInfo(
-    name: string,
-    slug: string,
-    description?: string | null,
-  ): void {
+  updateInfo(name: string, slug: string, description?: string | null): void {
     this._name = name;
     this._slug = slug;
     if (description !== undefined) {

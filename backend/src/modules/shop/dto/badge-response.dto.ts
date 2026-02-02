@@ -20,7 +20,10 @@ export class BadgeResponseDto {
   @ApiProperty({ description: 'Badge description', nullable: true })
   description: string | null;
 
-  @ApiProperty({ description: 'Platform fee discount percentage', nullable: true })
+  @ApiProperty({
+    description: 'Platform fee discount percentage',
+    nullable: true,
+  })
   platformFeeDiscountPercent: number | null;
 
   @ApiProperty({ description: 'Search boost multiplier', nullable: true })
@@ -50,7 +53,9 @@ export class BadgeResponseDto {
   /**
    * Creates a response DTO from a shop badge assignment.
    */
-  static fromBadgeAssignment(assignment: ShopBadgeAssignment): ShopBadgeAssignmentResponseDto {
+  static fromBadgeAssignment(
+    assignment: ShopBadgeAssignment,
+  ): ShopBadgeAssignmentResponseDto {
     return ShopBadgeAssignmentResponseDto.fromDomain(assignment);
   }
 }
@@ -92,7 +97,9 @@ export class ShopBadgeAssignmentResponseDto {
   @ApiProperty({ description: 'Whether badge has expired' })
   isExpired: boolean;
 
-  static fromDomain(assignment: ShopBadgeAssignment): ShopBadgeAssignmentResponseDto {
+  static fromDomain(
+    assignment: ShopBadgeAssignment,
+  ): ShopBadgeAssignmentResponseDto {
     return {
       id: assignment.id,
       shopId: assignment.shopId,

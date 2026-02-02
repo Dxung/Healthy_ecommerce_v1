@@ -25,9 +25,8 @@ export class OrmMealLogRepository implements IMealLogRepository {
   @WithPosition()
   findById(id: string): ResultAsync<DailyMealLog | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((orm) => (orm ? ORMDailyMealLogMapper.toDomain(orm) : null));
   }
 
@@ -63,7 +62,10 @@ export class OrmMealLogRepository implements IMealLogRepository {
       repo.find({
         where: {
           userId,
-          logDate: Between(this.formatDate(startDate), this.formatDate(endDate)) as any,
+          logDate: Between(
+            this.formatDate(startDate),
+            this.formatDate(endDate),
+          ) as any,
         },
         order: { logDate: 'ASC', mealType: 'ASC', createdAt: 'ASC' },
       }),

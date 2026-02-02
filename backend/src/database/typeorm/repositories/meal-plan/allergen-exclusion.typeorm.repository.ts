@@ -18,14 +18,18 @@ import { ORMUserAllergenExclusion } from '../../entities/meal-plan';
 import { ORMAllergenTag } from '../../entities/product';
 
 @Injectable()
-export class OrmAllergenExclusionRepository implements IAllergenExclusionRepository {
+export class OrmAllergenExclusionRepository
+  implements IAllergenExclusionRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  getByUserId(userId: string): ResultAsync<AllergenExclusionInfo[], DomainError> {
+  getByUserId(
+    userId: string,
+  ): ResultAsync<AllergenExclusionInfo[], DomainError> {
     const em = this.getEntityManager() ?? this.dataSource.manager;
 
     return ResultAsync.fromPromise(

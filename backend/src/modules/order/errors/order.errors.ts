@@ -99,4 +99,8 @@ export const ORDER_ERRORS = {
     code: 'ORDER_ALREADY_PAID',
     message: 'Đơn hàng đã được thanh toán.',
   },
+  ORDER_PAYMENT_STATUS_CHANGED: {
+    code: 'ORDER_PAYMENT_STATUS_CHANGED',
+    message: 'Trạng thái thanh toán đã thay đổi, vui lòng tải lại trang.',
+  },
 } as const satisfies Record<string, { code: string; message: string }>;

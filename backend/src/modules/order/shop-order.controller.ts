@@ -101,7 +101,7 @@ export class ShopOrderController {
 
   @Post(':id/ship')
   @Permissions('shop-order:manage')
-  @ApiOperation({ summary: 'Mark order as shipped' })
+  @ApiOperation({ summary: 'Mark order as shipped (đang giao hàng)' })
   @ApiResponse({ status: 200, description: 'Order marked as shipped' })
   shipOrder(
     @Param('id', ParseUUIDPipe) id: string,
@@ -111,24 +111,6 @@ export class ShopOrderController {
         success: true,
         message: 'Đơn hàng đã được giao cho đơn vị vận chuyển.',
       }),
-      (error) => {
-        throw OrderErrorHttpMapper.toHttpException(
-          error,
-          ExceptionSource.CONTROLLER,
-        );
-      },
-    );
-  }
-
-  @Post(':id/deliver')
-  @Permissions('shop-order:manage')
-  @ApiOperation({ summary: 'Mark order as delivered' })
-  @ApiResponse({ status: 200, description: 'Order marked as delivered' })
-  markDelivered(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ success: boolean; message: string }> {
-    return this.orderService.markDelivered(id).match(
-      () => ({ success: true, message: 'Đơn hàng đã được giao thành công.' }),
       (error) => {
         throw OrderErrorHttpMapper.toHttpException(
           error,

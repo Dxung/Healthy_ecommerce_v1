@@ -26,7 +26,9 @@ export interface IDietTagService {
    * @param dto - The create diet tag DTO.
    * @returns The created DietTag domain model.
    */
-  createDietTag(dto: CreateDietTagArgumentDto): ResultAsync<DietTag, DomainError>;
+  createDietTag(
+    dto: CreateDietTagArgumentDto,
+  ): ResultAsync<DietTag, DomainError>;
 
   /**
    * Updates an existing diet tag.

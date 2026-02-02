@@ -21,7 +21,9 @@ export class ORMShopBadgeMapper {
       orm.code,
       orm.name,
       orm.description,
-      orm.platformFeeDiscountPercent ? Number(orm.platformFeeDiscountPercent) : null,
+      orm.platformFeeDiscountPercent
+        ? Number(orm.platformFeeDiscountPercent)
+        : null,
       orm.searchBoostMultiplier ? Number(orm.searchBoostMultiplier) : null,
       orm.maxProductSlots,
       orm.isActive,

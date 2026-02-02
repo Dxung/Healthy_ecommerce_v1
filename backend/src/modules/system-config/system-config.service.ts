@@ -44,20 +44,27 @@ export class SystemConfigService implements ISystemConfigService, OnModuleInit {
         description: 'Số ngày cho phép đánh giá sau khi đơn hàng hoàn thành',
       },
       {
-        key: CONFIG_KEYS.ESCROW_HOLD_DAYS,
-        description: 'Số ngày giữ tiền sau khi đơn hàng hoàn thành trước khi chuyển cho shop',
-      },
-      {
         key: CONFIG_KEYS.COIN_EARN_RATE_PERCENT,
         description: 'Tỷ lệ tích xu (% giá trị đơn hàng)',
       },
       {
         key: CONFIG_KEYS.COIN_MAX_USAGE_PERCENT,
-        description: 'Phần trăm tối đa giá trị đơn hàng có thể thanh toán bằng xu',
+        description:
+          'Phần trăm tối đa giá trị đơn hàng có thể thanh toán bằng xu',
       },
       {
         key: CONFIG_KEYS.DEFAULT_MAX_PRODUCT_SLOTS,
-        description: 'Số lượng sản phẩm tối đa mà shop chưa có badge có thể đăng bán',
+        description:
+          'Số lượng sản phẩm tối đa mà shop chưa có badge có thể đăng bán',
+      },
+      {
+        key: CONFIG_KEYS.SHIPPING_FREE_THRESHOLD,
+        description: 'Ngưỡng giá trị đơn hàng để được miễn phí ship (VND)',
+      },
+      {
+        key: CONFIG_KEYS.ORDER_AUTO_COMPLETE_DAYS,
+        description:
+          'Số ngày sau khi giao hàng để tự động hoàn thành đơn nếu buyer không xác nhận',
       },
     ];
 
@@ -65,9 +72,7 @@ export class SystemConfigService implements ISystemConfigService, OnModuleInit {
       const result = await this.configRepository.findByKey(def.key);
 
       if (result.isOk() && result.value === null) {
-        const defaultValue = String(
-          DEFAULT_CONFIG[def.key as keyof typeof DEFAULT_CONFIG],
-        );
+        const defaultValue = String(DEFAULT_CONFIG[def.key]);
 
         const config = SystemConfig.create({
           key: def.key,
@@ -155,5 +160,43 @@ export class SystemConfigService implements ISystemConfigService, OnModuleInit {
       CONFIG_KEYS.PLATFORM_FEE_PERCENT,
       String(percent),
     ).map(() => percent);
+  }
+
+  getCoinMaxUsagePercent(): ResultAsync<number, DomainError> {
+    return this.getConfig(CONFIG_KEYS.COIN_MAX_USAGE_PERCENT).map((config) => {
+      if (!config) {
+        return DEFAULT_CONFIG[CONFIG_KEYS.COIN_MAX_USAGE_PERCENT];
+      }
+      const value = parseFloat(config.value);
+      return isNaN(value)
+        ? DEFAULT_CONFIG[CONFIG_KEYS.COIN_MAX_USAGE_PERCENT]
+        : value;
+    });
+  }
+
+  getShippingFreeThreshold(): ResultAsync<number, DomainError> {
+    return this.getConfig(CONFIG_KEYS.SHIPPING_FREE_THRESHOLD).map((config) => {
+      if (!config) {
+        return DEFAULT_CONFIG[CONFIG_KEYS.SHIPPING_FREE_THRESHOLD];
+      }
+      const value = parseFloat(config.value);
+      return isNaN(value)
+        ? DEFAULT_CONFIG[CONFIG_KEYS.SHIPPING_FREE_THRESHOLD]
+        : value;
+    });
+  }
+
+  getOrderAutoCompleteDays(): ResultAsync<number, DomainError> {
+    return this.getConfig(CONFIG_KEYS.ORDER_AUTO_COMPLETE_DAYS).map(
+      (config) => {
+        if (!config) {
+          return DEFAULT_CONFIG[CONFIG_KEYS.ORDER_AUTO_COMPLETE_DAYS];
+        }
+        const value = parseInt(config.value, 10);
+        return isNaN(value)
+          ? DEFAULT_CONFIG[CONFIG_KEYS.ORDER_AUTO_COMPLETE_DAYS]
+          : value;
+      },
+    );
   }
 }

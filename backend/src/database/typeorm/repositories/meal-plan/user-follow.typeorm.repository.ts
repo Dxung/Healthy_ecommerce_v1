@@ -25,7 +25,10 @@ export class OrmUserFollowRepository implements IUserFollowRepository {
   ) {}
 
   @WithPosition()
-  follow(followerId: string, followingId: string): ResultAsync<void, DomainError> {
+  follow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError> {
     const repo = this.getRepository();
     const follow = new ORMUserFollow();
     follow.id = uuidv7();
@@ -39,7 +42,10 @@ export class OrmUserFollowRepository implements IUserFollowRepository {
   }
 
   @WithPosition()
-  unfollow(followerId: string, followingId: string): ResultAsync<void, DomainError> {
+  unfollow(
+    followerId: string,
+    followingId: string,
+  ): ResultAsync<void, DomainError> {
     const repo = this.getRepository();
     return ResultAsync.fromPromise(
       repo.delete({ followerId, followingId }),
@@ -76,8 +82,14 @@ export class OrmUserFollowRepository implements IUserFollowRepository {
             qb
               .select('"preset"."creator_id"', 'creatorId')
               .addSelect('COUNT(*)', 'presetCount')
-              .addSelect('COALESCE(SUM("preset"."upvote_count"), 0)', 'totalLikes')
-              .addSelect('COALESCE(SUM("preset"."downvote_count"), 0)', 'totalDislikes')
+              .addSelect(
+                'COALESCE(SUM("preset"."upvote_count"), 0)',
+                'totalLikes',
+              )
+              .addSelect(
+                'COALESCE(SUM("preset"."downvote_count"), 0)',
+                'totalDislikes',
+              )
               .from(ORMFoodPreset, 'preset')
               .where('"preset"."is_public" = true')
               .groupBy('"preset"."creator_id"'),
@@ -125,8 +137,14 @@ export class OrmUserFollowRepository implements IUserFollowRepository {
             qb
               .select('"preset"."creator_id"', 'creatorId')
               .addSelect('COUNT(*)', 'presetCount')
-              .addSelect('COALESCE(SUM("preset"."upvote_count"), 0)', 'totalLikes')
-              .addSelect('COALESCE(SUM("preset"."downvote_count"), 0)', 'totalDislikes')
+              .addSelect(
+                'COALESCE(SUM("preset"."upvote_count"), 0)',
+                'totalLikes',
+              )
+              .addSelect(
+                'COALESCE(SUM("preset"."downvote_count"), 0)',
+                'totalDislikes',
+              )
               .from(ORMFoodPreset, 'preset')
               .where('"preset"."is_public" = true')
               .groupBy('"preset"."creator_id"'),

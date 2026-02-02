@@ -50,7 +50,12 @@ export class ORMWalletTransaction {
   })
   balanceAfter: number;
 
-  @Column({ name: 'reference_type', type: 'varchar', length: 50, nullable: true })
+  @Column({
+    name: 'reference_type',
+    type: 'varchar',
+    length: 50,
+    nullable: true,
+  })
   referenceType: string | null;
 
   @Column({ name: 'reference_id', type: 'uuid', nullable: true })

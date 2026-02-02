@@ -31,9 +31,8 @@ export class OrmProductIngredientRepository
     const repo = this.getIngredientRepository();
 
     // Delete existing ingredients then insert new ones
-    return ResultAsync.fromPromise(
-      repo.delete({ productId }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.delete({ productId }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).andThen(() => {
       if (ingredients.length === 0) {
         return ResultAsync.fromSafePromise(Promise.resolve(undefined));
@@ -60,7 +59,9 @@ export class OrmProductIngredientRepository
         order: { sortOrder: 'ASC' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((orms) => orms.map((orm) => ORMProductMapper.ingredientToDomain(orm)));
+    ).map((orms) =>
+      orms.map((orm) => ORMProductMapper.ingredientToDomain(orm)),
+    );
   }
 
   @WithPosition()

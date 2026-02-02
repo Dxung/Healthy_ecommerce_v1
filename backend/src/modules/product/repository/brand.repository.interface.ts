@@ -66,5 +66,8 @@ export interface IBrandRepository {
    * @param excludeId - Optional brand ID to exclude from the check.
    * @returns True if slug exists, false otherwise.
    */
-  slugExists(slug: string, excludeId?: string): ResultAsync<boolean, DomainError>;
+  slugExists(
+    slug: string,
+    excludeId?: string,
+  ): ResultAsync<boolean, DomainError>;
 }

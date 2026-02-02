@@ -8,7 +8,13 @@ import { User } from 'src/modules/user/models/user.model';
 import { UserStatus } from 'src/modules/user/enums/user-status.enum';
 import { AsyncLocalStorage } from 'async_hooks';
 import { ITypeORMAlsStore } from 'src/shared/als/interfaces/als-store.interface';
-import { DataSource, ILike, Between, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import {
+  DataSource,
+  ILike,
+  Between,
+  LessThanOrEqual,
+  MoreThanOrEqual,
+} from 'typeorm';
 import { ORMUserCore } from '../../entities';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
@@ -248,9 +254,7 @@ export class OrmUserCoreRepository implements IUserCoreRepository {
     const skip = (page - 1) * limit;
 
     // Build query with QueryBuilder for complex filtering
-    const queryBuilder = repo
-      .createQueryBuilder('user')
-      .withDeleted(); // Include soft-deleted users for admin view
+    const queryBuilder = repo.createQueryBuilder('user').withDeleted(); // Include soft-deleted users for admin view
 
     // Apply search filter (username, phone, email)
     if (filter?.search) {
@@ -288,9 +292,8 @@ export class OrmUserCoreRepository implements IUserCoreRepository {
     // Apply pagination
     queryBuilder.skip(skip).take(limit);
 
-    return ResultAsync.fromPromise(
-      queryBuilder.getManyAndCount(),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(queryBuilder.getManyAndCount(), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map(([ormUsers, total]) => {
       const users = ormUsers.map((ormUser) => ORMUserMapper.toDomain(ormUser));
       return createPaginatedResult(users, total, page, limit);

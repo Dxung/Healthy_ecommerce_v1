@@ -9,22 +9,30 @@ export interface IBrandDocumentRequirementRepository {
   /**
    * Creates a new brand document requirement.
    */
-  create(requirement: BrandDocumentRequirement): ResultAsync<BrandDocumentRequirement, DomainError>;
+  create(
+    requirement: BrandDocumentRequirement,
+  ): ResultAsync<BrandDocumentRequirement, DomainError>;
 
   /**
    * Finds by ID.
    */
-  findById(id: string): ResultAsync<BrandDocumentRequirement | null, DomainError>;
+  findById(
+    id: string,
+  ): ResultAsync<BrandDocumentRequirement | null, DomainError>;
 
   /**
    * Finds all active requirements for a brand.
    */
-  findActiveByBrand(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError>;
+  findActiveByBrand(
+    brandId: string,
+  ): ResultAsync<BrandDocumentRequirement[], DomainError>;
 
   /**
    * Finds all requirements for a brand (including inactive).
    */
-  findAllByBrand(brandId: string): ResultAsync<BrandDocumentRequirement[], DomainError>;
+  findAllByBrand(
+    brandId: string,
+  ): ResultAsync<BrandDocumentRequirement[], DomainError>;
 
   /**
    * Checks if requirement exists for brand and document type.
@@ -37,7 +45,9 @@ export interface IBrandDocumentRequirementRepository {
   /**
    * Updates a requirement.
    */
-  update(requirement: BrandDocumentRequirement): ResultAsync<BrandDocumentRequirement, DomainError>;
+  update(
+    requirement: BrandDocumentRequirement,
+  ): ResultAsync<BrandDocumentRequirement, DomainError>;
 
   /**
    * Deletes a requirement.

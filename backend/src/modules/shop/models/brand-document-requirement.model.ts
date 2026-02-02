@@ -20,7 +20,10 @@ export class BrandDocumentRequirement {
   /**
    * Creates a new brand document requirement.
    */
-  static create(brandId: string, documentTypeId: string): BrandDocumentRequirement {
+  static create(
+    brandId: string,
+    documentTypeId: string,
+  ): BrandDocumentRequirement {
     const id = uuidv7();
     const now = new Date();
 

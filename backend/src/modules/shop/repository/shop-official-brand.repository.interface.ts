@@ -9,7 +9,9 @@ export interface IShopOfficialBrandRepository {
   /**
    * Creates a new shop official brand record.
    */
-  create(officialBrand: ShopOfficialBrand): ResultAsync<ShopOfficialBrand, DomainError>;
+  create(
+    officialBrand: ShopOfficialBrand,
+  ): ResultAsync<ShopOfficialBrand, DomainError>;
 
   /**
    * Finds by shop ID and brand ID.
@@ -22,12 +24,17 @@ export interface IShopOfficialBrandRepository {
   /**
    * Checks if shop is official for a brand (active, not expired, not revoked).
    */
-  isOfficialForBrand(shopId: string, brandId: string): ResultAsync<boolean, DomainError>;
+  isOfficialForBrand(
+    shopId: string,
+    brandId: string,
+  ): ResultAsync<boolean, DomainError>;
 
   /**
    * Finds all active official brands for a shop.
    */
-  findActiveByShop(shopId: string): ResultAsync<ShopOfficialBrand[], DomainError>;
+  findActiveByShop(
+    shopId: string,
+  ): ResultAsync<ShopOfficialBrand[], DomainError>;
 
   /**
    * Finds all brand IDs that shop is official for (active, not expired).
@@ -37,7 +44,9 @@ export interface IShopOfficialBrandRepository {
   /**
    * Updates an official brand record.
    */
-  update(officialBrand: ShopOfficialBrand): ResultAsync<ShopOfficialBrand, DomainError>;
+  update(
+    officialBrand: ShopOfficialBrand,
+  ): ResultAsync<ShopOfficialBrand, DomainError>;
 
   /**
    * Finds all expired but not yet revoked official brands (for cronjob).

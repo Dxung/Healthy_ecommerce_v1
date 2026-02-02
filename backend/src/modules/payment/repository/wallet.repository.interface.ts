@@ -19,6 +19,11 @@ export interface PaginatedResult<T> {
 
 export interface IWalletRepository {
   /**
+   * Find wallet by ID
+   */
+  findById(walletId: string): ResultAsync<Wallet | null, DomainError>;
+
+  /**
    * Find wallet by owner type and owner ID
    */
   findByOwner(
@@ -35,6 +40,12 @@ export interface IWalletRepository {
    * Find or create wallet for a shop
    */
   findOrCreateForShop(shopId: string): ResultAsync<Wallet, DomainError>;
+
+  /**
+   * Find or create the platform wallet
+   * Platform wallet is a singleton wallet for the platform itself
+   */
+  findOrCreateForPlatform(): ResultAsync<Wallet, DomainError>;
 
   /**
    * Save wallet (create or update)

@@ -15,20 +15,23 @@ import { SHARED_ERRORS } from 'src/shared/errors/shared.errors';
 import { ResultAsync, okAsync } from 'neverthrow';
 
 @Injectable()
-export class OrmShopOfficialBrandRepository implements IShopOfficialBrandRepository {
+export class OrmShopOfficialBrandRepository
+  implements IShopOfficialBrandRepository
+{
   constructor(
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
     private readonly dataSource: DataSource,
   ) {}
 
   @WithPosition()
-  create(officialBrand: ShopOfficialBrand): ResultAsync<ShopOfficialBrand, DomainError> {
+  create(
+    officialBrand: ShopOfficialBrand,
+  ): ResultAsync<ShopOfficialBrand, DomainError> {
     const repo = this.getRepository();
     const ormEntity = ORMShopOfficialBrandMapper.toOrm(officialBrand);
 
-    return ResultAsync.fromPromise(
-      repo.save(ormEntity),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.save(ormEntity), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((saved) => ORMShopOfficialBrandMapper.toDomain(saved));
   }
 
@@ -50,7 +53,10 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
   }
 
   @WithPosition()
-  isOfficialForBrand(shopId: string, brandId: string): ResultAsync<boolean, DomainError> {
+  isOfficialForBrand(
+    shopId: string,
+    brandId: string,
+  ): ResultAsync<boolean, DomainError> {
     const repo = this.getRepository();
     const now = new Date();
 
@@ -68,7 +74,9 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
   }
 
   @WithPosition()
-  findActiveByShop(shopId: string): ResultAsync<ShopOfficialBrand[], DomainError> {
+  findActiveByShop(
+    shopId: string,
+  ): ResultAsync<ShopOfficialBrand[], DomainError> {
     const repo = this.getRepository();
     const now = new Date();
 
@@ -82,7 +90,9 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
         order: { grantedAt: 'DESC' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormEntities) => ORMShopOfficialBrandMapper.toDomainList(ormEntities));
+    ).map((ormEntities) =>
+      ORMShopOfficialBrandMapper.toDomainList(ormEntities),
+    );
   }
 
   @WithPosition()
@@ -104,7 +114,9 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
   }
 
   @WithPosition()
-  update(officialBrand: ShopOfficialBrand): ResultAsync<ShopOfficialBrand, DomainError> {
+  update(
+    officialBrand: ShopOfficialBrand,
+  ): ResultAsync<ShopOfficialBrand, DomainError> {
     const repo = this.getRepository();
 
     return ResultAsync.fromPromise(
@@ -136,7 +148,9 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
         },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormEntities) => ORMShopOfficialBrandMapper.toDomainList(ormEntities));
+    ).map((ormEntities) =>
+      ORMShopOfficialBrandMapper.toDomainList(ormEntities),
+    );
   }
 
   @WithPosition()
@@ -158,11 +172,12 @@ export class OrmShopOfficialBrandRepository implements IShopOfficialBrandReposit
 
   // ======================== HELPERS ========================
 
-  private findById(id: string): ResultAsync<ShopOfficialBrand | null, DomainError> {
+  private findById(
+    id: string,
+  ): ResultAsync<ShopOfficialBrand | null, DomainError> {
     const repo = this.getRepository();
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormEntity) => {
       if (!ormEntity) return null;
       return ORMShopOfficialBrandMapper.toDomain(ormEntity);

@@ -101,7 +101,10 @@ export class HealthProfileResponseDto {
   @ApiPropertyOptional({ nullable: true, description: 'Calculated TDEE' })
   calculatedTdee: number | null;
 
-  @ApiPropertyOptional({ nullable: true, description: 'Effective calorie target' })
+  @ApiPropertyOptional({
+    nullable: true,
+    description: 'Effective calorie target',
+  })
   effectiveCalorieTarget: number | null;
 
   constructor(profile: UserHealthProfile) {

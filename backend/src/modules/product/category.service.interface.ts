@@ -66,7 +66,9 @@ export interface ICategoryService {
    * @param activeOnly - If true, only returns active categories. Default true.
    * @returns Array of root Category domain models with children populated.
    */
-  getCategoryHierarchy(activeOnly?: boolean): ResultAsync<Category[], DomainError>;
+  getCategoryHierarchy(
+    activeOnly?: boolean,
+  ): ResultAsync<Category[], DomainError>;
 
   /**
    * Gets a category by its slug.

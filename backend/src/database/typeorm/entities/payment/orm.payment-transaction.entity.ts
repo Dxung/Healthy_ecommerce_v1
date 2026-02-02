@@ -8,16 +8,17 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { ORMWallet } from './orm.wallet.entity';
+import { ORMTopup } from './orm.topup.entity';
 import { PaymentStatus } from './enums/payment-status.enum';
 import { PaymentType } from './enums/payment-type.enum';
 
 /**
  * ORM Entity for payment_transactions table.
  * Represents VNPay payment records.
+ * Links to either Order (for order payment) or Topup (for wallet topup).
  */
 @Entity('payment_transactions', { schema: 'payment_schema' })
-@Index('idx_payment_transactions_wallet_id', ['walletId'])
+@Index('idx_payment_transactions_topup_id', ['topupId'])
 @Index('idx_payment_transactions_order_id', ['orderId'])
 @Index('idx_payment_transactions_vnpay_ref', ['vnpayTxnRef'])
 @Index('idx_payment_transactions_status', ['status'])
@@ -25,8 +26,8 @@ export class ORMPaymentTransaction {
   @PrimaryColumn({ type: 'uuid' })
   id: string;
 
-  @Column({ name: 'wallet_id', type: 'uuid', nullable: true })
-  walletId: string | null;
+  @Column({ name: 'topup_id', type: 'uuid', nullable: true })
+  topupId: string | null;
 
   @Column({ name: 'order_id', type: 'uuid', nullable: true })
   orderId: string | null;
@@ -106,7 +107,7 @@ export class ORMPaymentTransaction {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => ORMWallet)
-  @JoinColumn({ name: 'wallet_id' })
-  wallet: ORMWallet;
+  @ManyToOne(() => ORMTopup)
+  @JoinColumn({ name: 'topup_id' })
+  topup: ORMTopup;
 }

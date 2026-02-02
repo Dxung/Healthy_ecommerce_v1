@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, LessThan } from 'typeorm';
+import { DataSource } from 'typeorm';
 import { ResultAsync } from 'neverthrow';
 import { AsyncLocalStorage } from 'async_hooks';
 import { IPaymentTransactionRepository } from 'src/modules/payment/repository/payment-transaction.repository.interface';
 import { PaymentTransaction } from 'src/modules/payment/models/payment-transaction.model';
 import { ORMPaymentTransaction } from '../../entities/payment/orm.payment-transaction.entity';
 import { ORMPaymentTransactionMapper } from '../../mappers/payment-transaction.mapper.orm';
-import { PaymentStatus } from '../../entities/payment/enums/payment-status.enum';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
   createDomainError,
@@ -85,6 +84,25 @@ export class OrmPaymentTransactionRepository
   }
 
   @WithPosition()
+  findByTopupId(
+    topupId: string,
+  ): ResultAsync<PaymentTransaction | null, DomainError> {
+    const repo = this.getRepository();
+
+    return ResultAsync.fromPromise(
+      repo.findOne({
+        where: { topupId },
+        order: { createdAt: 'DESC' },
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((ormTransaction) =>
+      ormTransaction
+        ? ORMPaymentTransactionMapper.toDomain(ormTransaction)
+        : null,
+    );
+  }
+
+  @WithPosition()
   update(
     transaction: PaymentTransaction,
   ): ResultAsync<PaymentTransaction, DomainError> {
@@ -101,28 +119,6 @@ export class OrmPaymentTransactionRepository
     transaction: PaymentTransaction,
   ): ResultAsync<PaymentTransaction, DomainError> {
     return this.update(transaction);
-  }
-
-  @WithPosition()
-  cancelExpiredPayments(
-    expiredMinutes: number,
-  ): ResultAsync<number, DomainError> {
-    const repo = this.getRepository();
-    const expiryTime = new Date(Date.now() - expiredMinutes * 60 * 1000);
-
-    return ResultAsync.fromPromise(
-      repo.update(
-        {
-          status: PaymentStatus.PENDING,
-          createdAt: LessThan(expiryTime),
-        },
-        {
-          status: PaymentStatus.CANCELLED,
-          updatedAt: new Date(),
-        },
-      ),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((result) => result.affected ?? 0);
   }
 
   private getEntityManager() {

@@ -36,9 +36,9 @@ export function CartShopGroup({
   const hasSelectableItems = selectableItems.length > 0;
 
   return (
-    <div className="bg-white rounded-lg border">
+    <div className="bg-white rounded-lg shadow-sm">
       {/* Shop Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50">
+      <div className="flex items-center gap-3 px-4 py-3 border-b bg-gray-50/80">
         <input
           type="checkbox"
           checked={allSelected}

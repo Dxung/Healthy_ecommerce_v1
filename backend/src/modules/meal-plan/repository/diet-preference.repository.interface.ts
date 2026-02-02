@@ -17,15 +17,24 @@ export interface IDietPreferenceRepository {
   /**
    * Set user's diet preferences (replaces all existing).
    */
-  setPreferences(userId: string, dietTagIds: string[]): ResultAsync<void, DomainError>;
+  setPreferences(
+    userId: string,
+    dietTagIds: string[],
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Add a diet preference.
    */
-  addPreference(userId: string, dietTagId: string): ResultAsync<void, DomainError>;
+  addPreference(
+    userId: string,
+    dietTagId: string,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Remove a diet preference.
    */
-  removePreference(userId: string, dietTagId: string): ResultAsync<void, DomainError>;
+  removePreference(
+    userId: string,
+    dietTagId: string,
+  ): ResultAsync<void, DomainError>;
 }

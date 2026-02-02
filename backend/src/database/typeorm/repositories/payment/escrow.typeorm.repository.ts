@@ -42,9 +42,8 @@ export class OrmEscrowRepository implements IEscrowRepository {
   findById(id: string): ResultAsync<EscrowHold | null, DomainError> {
     const repo = this.getEscrowRepository();
 
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormEscrow) =>
       ormEscrow ? ORMEscrowHoldMapper.toDomain(ormEscrow) : null,
     );
@@ -88,16 +87,18 @@ export class OrmEscrowRepository implements IEscrowRepository {
   ): ResultAsync<PendingRelease | null, DomainError> {
     const repo = this.getPendingReleaseRepository();
 
-    return ResultAsync.fromPromise(
-      repo.findOne({ where: { id } }),
-      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    return ResultAsync.fromPromise(repo.findOne({ where: { id } }), (error) =>
+      createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormRelease) =>
       ormRelease ? ORMPendingReleaseMapper.toDomain(ormRelease) : null,
     );
   }
 
   @WithPosition()
-  findPendingReleasesForProcessing(): ResultAsync<PendingRelease[], DomainError> {
+  findPendingReleasesForProcessing(): ResultAsync<
+    PendingRelease[],
+    DomainError
+  > {
     const repo = this.getPendingReleaseRepository();
     const now = new Date();
 
@@ -128,19 +129,32 @@ export class OrmEscrowRepository implements IEscrowRepository {
     ).map((saved) => ORMPendingReleaseMapper.toDomain(saved));
   }
 
+  /**
+   * Find holding escrows for completed orders that have been completed for at least 24 hours.
+   * This is used by the cronjob as a backup mechanism - primary escrow release happens
+   * immediately when buyer confirms delivery.
+   * The 24h delay prevents conflicts between immediate release and cronjob.
+   */
   @WithPosition()
   findHoldingEscrowsForCompletedOrders(): ResultAsync<
     Array<{ escrowHold: EscrowHold; shopId: string }>,
     DomainError
   > {
     const repo = this.getEscrowRepository();
+    // Only process orders that have been completed for at least 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
     return ResultAsync.fromPromise(
       repo
         .createQueryBuilder('escrow')
         .innerJoin(ORMOrder, 'order', 'escrow.order_id = order.id')
         .where('escrow.status = :status', { status: EscrowStatus.HOLDING })
-        .andWhere('order.status = :orderStatus', { orderStatus: OrderStatus.COMPLETED })
+        .andWhere('order.status = :orderStatus', {
+          orderStatus: OrderStatus.COMPLETED,
+        })
+        .andWhere('order.completed_at <= :completedBefore', {
+          completedBefore: twentyFourHoursAgo,
+        })
         .getMany(),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormEscrows) =>

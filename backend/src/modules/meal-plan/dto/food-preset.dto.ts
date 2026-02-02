@@ -232,13 +232,21 @@ export class PresetResponseDto {
   @ApiProperty()
   createdAt: Date;
 
-  @ApiPropertyOptional({ description: 'Current user vote', nullable: true, enum: VoteType })
+  @ApiPropertyOptional({
+    description: 'Current user vote',
+    nullable: true,
+    enum: VoteType,
+  })
   userVote?: VoteType | null;
 
   @ApiPropertyOptional({ description: 'Is favorited by current user' })
   isFavorite?: boolean;
 
-  constructor(preset: FoodPreset, userVote?: VoteType | null, isFavorite?: boolean) {
+  constructor(
+    preset: FoodPreset,
+    userVote?: VoteType | null,
+    isFavorite?: boolean,
+  ) {
     this.id = preset.id;
     this.creatorId = preset.creatorId;
     this.name = preset.name;

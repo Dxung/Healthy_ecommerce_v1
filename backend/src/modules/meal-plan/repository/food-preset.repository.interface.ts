@@ -59,7 +59,10 @@ export interface IFoodPresetRepository {
   /**
    * Get top presets from specific users (by upvote count).
    */
-  getTopPresetsByCreators(creatorIds: string[], limit: number): ResultAsync<FoodPreset[], DomainError>;
+  getTopPresetsByCreators(
+    creatorIds: string[],
+    limit: number,
+  ): ResultAsync<FoodPreset[], DomainError>;
 
   /**
    * Creates a preset.
@@ -79,7 +82,11 @@ export interface IFoodPresetRepository {
   /**
    * Add or update user vote on preset.
    */
-  upsertVote(presetId: string, userId: string, voteType: VoteType): ResultAsync<void, DomainError>;
+  upsertVote(
+    presetId: string,
+    userId: string,
+    voteType: VoteType,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Remove user vote from preset.
@@ -89,7 +96,10 @@ export interface IFoodPresetRepository {
   /**
    * Get user's vote on a preset.
    */
-  getUserVote(presetId: string, userId: string): ResultAsync<VoteType | null, DomainError>;
+  getUserVote(
+    presetId: string,
+    userId: string,
+  ): ResultAsync<VoteType | null, DomainError>;
 
   /**
    * Increment use count for a preset.
@@ -104,7 +114,10 @@ export interface IFoodPresetRepository {
   /**
    * Remove preset from user favorites.
    */
-  removeFavorite(userId: string, presetId: string): ResultAsync<void, DomainError>;
+  removeFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<void, DomainError>;
 
   /**
    * Get user's favorite presets.
@@ -114,5 +127,8 @@ export interface IFoodPresetRepository {
   /**
    * Check if preset is favorited by user.
    */
-  isFavorite(userId: string, presetId: string): ResultAsync<boolean, DomainError>;
+  isFavorite(
+    userId: string,
+    presetId: string,
+  ): ResultAsync<boolean, DomainError>;
 }

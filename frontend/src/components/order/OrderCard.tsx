@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Store, Package, ChevronRight } from 'lucide-react';
+import { Store, Package, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type OrderListItemResponse, type OrderStatus } from '@/lib/api';
 
@@ -10,12 +10,14 @@ interface OrderCardProps {
   onViewDetail: (orderId: string) => void;
   onCancelOrder?: (orderId: string) => void;
   onConfirmDelivery?: (orderId: string) => void;
+  /** ID of the order currently being operated on (for loading state) */
+  operatingOrderId?: string | null;
 }
 
 const statusLabels: Record<OrderStatus, string> = {
   pending: 'Chờ xác nhận',
   confirmed: 'Đã xác nhận',
-  shipping: 'Đang giao',
+  shipping: 'Đang vận chuyển',
   delivered: 'Đã giao',
   completed: 'Hoàn thành',
   cancelled: 'Đã hủy',
@@ -39,7 +41,9 @@ export function OrderCard({
   onViewDetail,
   onCancelOrder,
   onConfirmDelivery,
+  operatingOrderId,
 }: OrderCardProps) {
+  const isOperating = operatingOrderId === order.id;
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
@@ -58,7 +62,7 @@ export function OrderCard({
   };
 
   const canCancel = order.status === 'pending';
-  const canConfirmDelivery = order.status === 'delivered';
+  const canConfirmDelivery = order.status === 'shipping';
 
   return (
     <div className="bg-white rounded-lg border">
@@ -140,17 +144,29 @@ export function OrderCard({
                 variant="outline"
                 size="sm"
                 onClick={() => onCancelOrder(order.id)}
+                disabled={isOperating}
                 className="text-red-600 border-red-300 hover:bg-red-50"
               >
+                {isOperating ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
                 Hủy đơn
               </Button>
             )}
             {canConfirmDelivery && onConfirmDelivery && (
-              <Button size="sm" onClick={() => onConfirmDelivery(order.id)}>
-                Đã nhận hàng
+              <Button
+                size="sm"
+                onClick={() => onConfirmDelivery(order.id)}
+                disabled={isOperating}
+              >
+                {isOperating ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : null}
+                Xác nhận đã nhận hàng
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => onViewDetail(order.id)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewDetail(order.id)}
+              disabled={isOperating}
+            >
               Chi tiết
             </Button>
           </div>

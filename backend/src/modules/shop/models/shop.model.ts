@@ -156,7 +156,11 @@ export class Shop {
   }
 
   public canSell(): boolean {
-    return this._status === ShopStatus.ACTIVE && !this._isAdminSuspended && !this._isRefundDebt;
+    return (
+      this._status === ShopStatus.ACTIVE &&
+      !this._isAdminSuspended &&
+      !this._isRefundDebt
+    );
   }
 
   // ======================== STATUS CHANGE METHODS ========================

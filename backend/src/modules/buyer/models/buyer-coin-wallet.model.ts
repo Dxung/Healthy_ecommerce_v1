@@ -111,6 +111,34 @@ export class BuyerCoinWallet {
   }
 
   /**
+   * Creates a refund transaction (refunded coins).
+   * Returns the transaction record to be persisted.
+   */
+  refundCoins(
+    amount: number,
+    referenceType: string,
+    referenceId: string | null,
+    description: string | null,
+  ): CoinTransaction {
+    const balanceBefore = this._balance;
+    this._balance += amount;
+    this._updatedAt = new Date();
+
+    return {
+      id: uuidv7(),
+      buyerId: this._buyerId,
+      type: CoinTransactionType.REFUNDED,
+      amount,
+      balanceBefore,
+      balanceAfter: this._balance,
+      referenceType,
+      referenceId,
+      description,
+      createdAt: new Date(),
+    };
+  }
+
+  /**
    * Checks if wallet has sufficient balance for a debit.
    */
   hasEnoughBalance(amount: number): boolean {

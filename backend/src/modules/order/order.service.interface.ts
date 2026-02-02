@@ -35,6 +35,8 @@ export interface CreateOrderResult {
   vnpayAmount?: number;
   /** True if order is COD (Cash on Delivery) - order auto-confirmed */
   isCod?: boolean;
+  /** Total coins used across all orders */
+  coinUsed?: number;
 }
 
 /**
@@ -116,13 +118,9 @@ export interface IOrderService {
 
   /**
    * Mark order as shipped (shop)
+   * Moves order from confirmed to shipping
    */
   shipOrder(orderId: string): ResultAsync<Order, DomainError>;
-
-  /**
-   * Mark order as delivered (shop/system)
-   */
-  markDelivered(orderId: string): ResultAsync<Order, DomainError>;
 
   /**
    * Cancel order (shop)
@@ -144,16 +142,13 @@ export interface IOrderService {
   // ===================== SYSTEM/CRON METHODS =====================
 
   /**
-   * Auto-complete delivered orders past deadline
+   * Auto-complete shipping orders past deadline
+   * (buyer hasn't confirmed receipt after X days)
+   * @param autoCompleteDays - Number of days after delivery to auto-complete
    */
-  autoCompleteOrders(): ResultAsync<number, DomainError>;
-
-  /**
-   * Process missed refunds for cancelled orders
-   * Called by RefundProcessorCronjob to handle edge cases where
-   * refunds were not processed during order cancellation.
-   */
-  processMissedRefunds(): ResultAsync<number, DomainError>;
+  autoCompleteOrders(
+    autoCompleteDays: number,
+  ): ResultAsync<number, DomainError>;
 
   // ===================== PAYMENT CALLBACK METHODS =====================
 
@@ -174,5 +169,7 @@ export interface IOrderService {
    * Cancel order due to payment timeout
    * Called by OrderPaymentTimeoutCronjob
    */
-  cancelOrderDueToPaymentTimeout(orderId: string): ResultAsync<Order, DomainError>;
+  cancelOrderDueToPaymentTimeout(
+    orderId: string,
+  ): ResultAsync<Order, DomainError>;
 }

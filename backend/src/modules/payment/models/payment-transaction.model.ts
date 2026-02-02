@@ -5,11 +5,12 @@ import { PaymentType } from 'src/database/typeorm/entities/payment/enums/payment
 /**
  * PaymentTransaction Domain Model
  * Represents a VNPay payment record.
+ * Links to either Order (for order payment) or Topup (for wallet topup).
  */
 export class PaymentTransaction {
   constructor(
     private readonly _id: string,
-    private readonly _walletId: string | null,
+    private readonly _topupId: string | null,
     private readonly _orderId: string | null,
     private readonly _type: PaymentType,
     private readonly _amount: number,
@@ -38,14 +39,14 @@ export class PaymentTransaction {
    * Creates a new payment transaction for topup
    */
   static createForTopup(params: {
-    walletId: string;
+    topupId: string;
     amount: number;
     txnRef?: string;
   }): PaymentTransaction {
     const now = new Date();
     return new PaymentTransaction(
       uuidv7(),
-      params.walletId,
+      params.topupId,
       null,
       PaymentType.TOPUP,
       params.amount,
@@ -66,14 +67,13 @@ export class PaymentTransaction {
    * Creates a new payment transaction for order payment
    */
   static createForOrder(params: {
-    walletId?: string | null;
     orderId: string;
     amount: number;
   }): PaymentTransaction {
     const now = new Date();
     return new PaymentTransaction(
       uuidv7(),
-      params.walletId ?? null,
+      null,
       params.orderId,
       PaymentType.ORDER_PAYMENT,
       params.amount,
@@ -151,8 +151,8 @@ export class PaymentTransaction {
     return this._id;
   }
 
-  get walletId(): string | null {
-    return this._walletId;
+  get topupId(): string | null {
+    return this._topupId;
   }
 
   get orderId(): string | null {

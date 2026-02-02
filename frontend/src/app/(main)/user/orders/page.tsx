@@ -18,8 +18,7 @@ const statusTabs: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'Tất cả' },
   { value: 'pending', label: 'Chờ xác nhận' },
   { value: 'confirmed', label: 'Đã xác nhận' },
-  { value: 'shipping', label: 'Đang giao' },
-  { value: 'delivered', label: 'Đã giao' },
+  { value: 'shipping', label: 'Đang vận chuyển' },
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];
@@ -31,7 +30,7 @@ export default function MyOrdersPage() {
   const [page, setPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
-  const [operating, setOperating] = useState(false);
+  const [operatingOrderId, setOperatingOrderId] = useState<string | null>(null);
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -66,7 +65,7 @@ export default function MyOrdersPage() {
 
   const handleCancelOrder = async (orderId: string) => {
     try {
-      setOperating(true);
+      setOperatingOrderId(orderId);
       await apiClient.cancelMyOrder(orderId);
       toast.success('Đã hủy đơn hàng');
       await fetchOrders();
@@ -74,13 +73,13 @@ export default function MyOrdersPage() {
       const error = err as ApiError;
       toast.error(error.message || 'Hủy đơn hàng thất bại');
     } finally {
-      setOperating(false);
+      setOperatingOrderId(null);
     }
   };
 
   const handleConfirmDelivery = async (orderId: string) => {
     try {
-      setOperating(true);
+      setOperatingOrderId(orderId);
       const result = await apiClient.confirmDelivery(orderId);
       toast.success(`Xác nhận thành công! Bạn được cộng ${result.coinEarned} xu`);
       await fetchOrders();
@@ -88,7 +87,7 @@ export default function MyOrdersPage() {
       const error = err as ApiError;
       toast.error(error.message || 'Xác nhận thất bại');
     } finally {
-      setOperating(false);
+      setOperatingOrderId(null);
     }
   };
 
@@ -154,6 +153,7 @@ export default function MyOrdersPage() {
                         onViewDetail={handleViewDetail}
                         onCancelOrder={handleCancelOrder}
                         onConfirmDelivery={handleConfirmDelivery}
+                        operatingOrderId={operatingOrderId}
                       />
                     ))}
                   </div>
