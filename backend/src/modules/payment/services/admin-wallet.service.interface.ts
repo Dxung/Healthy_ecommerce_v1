@@ -21,6 +21,7 @@ export interface EscrowWithOrderAndShop {
   orderSubtotal: number;
   coinUsed: number;
   platformFeePercent: number;
+  platformShipDiscount: number;
   status: EscrowStatus;
   createdAt: Date;
   releasedAt: Date | null;

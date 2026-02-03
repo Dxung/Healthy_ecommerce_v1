@@ -70,6 +70,7 @@ export class AdminWalletService implements IAdminWalletService {
           orderSubtotal: item.escrow.orderSubtotal,
           coinUsed: item.escrow.coinUsed,
           platformFeePercent: item.escrow.platformFeePercent,
+          platformShipDiscount: item.platformShipDiscount,
           status: item.escrow.status,
           createdAt: item.escrow.createdAt,
           releasedAt: item.escrow.releasedAt,

@@ -591,6 +591,14 @@ function AdminOrdersPageContent() {
                     <span className="text-gray-500">Phí vận chuyển</span>
                     <span>{formatCurrency(selectedOrder.shippingFee)}</span>
                   </div>
+                  <div className={`flex justify-between ${selectedOrder.platformShipDiscount > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                    <span>Hỗ trợ vận chuyển</span>
+                    <span>
+                      {selectedOrder.platformShipDiscount > 0
+                        ? `-${formatCurrency(selectedOrder.platformShipDiscount)}`
+                        : '0 ₫'}
+                    </span>
+                  </div>
                   {selectedOrder.tierDiscountAmount > 0 && (
                     <div className="flex justify-between text-green-600">
                       <span>Giảm giá hạng thành viên</span>
@@ -607,12 +615,14 @@ function AdminOrdersPageContent() {
                       </span>
                     </div>
                   )}
-                  {selectedOrder.coinUsed > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Xu đã dùng</span>
-                      <span>-{formatCurrency(selectedOrder.coinUsed)}</span>
-                    </div>
-                  )}
+                  <div className={`flex justify-between ${selectedOrder.coinUsed > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                    <span>Xu đã dùng</span>
+                    <span>
+                      {selectedOrder.coinUsed > 0
+                        ? `-${formatCurrency(selectedOrder.coinUsed)}`
+                        : '0 xu'}
+                    </span>
+                  </div>
                   <div className="flex justify-between pt-2 border-t border-gray-200 font-medium">
                     <span>Tổng cộng</span>
                     <span className="text-primary">
@@ -620,7 +630,7 @@ function AdminOrdersPageContent() {
                     </span>
                   </div>
                   <div className="flex justify-between text-gray-500">
-                    <span>Phí nền tảng ({selectedOrder.platformFeePercent.toFixed(2)}%)</span>
+                    <span>Phí nền tảng ({(selectedOrder.platformFeePercent ?? 0).toFixed(2)}%)</span>
                     <span>{formatCurrency(selectedOrder.platformFee)}</span>
                   </div>
                 </div>

@@ -43,6 +43,7 @@ export class EscrowService implements IEscrowService {
     shopId: string,
     amount: number,
     orderSubtotal: number,
+    shippingFee: number,
     coinUsed: number,
     platformFeePercent: number,
   ): ResultAsync<EscrowHold, DomainError> {
@@ -51,6 +52,7 @@ export class EscrowService implements IEscrowService {
       shopId,
       amount,
       orderSubtotal,
+      shippingFee,
       coinUsed,
       platformFeePercent,
     });
@@ -92,14 +94,15 @@ export class EscrowService implements IEscrowService {
       const platformFee = Math.round(
         escrowHold.orderSubtotal * (escrowHold.platformFeePercent / 100),
       );
-      // Shop receives: orderSubtotal - platformFee
-      const shopReceives = escrowHold.orderSubtotal - platformFee;
+      // Shop receives: orderSubtotal - platformFee + shippingFee
+      const shopReceives = escrowHold.orderSubtotal - platformFee + escrowHold.shippingFee;
       // Platform receives: escrowAmount - shopReceives
-      // Can be negative if coinUsed > platformFee (platform subsidizes shop)
+      // = platformFee - platformShipDiscount - coinUsed
+      // Can be negative if (platformShipDiscount + coinUsed) > platformFee
       const platformReceives = escrowHold.amount - shopReceives;
 
       this.logger.log(
-        `Releasing escrow ${escrowId}: escrowAmount=${escrowHold.amount}, orderSubtotal=${escrowHold.orderSubtotal}, coinUsed=${escrowHold.coinUsed}, feePercent=${escrowHold.platformFeePercent}%, platformFee=${platformFee}, shopReceives=${shopReceives}, platformReceives=${platformReceives}`,
+        `Releasing escrow ${escrowId}: escrowAmount=${escrowHold.amount}, orderSubtotal=${escrowHold.orderSubtotal}, shippingFee=${escrowHold.shippingFee}, coinUsed=${escrowHold.coinUsed}, feePercent=${escrowHold.platformFeePercent}%, platformFee=${platformFee}, shopReceives=${shopReceives}, platformReceives=${platformReceives}`,
         'EscrowService',
       );
 

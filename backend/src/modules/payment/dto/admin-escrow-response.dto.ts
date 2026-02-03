@@ -8,6 +8,7 @@ interface EscrowData {
   orderSubtotal: number;
   coinUsed: number;
   platformFeePercent: number;
+  platformShipDiscount: number;
   status: EscrowStatus;
   createdAt: Date;
   releasedAt: Date | null;
@@ -27,6 +28,7 @@ export class AdminEscrowResponseDto {
   orderSubtotal: number;
   coinUsed: number;
   platformFeePercent: number;
+  platformShipDiscount: number;
   status: EscrowStatus;
   statusLabel: string;
   createdAt: Date;
@@ -47,6 +49,7 @@ export class AdminEscrowResponseDto {
     this.orderSubtotal = escrow.orderSubtotal;
     this.coinUsed = escrow.coinUsed;
     this.platformFeePercent = escrow.platformFeePercent;
+    this.platformShipDiscount = escrow.platformShipDiscount;
     this.status = escrow.status;
     this.statusLabel = this.getStatusLabel(escrow.status);
     this.createdAt = escrow.createdAt;

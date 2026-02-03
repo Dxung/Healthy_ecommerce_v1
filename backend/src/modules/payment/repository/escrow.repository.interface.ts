@@ -8,6 +8,7 @@ export interface EscrowWithOrderAndShopInfo {
   escrow: EscrowHold;
   orderCode: string;
   shopName: string;
+  platformShipDiscount: number;
 }
 
 export interface EscrowListFilters {

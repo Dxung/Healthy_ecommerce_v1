@@ -33,6 +33,16 @@ export class ORMEscrowHold {
   @Column({ name: 'order_subtotal', type: 'decimal', precision: 15, scale: 2 })
   orderSubtotal: number;
 
+  /** Shipping fee - goes to shop */
+  @Column({
+    name: 'shipping_fee',
+    type: 'decimal',
+    precision: 15,
+    scale: 2,
+    default: 0,
+  })
+  shippingFee: number;
+
   /** Coins used by buyer in this order */
   @Column({
     name: 'coin_used',

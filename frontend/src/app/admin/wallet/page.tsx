@@ -183,7 +183,7 @@ export default function AdminWalletPage() {
             }`}
           >
             <ShieldCheck className="w-4 h-4 inline-block mr-2" />
-            Escrow Holds
+            Ký quỹ
           </button>
         </nav>
       </div>
@@ -396,10 +396,19 @@ export default function AdminWalletPage() {
                           Shop
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Số tiền
+                          Tiền hàng
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Phí nền tảng %
+                          Xu đã dùng
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Hỗ trợ ship
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phí sàn
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tổng ký quỹ
                         </th>
                         <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Trạng thái
@@ -408,43 +417,56 @@ export default function AdminWalletPage() {
                           Ngày tạo
                         </th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ngày release
+                          Ngày giải ngân
                         </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                      {escrows.map((escrow) => (
-                        <tr key={escrow.id} className="hover:bg-gray-50">
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span className="text-sm font-medium text-primary">
-                              {escrow.orderCode || '-'}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {escrow.shopName || '-'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                            {escrow.formattedAmount || formatCurrency(escrow.amount || 0)}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                            {(escrow.platformFeePercent ?? 0).toFixed(2)}%
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-center">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${getEscrowStatusColor(escrow.status)}`}
-                            >
-                              {getEscrowStatusIcon(escrow.status)}
-                              {escrow.statusLabel || escrow.status}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {escrow.createdAt ? formatDate(escrow.createdAt) : '-'}
-                          </td>
-                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {escrow.releasedAt ? formatDate(escrow.releasedAt) : '-'}
-                          </td>
-                        </tr>
-                      ))}
+                      {escrows.map((escrow) => {
+                        const platformFeeAmount = Math.round((escrow.orderSubtotal || 0) * (escrow.platformFeePercent || 0) / 100);
+                        return (
+                          <tr key={escrow.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <span className="text-sm font-medium text-primary">
+                                {escrow.orderCode || '-'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {escrow.shopName || '-'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {formatCurrency(escrow.orderSubtotal || 0)}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {escrow.coinUsed > 0 ? formatCurrency(escrow.coinUsed) : '0 xu'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {(escrow.platformShipDiscount || 0) > 0 ? formatCurrency(escrow.platformShipDiscount) : '0 ₫'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              <div>{formatCurrency(platformFeeAmount)}</div>
+                              <div className="text-xs text-gray-500">({(escrow.platformFeePercent ?? 0).toFixed(1)}%)</div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
+                              {escrow.formattedAmount || formatCurrency(escrow.amount || 0)}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-center">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${getEscrowStatusColor(escrow.status)}`}
+                              >
+                                {getEscrowStatusIcon(escrow.status)}
+                                {escrow.statusLabel || escrow.status}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {escrow.createdAt ? formatDate(escrow.createdAt) : '-'}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {escrow.releasedAt ? formatDate(escrow.releasedAt) : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -453,7 +475,7 @@ export default function AdminWalletPage() {
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t border-gray-200">
                   <div className="text-xs sm:text-sm text-gray-500">
                     Hiển thị {(escrowPage - 1) * limit + 1} -{' '}
-                    {Math.min(escrowPage * limit, escrowTotal)} trong {escrowTotal} escrow
+                    {Math.min(escrowPage * limit, escrowTotal)} trong {escrowTotal} ký quỹ
                   </div>
                   <div className="flex items-center gap-2">
                     <button

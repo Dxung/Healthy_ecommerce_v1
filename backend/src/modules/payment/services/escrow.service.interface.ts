@@ -9,6 +9,7 @@ export interface IEscrowService {
    * @param shopId - Shop ID
    * @param amount - Total amount held (buyer's payment)
    * @param orderSubtotal - Original order value before coin discount
+   * @param shippingFee - Shipping fee (goes to shop)
    * @param coinUsed - Coins used by buyer
    * @param platformFeePercent - Platform fee percent (already includes badge discount)
    */
@@ -17,6 +18,7 @@ export interface IEscrowService {
     shopId: string,
     amount: number,
     orderSubtotal: number,
+    shippingFee: number,
     coinUsed: number,
     platformFeePercent: number,
   ): ResultAsync<EscrowHold, DomainError>;

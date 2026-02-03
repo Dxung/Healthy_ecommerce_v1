@@ -124,6 +124,7 @@ export class AdminWalletController {
                 orderSubtotal: item.orderSubtotal,
                 coinUsed: item.coinUsed,
                 platformFeePercent: item.platformFeePercent,
+                platformShipDiscount: item.platformShipDiscount,
                 status: item.status,
                 createdAt: item.createdAt,
                 releasedAt: item.releasedAt,

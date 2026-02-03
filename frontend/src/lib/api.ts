@@ -375,6 +375,7 @@ export interface AdminOrderResponse {
   platformFeePercent: number;
   tierDiscountAmount: number;
   voucherDiscountAmount: number;
+  platformShipDiscount: number;
   coinUsed: number;
   totalAmount: number;
   coinEarned: number;
@@ -462,6 +463,7 @@ export interface AdminEscrowResponse {
   orderSubtotal: number;
   coinUsed: number;
   platformFeePercent: number;
+  platformShipDiscount: number;
   status: EscrowStatus;
   statusLabel: string;
   createdAt: string;

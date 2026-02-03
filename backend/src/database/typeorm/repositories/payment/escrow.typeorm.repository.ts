@@ -189,6 +189,7 @@ export class OrmEscrowRepository implements IEscrowRepository {
         'escrow.shop_id',
         'escrow.amount',
         'escrow.order_subtotal',
+        'escrow.shipping_fee',
         'escrow.coin_used',
         'escrow.platform_fee_percent',
         'escrow.status',
@@ -196,9 +197,11 @@ export class OrmEscrowRepository implements IEscrowRepository {
         'escrow.created_at',
         'escrow.updated_at',
         'order.order_code as "orderCode"',
+        'order.platform_ship_discount as "platformShipDiscount"',
         'shop.name as "shopName"',
       ])
       .addSelect('order.order_code', 'orderCode')
+      .addSelect('order.platform_ship_discount', 'platformShipDiscount')
       .addSelect('shop.name', 'shopName');
 
     if (filters.status) {
@@ -240,6 +243,7 @@ export class OrmEscrowRepository implements IEscrowRepository {
           shopId: raw.escrow_shop_id,
           amount: parseFloat(raw.escrow_amount),
           orderSubtotal: parseFloat(raw.escrow_order_subtotal),
+          shippingFee: parseFloat(raw.escrow_shipping_fee || 0),
           coinUsed: parseFloat(raw.escrow_coin_used),
           platformFeePercent: parseFloat(raw.escrow_platform_fee_percent),
           status: raw.escrow_status,
@@ -252,6 +256,7 @@ export class OrmEscrowRepository implements IEscrowRepository {
           escrow,
           orderCode: raw.orderCode,
           shopName: raw.shopName,
+          platformShipDiscount: parseFloat(raw.platformShipDiscount || 0),
         };
       });
 

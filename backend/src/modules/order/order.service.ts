@@ -564,6 +564,7 @@ export class OrderService implements IOrderService {
                       orderWithShop.order.shopId,
                       orderWithShop.order.totalAmount,
                       orderWithShop.order.subtotal,
+                      orderWithShop.order.shippingFee,
                       orderWithShop.order.coinUsed,
                       platformFeePercent,
                     );
@@ -808,6 +809,7 @@ export class OrderService implements IOrderService {
                   order.shopId,
                   order.totalAmount,
                   order.subtotal,
+                  order.shippingFee,
                   order.coinUsed,
                   platformFeePercent,
                 )
@@ -1335,6 +1337,7 @@ export class OrderService implements IOrderService {
             order.shopId,
             order.totalAmount,
             order.subtotal,
+            order.shippingFee,
             order.coinUsed,
             platformFeePercent,
           )

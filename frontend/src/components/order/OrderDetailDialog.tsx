@@ -269,7 +269,7 @@ export function OrderDetailDialog({
                   </div>
                   {order.platformShipDiscount > 0 && (
                     <div className="flex justify-between text-green-600">
-                      <span>Giảm giá vận chuyển</span>
+                      <span>Hỗ trợ vận chuyển</span>
                       <span>-{formatPrice(order.platformShipDiscount)}</span>
                     </div>
                   )}
@@ -279,12 +279,10 @@ export function OrderDetailDialog({
                       <span>-{formatPrice(order.voucherDiscountAmount)}</span>
                     </div>
                   )}
-                  {order.coinUsed > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>Xu đã dùng</span>
-                      <span>-{formatPrice(order.coinUsed)}</span>
-                    </div>
-                  )}
+                  <div className={`flex justify-between ${order.coinUsed > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                    <span>Xu đã dùng</span>
+                    <span>{order.coinUsed > 0 ? `-${formatPrice(order.coinUsed)}` : '0 xu'}</span>
+                  </div>
                   <div className="flex justify-between pt-2 border-t font-medium">
                     <span>Tổng thanh toán</span>
                     <span className="text-primary text-lg">{formatPrice(order.totalAmount)}</span>
