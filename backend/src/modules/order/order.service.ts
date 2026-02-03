@@ -557,6 +557,8 @@ export class OrderService implements IOrderService {
                       0,
                       baseFeePercent - badgeDiscount,
                     );
+                    // Update order with platform fee info
+                    orderWithShop.order.setPlatformFee(platformFeePercent);
                     return this.escrowService.createHold(
                       orderWithShop.order.id,
                       orderWithShop.order.shopId,
@@ -571,7 +573,7 @@ export class OrderService implements IOrderService {
               return ResultAsync.combine(escrowCreations);
             })
             .andThen(() => {
-              // Mark all orders as paid and update in DB
+              // Mark all orders as paid (platform fee already set) and update in DB
               const updateResults = createdOrders.map((orderWithShop) => {
                 orderWithShop.order.markAsPaid();
                 return this.orderRepository.save(orderWithShop.order);
@@ -796,6 +798,8 @@ export class OrderService implements IOrderService {
                 0,
                 baseFeePercent - badgeDiscount,
               );
+              // Update order with platform fee info
+              order.setPlatformFee(platformFeePercent);
 
               // Create escrow hold
               return this.escrowService
@@ -808,7 +812,7 @@ export class OrderService implements IOrderService {
                   platformFeePercent,
                 )
                 .andThen(() => {
-                  // Mark order as paid
+                  // Mark order as paid (platform fee already set)
                   order.markAsPaid();
                   return this.orderRepository.updateOrder(order);
                 })
@@ -1321,6 +1325,8 @@ export class OrderService implements IOrderService {
       ]).andThen(([baseFeePercent, badgeDiscount]) => {
         // Calculate final platform fee percent (base - badge discount, min 0)
         const platformFeePercent = Math.max(0, baseFeePercent - badgeDiscount);
+        // Update order with platform fee info
+        order.setPlatformFee(platformFeePercent);
 
         // Create escrow hold for shop with fee calculation data
         return this.escrowService
@@ -1333,7 +1339,7 @@ export class OrderService implements IOrderService {
             platformFeePercent,
           )
           .andThen(() => {
-            // Mark order as paid
+            // Mark order as paid (platform fee already set)
             order.markAsPaid();
             return this.orderRepository.updateOrder(order);
           });

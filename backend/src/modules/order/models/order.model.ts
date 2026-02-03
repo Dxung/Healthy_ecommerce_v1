@@ -269,6 +269,18 @@ export class Order {
   }
 
   /**
+   * Sets platform fee info (called when escrow is created)
+   */
+  setPlatformFee(feePercent: number): void {
+    (this as unknown as { _platformFeePercent: number })._platformFeePercent =
+      feePercent;
+    (this as unknown as { _platformFee: number })._platformFee = Math.round(
+      this._subtotal * (feePercent / 100),
+    );
+    this._updatedAt = new Date();
+  }
+
+  /**
    * Adds an item to the order
    */
   addItem(item: OrderItem): void {

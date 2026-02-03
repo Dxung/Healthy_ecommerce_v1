@@ -130,9 +130,9 @@ export function OrderCard({
             </div>
           </Link>
         ))}
-        {order.itemCount > 2 && (
+        {order.items.length > 2 && (
           <div className="px-4 py-2 text-sm text-gray-500 text-center">
-            +{order.itemCount - 2} sản phẩm khác
+            +{order.items.length - 2} sản phẩm khác
           </div>
         )}
       </div>
