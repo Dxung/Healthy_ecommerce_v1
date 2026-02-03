@@ -455,6 +455,26 @@ export class OrmProductRepository implements IProductRepository {
     ).map((result) => result.affected ?? 0);
   }
 
+  @WithPosition()
+  incrementSoldCount(
+    productId: string,
+    quantity: number,
+  ): ResultAsync<void, DomainError> {
+    const repo = this.getProductRepository();
+    return ResultAsync.fromPromise(
+      repo
+        .createQueryBuilder()
+        .update(ORMProduct)
+        .set({
+          totalSold: () => `total_sold + ${quantity}`,
+          updatedAt: new Date(),
+        })
+        .where('id = :productId', { productId })
+        .execute(),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map(() => undefined);
+  }
+
   // ======================== PRIVATE HELPERS ========================
 
   private buildRelations(options?: ProductLoadOptions): string[] {

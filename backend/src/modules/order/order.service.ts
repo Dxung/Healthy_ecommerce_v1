@@ -24,12 +24,14 @@ import { IPaymentService } from '../payment/payment.service.interface';
 import { IBuyerService } from '../buyer/buyer.service.interface';
 import { IBuyerCoinWalletRepository } from '../buyer/repository/buyer-coin-wallet.repository.interface';
 import { IProductVariantRepository } from '../product/repository/product-variant.repository.interface';
+import { IProductRepository } from '../product/repository/product.repository.interface';
 import { ISystemConfigService } from '../system-config/system-config.service.interface';
 import { IShopBadgeBenefitsService } from '../shop/shop-badge-benefits.service.interface';
 import { IVnpayService } from '../payment/services/vnpay.service.interface';
 import { IPaymentTransactionRepository } from '../payment/repository/payment-transaction.repository.interface';
 import {
   ORDER_REPOSITORY,
+  PRODUCT_REPOSITORY,
   PRODUCT_VARIANT_REPOSITORY,
   BUYER_COIN_WALLET_REPOSITORY,
   PAYMENT_TRANSACTION_REPOSITORY,
@@ -89,6 +91,8 @@ export class OrderService implements IOrderService {
     private readonly paymentService: IPaymentService,
     @Inject(BUYER_SERVICE)
     private readonly buyerService: IBuyerService,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepository: IProductRepository,
     @Inject(PRODUCT_VARIANT_REPOSITORY)
     private readonly variantRepository: IProductVariantRepository,
     @Inject(BUYER_COIN_WALLET_REPOSITORY)
@@ -151,6 +155,34 @@ export class OrderService implements IOrderService {
     );
 
     return this.variantRepository.restoreStock(stockRestoreItems);
+  }
+
+  /**
+   * Increments the sold count for all products in an order.
+   * Called when an order is completed to update product sales statistics.
+   */
+  private incrementSoldCountsForOrder(
+    order: Order,
+  ): ResultAsync<void, DomainError> {
+    const items = order.items;
+    if (items.length === 0) {
+      return okAsync(undefined);
+    }
+
+    // Aggregate quantities by product (same product may appear with different variants)
+    const soldMap = new Map<string, number>();
+    for (const item of items) {
+      const currentQty = soldMap.get(item.productId) ?? 0;
+      soldMap.set(item.productId, currentQty + item.quantity);
+    }
+
+    // Increment sold count for each product
+    const incrementResults = Array.from(soldMap.entries()).map(
+      ([productId, quantity]) =>
+        this.productRepository.incrementSoldCount(productId, quantity),
+    );
+
+    return ResultAsync.combine(incrementResults).map(() => undefined);
   }
 
   // ===================== BUYER METHODS =====================
@@ -638,12 +670,14 @@ export class OrderService implements IOrderService {
     const primaryOrder = createdOrders[0].order;
 
     // Create payment transaction via PaymentService
+    // Pass all order IDs for multi-shop checkout tracking
     return this.paymentService
       .createOrderPayment(
         primaryOrderId,
         totalAmount,
         '127.0.0.1', // TODO: Get from request context
         primaryOrder.createdAt, // Pass order creation time for timeout validation
+        orderIds, // All order IDs for multi-shop checkout
       )
       .map((paymentResult) => ({
         orders: createdOrders,
@@ -685,6 +719,7 @@ export class OrderService implements IOrderService {
             vnpayAmount,
             '127.0.0.1', // TODO: Get from request context
             primaryOrder.createdAt, // Pass order creation time for timeout validation
+            orderIds, // All order IDs for multi-shop checkout
           )
           .map((paymentResult) => ({
             orders: createdOrders,
@@ -1001,6 +1036,7 @@ export class OrderService implements IOrderService {
    * 1. Update order status to COMPLETED
    * 2. Credit coins to buyer (if any earned)
    * 3. Release escrow to shop + platform
+   * 4. Increment sold count for each product
    *
    * If any step fails, all operations are rolled back.
    */
@@ -1054,34 +1090,41 @@ export class OrderService implements IOrderService {
                       )
                       .map(() => undefined)
                   : okAsync(undefined)
-                ).andThen(() =>
-                  // Step 3: Find and release escrow
-                  this.escrowService
-                    .findByOrderId(savedOrder.id)
-                    .andThen((escrowHolds) => {
-                      const holdingEscrows = escrowHolds.filter((e) =>
-                        e.isHolding(),
-                      );
-
-                      if (holdingEscrows.length === 0) {
-                        this.logger.warn(
-                          `No holding escrows found for order ${savedOrder.id}`,
-                          'OrderService',
+                )
+                  .andThen(() =>
+                    // Step 3: Find and release escrow
+                    this.escrowService
+                      .findByOrderId(savedOrder.id)
+                      .andThen((escrowHolds) => {
+                        const holdingEscrows = escrowHolds.filter((e) =>
+                          e.isHolding(),
                         );
-                        return okAsync(savedOrder);
-                      }
 
-                      // Release each escrow (usually just one per order)
-                      // releaseToShop will participate in the outer transaction
-                      const releasePromises = holdingEscrows.map((escrow) =>
-                        this.escrowService.releaseToShop(escrow.id),
-                      );
+                        if (holdingEscrows.length === 0) {
+                          this.logger.warn(
+                            `No holding escrows found for order ${savedOrder.id}`,
+                            'OrderService',
+                          );
+                          return okAsync(undefined);
+                        }
 
-                      return ResultAsync.combine(releasePromises).map(
-                        () => savedOrder,
-                      );
-                    }),
-                ),
+                        // Release each escrow (usually just one per order)
+                        // releaseToShop will participate in the outer transaction
+                        const releasePromises = holdingEscrows.map((escrow) =>
+                          this.escrowService.releaseToShop(escrow.id),
+                        );
+
+                        return ResultAsync.combine(releasePromises).map(
+                          () => undefined,
+                        );
+                      }),
+                  )
+                  .andThen(() =>
+                    // Step 4: Increment sold count for each product
+                    this.incrementSoldCountsForOrder(savedOrder).map(
+                      () => savedOrder,
+                    ),
+                  ),
               );
           }),
         );
@@ -1244,6 +1287,7 @@ export class OrderService implements IOrderService {
    * 1. Update order status to COMPLETED
    * 2. Credit coins to buyer (if any earned)
    * 3. Release escrow to shop + platform
+   * 4. Increment sold count for each product
    *
    * @param autoCompleteDays - Number of days after delivery to auto-complete
    */
@@ -1286,29 +1330,36 @@ export class OrderService implements IOrderService {
                       )
                       .map(() => undefined)
                   : okAsync(undefined)
-                ).andThen(() =>
-                  // Step 3: Find and release escrow
-                  this.escrowService
-                    .findByOrderId(savedOrder.id)
-                    .andThen((escrowHolds) => {
-                      const holdingEscrows = escrowHolds.filter((e) =>
-                        e.isHolding(),
-                      );
+                )
+                  .andThen(() =>
+                    // Step 3: Find and release escrow
+                    this.escrowService
+                      .findByOrderId(savedOrder.id)
+                      .andThen((escrowHolds) => {
+                        const holdingEscrows = escrowHolds.filter((e) =>
+                          e.isHolding(),
+                        );
 
-                      if (holdingEscrows.length === 0) {
-                        return okAsync(savedOrder);
-                      }
+                        if (holdingEscrows.length === 0) {
+                          return okAsync(undefined);
+                        }
 
-                      // Release each escrow
-                      const releasePromises = holdingEscrows.map((escrow) =>
-                        this.escrowService.releaseToShop(escrow.id),
-                      );
+                        // Release each escrow
+                        const releasePromises = holdingEscrows.map((escrow) =>
+                          this.escrowService.releaseToShop(escrow.id),
+                        );
 
-                      return ResultAsync.combine(releasePromises).map(
-                        () => savedOrder,
-                      );
-                    }),
-                ),
+                        return ResultAsync.combine(releasePromises).map(
+                          () => undefined,
+                        );
+                      }),
+                  )
+                  .andThen(() =>
+                    // Step 4: Increment sold count for each product
+                    this.incrementSoldCountsForOrder(savedOrder).map(
+                      () => savedOrder,
+                    ),
+                  ),
               ),
             )
             .map(() => {

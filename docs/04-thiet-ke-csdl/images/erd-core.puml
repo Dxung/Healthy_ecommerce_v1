@@ -1,0 +1,113 @@
+@startuml erd-core
+!theme plain
+skinparam linetype ortho
+
+title ERD - Core Entities
+
+entity "user_core" as user {
+  *id : UUID <<PK>>
+  --
+  username : VARCHAR(50)
+  email : VARCHAR(255)
+  phoneNumber : VARCHAR(20)
+  fullName : VARCHAR(255)
+  avatarUrl : VARCHAR(500)
+  status : ENUM
+  createdAt : TIMESTAMP
+  deletedAt : TIMESTAMP
+}
+
+entity "user_addresses" as address {
+  *id : UUID <<PK>>
+  --
+  *userId : UUID <<FK>>
+  recipientName : VARCHAR(255)
+  recipientPhone : VARCHAR(20)
+  addressLine : VARCHAR(255)
+  wardId : VARCHAR(50)
+  districtId : VARCHAR(50)
+  provinceId : VARCHAR(50)
+  isDefault : BOOLEAN
+}
+
+entity "shops" as shop {
+  *id : UUID <<PK>>
+  --
+  *userId : UUID <<FK>>
+  name : VARCHAR(255)
+  slug : VARCHAR(255)
+  phone : VARCHAR(20)
+  email : VARCHAR(255)
+  averageRating : DECIMAL
+  totalOrders : INTEGER
+  status : ENUM
+}
+
+entity "products" as product {
+  *id : UUID <<PK>>
+  --
+  *shopId : UUID <<FK>>
+  *categoryId : UUID <<FK>>
+  brandId : UUID <<FK>>
+  name : VARCHAR(500)
+  slug : VARCHAR(500)
+  thumbnailUrl : VARCHAR(500)
+  minPrice : DECIMAL
+  maxPrice : DECIMAL
+  averageRating : DECIMAL
+  status : ENUM
+}
+
+entity "product_variants" as variant {
+  *id : UUID <<PK>>
+  --
+  *productId : UUID <<FK>>
+  sku : VARCHAR(100)
+  name : VARCHAR(255)
+  price : DECIMAL
+  stockQuantity : INTEGER
+  isActive : BOOLEAN
+}
+
+entity "product_nutrition" as nutrition {
+  *id : UUID <<PK>>
+  --
+  *productId : UUID <<FK>> <<UNIQUE>>
+  calories : DECIMAL
+  protein : DECIMAL
+  carbohydrates : DECIMAL
+  fat : DECIMAL
+  fiber : DECIMAL
+  sugar : DECIMAL
+  sodium : DECIMAL
+  ... (20+ more fields)
+}
+
+entity "categories" as category {
+  *id : UUID <<PK>>
+  --
+  parentId : UUID <<FK>>
+  name : VARCHAR(255)
+  slug : VARCHAR(255)
+  level : SMALLINT
+}
+
+entity "brands" as brand {
+  *id : UUID <<PK>>
+  --
+  name : VARCHAR(255)
+  slug : VARCHAR(255)
+  logoUrl : VARCHAR(500)
+}
+
+' Relationships
+user ||--o{ address : "has"
+user ||--o| shop : "owns"
+shop ||--o{ product : "sells"
+product ||--o{ variant : "has"
+product ||--|| nutrition : "has"
+product }o--|| category : "belongs to"
+product }o--o| brand : "belongs to"
+category ||--o{ category : "parent"
+
+@enduml

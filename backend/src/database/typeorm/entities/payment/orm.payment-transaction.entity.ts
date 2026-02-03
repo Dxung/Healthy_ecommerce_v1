@@ -32,6 +32,9 @@ export class ORMPaymentTransaction {
   @Column({ name: 'order_id', type: 'uuid', nullable: true })
   orderId: string | null;
 
+  @Column({ name: 'related_order_ids', type: 'text', nullable: true })
+  relatedOrderIds: string | null;
+
   @Column({
     type: 'enum',
     enum: PaymentType,

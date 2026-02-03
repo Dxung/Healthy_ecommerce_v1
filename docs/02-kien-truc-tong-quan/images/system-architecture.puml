@@ -1,0 +1,65 @@
+@startuml system-architecture
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Kiến trúc tổng quan hệ thống Healthy Ecommerce
+
+package "Client Layer" {
+  [Buyer App\n(Next.js)] as Buyer
+  [Shop App\n(Next.js)] as Shop
+  [Admin App\n(Next.js)] as Admin
+}
+
+package "Backend Layer" {
+  [API Gateway\nREST/HTTP\nPort 3001] as API
+
+  package "NestJS Application" {
+    [Controller Layer] as Controller
+    [Service Layer] as Service
+    [Repository Layer] as Repository
+
+    package "Cron Jobs" {
+      [OrderAutoComplete] as Cron1
+      [PaymentTimeout] as Cron2
+      [BadgeEligibility] as Cron3
+      [BadgeExpiry] as Cron4
+      [TopupReconcile] as Cron5
+    }
+  }
+}
+
+package "Data Layer" {
+  database "PostgreSQL\n(15 Schemas)" as DB
+}
+
+package "External Services" {
+  cloud "VNPay\nPayment Gateway" as VNPay
+  cloud "Cloudinary\nImage CDN" as Cloudinary
+  cloud "Firebase\nOTP Auth" as Firebase
+}
+
+' Client to API connections
+Buyer --> API : HTTP/REST
+Shop --> API : HTTP/REST
+Admin --> API : HTTP/REST
+
+' Internal connections
+API --> Controller
+Controller --> Service
+Service --> Repository
+Repository --> DB
+
+' Cron to Service
+Cron1 --> Service
+Cron2 --> Service
+Cron3 --> Service
+Cron4 --> Service
+Cron5 --> Service
+
+' External connections
+Service --> VNPay : Payment API
+Service --> Cloudinary : Image Upload
+Service --> Firebase : OTP Verify
+
+@enduml

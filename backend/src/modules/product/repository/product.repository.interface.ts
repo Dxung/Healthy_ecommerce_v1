@@ -204,4 +204,16 @@ export interface IProductRepository {
     shopId: string,
     officialBrandIds: string[],
   ): ResultAsync<number, DomainError>;
+
+  /**
+   * Increments the sold count for a product.
+   * Called when an order containing this product is completed.
+   * @param productId - The product ID.
+   * @param quantity - The quantity to add to sold count.
+   * @returns void on success.
+   */
+  incrementSoldCount(
+    productId: string,
+    quantity: number,
+  ): ResultAsync<void, DomainError>;
 }

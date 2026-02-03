@@ -1,0 +1,128 @@
+@startuml erd-order-payment
+!theme plain
+skinparam linetype ortho
+
+title ERD - Order & Payment
+
+entity "user_core" as user {
+  *id : UUID <<PK>>
+  --
+  fullName : VARCHAR(255)
+  phoneNumber : VARCHAR(20)
+}
+
+entity "shops" as shop {
+  *id : UUID <<PK>>
+  --
+  name : VARCHAR(255)
+}
+
+entity "orders" as order {
+  *id : UUID <<PK>>
+  --
+  orderCode : VARCHAR(50) <<UNIQUE>>
+  *buyerId : UUID <<FK>>
+  *shopId : UUID <<FK>>
+  receiverName : VARCHAR(255)
+  receiverPhone : VARCHAR(20)
+  shippingAddress : TEXT
+  --
+  subtotal : DECIMAL
+  shippingFee : DECIMAL
+  platformFee : DECIMAL
+  coinUsed : BIGINT
+  totalAmount : DECIMAL
+  --
+  buyerTierCode : VARCHAR(20)
+  coinEarned : BIGINT
+  --
+  paymentMethod : ENUM
+  paymentStatus : ENUM
+  status : ENUM
+  --
+  createdAt : TIMESTAMP
+  paidAt : TIMESTAMP
+  completedAt : TIMESTAMP
+  cancelledAt : TIMESTAMP
+}
+
+entity "order_items" as orderItem {
+  *id : UUID <<PK>>
+  --
+  *orderId : UUID <<FK>>
+  *productId : UUID <<FK>>
+  *variantId : UUID <<FK>>
+  productName : VARCHAR(500)
+  variantName : VARCHAR(255)
+  productImageUrl : VARCHAR(500)
+  unitPrice : DECIMAL
+  quantity : INTEGER
+  totalPrice : DECIMAL
+}
+
+entity "wallets" as wallet {
+  *id : UUID <<PK>>
+  --
+  ownerType : ENUM (BUYER/SHOP)
+  ownerId : UUID
+  balance : DECIMAL
+  frozenBalance : DECIMAL
+}
+
+entity "escrow_holds" as escrow {
+  *id : UUID <<PK>>
+  --
+  *orderId : UUID <<FK>>
+  *shopId : UUID <<FK>>
+  amount : DECIMAL
+  orderSubtotal : DECIMAL
+  shippingFee : DECIMAL
+  platformFeePercent : DECIMAL
+  status : ENUM
+  releasedAt : TIMESTAMP
+}
+
+entity "wallet_transactions" as walletTxn {
+  *id : UUID <<PK>>
+  --
+  *walletId : UUID <<FK>>
+  type : ENUM (DEBIT/CREDIT)
+  amount : DECIMAL
+  balanceBefore : DECIMAL
+  balanceAfter : DECIMAL
+  referenceType : VARCHAR
+  referenceId : UUID
+  description : TEXT
+  createdAt : TIMESTAMP
+}
+
+entity "topups" as topup {
+  *id : UUID <<PK>>
+  --
+  *walletId : UUID <<FK>>
+  amount : DECIMAL
+  status : ENUM
+  createdAt : TIMESTAMP
+}
+
+entity "buyer_coin_wallets" as coinWallet {
+  *id : UUID <<PK>>
+  --
+  *buyerId : UUID <<FK>>
+  balance : BIGINT
+}
+
+' Relationships
+user ||--o{ order : "places"
+shop ||--o{ order : "receives"
+order ||--o{ orderItem : "contains"
+order ||--|| escrow : "has"
+
+user ||--o| wallet : "has (buyer)"
+shop ||--o| wallet : "has (shop)"
+wallet ||--o{ walletTxn : "logs"
+wallet ||--o{ topup : "has"
+
+user ||--|| coinWallet : "has"
+
+@enduml

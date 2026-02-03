@@ -1,0 +1,89 @@
+@startuml payment-flow
+|Buyer|
+start
+:Chọn sản phẩm vào giỏ hàng;
+:Nhấn "Thanh toán";
+
+|Frontend|
+:Hiển thị trang Checkout;
+:Buyer chọn địa chỉ giao hàng;
+
+if (Sử dụng xu?) then (Có)
+  :Nhập số xu muốn dùng;
+  note right: Tối đa 50% giá trị đơn
+endif
+
+:Chọn phương thức thanh toán;
+
+|Backend|
+:Validate cart items;
+:Kiểm tra stock;
+:Kiểm tra giá có thay đổi;
+
+if (Valid?) then (Không)
+  |Frontend|
+  :Hiển thị lỗi;
+  stop
+endif
+
+|Backend|
+:Tạo Order (status=PENDING);
+:Trừ stock sản phẩm;
+
+if (Có dùng xu?) then (Có)
+  :Trừ xu từ coin wallet;
+endif
+
+:Tạo Payment Transaction;
+:Generate VNPay URL;
+
+|Frontend|
+:Redirect đến VNPay;
+
+|VNPay|
+:Hiển thị trang thanh toán;
+:Buyer nhập thông tin thẻ;
+:Xử lý thanh toán;
+
+if (Thanh toán thành công?) then (Có)
+  :Redirect về Return URL;
+
+  |Backend|
+  :Nhận Return URL callback;
+  :Verify chữ ký VNPay;
+  :Cập nhật Payment Transaction;
+
+  fork
+    :VNPay gửi IPN;
+    :Verify IPN signature;
+    :Return RspCode=00;
+  fork again
+    :Tiếp tục xử lý;
+  end fork
+
+  :Cập nhật paymentStatus = COMPLETED;
+  :Cập nhật paidAt;
+  :Tạo EscrowHold (HOLDING);
+  :Cập nhật order status = CONFIRMED;
+
+  |Frontend|
+  :Redirect đến trang Success;
+  :Hiển thị "Đặt hàng thành công";
+
+else (Không)
+  :Redirect về Return URL với error;
+
+  |Backend|
+  :Cập nhật Payment Transaction = FAILED;
+  :Khôi phục stock;
+
+  if (Đã dùng xu?) then (Có)
+    :Hoàn xu vào coin wallet;
+  endif
+
+  |Frontend|
+  :Hiển thị "Thanh toán thất bại";
+endif
+
+stop
+@enduml

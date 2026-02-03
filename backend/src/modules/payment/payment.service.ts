@@ -57,6 +57,7 @@ export class PaymentService implements IPaymentService {
     amount: number,
     ipAddress: string,
     orderCreatedAt?: Date,
+    allOrderIds?: string[],
   ): ResultAsync<CreateOrderPaymentResult, DomainError> {
     // Validate order is still within payment timeout window
     if (orderCreatedAt) {
@@ -76,6 +77,7 @@ export class PaymentService implements IPaymentService {
 
     const paymentTxn = PaymentTransaction.createForOrder({
       orderId,
+      orderIds: allOrderIds,
       amount,
     });
 
@@ -209,17 +211,21 @@ export class PaymentService implements IPaymentService {
         transaction.type === PaymentType.ORDER_PAYMENT &&
         transaction.orderId
       ) {
-        return this.orderService
-          .processVnpayPaymentSuccess(transaction.orderId)
-          .map(
-            (): VnpayReturnHandlerResult => ({
-              isSuccess: true,
-              type: 'order_payment',
-              amount,
-              redirectPath: '/checkout/success',
-              redirectParams: { status: 'success' },
-            }),
-          );
+        // Process ALL orders from this transaction (multi-shop checkout support)
+        const allOrderIds = transaction.getAllOrderIds();
+        const orderProcessResults = allOrderIds.map((orderId) =>
+          this.orderService.processVnpayPaymentSuccess(orderId),
+        );
+
+        return ResultAsync.combine(orderProcessResults).map(
+          (): VnpayReturnHandlerResult => ({
+            isSuccess: true,
+            type: 'order_payment',
+            amount,
+            redirectPath: '/checkout/success',
+            redirectParams: { status: 'success' },
+          }),
+        );
       }
 
       return errAsync(
@@ -311,8 +317,13 @@ export class PaymentService implements IPaymentService {
         transaction.type === PaymentType.ORDER_PAYMENT &&
         transaction.orderId
       ) {
-        return this.orderService
-          .processVnpayPaymentSuccess(transaction.orderId)
+        // Process ALL orders from this transaction (multi-shop checkout support)
+        const allOrderIds = transaction.getAllOrderIds();
+        const orderProcessResults = allOrderIds.map((orderId) =>
+          this.orderService.processVnpayPaymentSuccess(orderId),
+        );
+
+        return ResultAsync.combine(orderProcessResults)
           .map(() => ({ RspCode: '00', Message: 'Confirm Success' }))
           .orElse(() =>
             okAsync({ RspCode: '02', Message: 'Processing failed' }),

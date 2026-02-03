@@ -1,0 +1,68 @@
+@startuml repository-pattern
+!theme plain
+
+title Repository Pattern
+
+package "Application Layer" {
+  class OrderService {
+    -orderRepository: IOrderRepository
+    +createOrder()
+    +getOrderById()
+    +cancelOrder()
+  }
+}
+
+package "Repository Interface" {
+  interface IOrderRepository {
+    +save(order: Order): ResultAsync
+    +findById(id: string): ResultAsync
+    +findByBuyerId(buyerId: string): ResultAsync
+    +update(order: Order): ResultAsync
+  }
+}
+
+package "Infrastructure Layer" {
+  class OrmOrderRepository {
+    -dataSource: DataSource
+    +save(order: Order): ResultAsync
+    +findById(id: string): ResultAsync
+    +findByBuyerId(buyerId: string): ResultAsync
+    +update(order: Order): ResultAsync
+  }
+
+  class OrderMapper {
+    +toDomain(orm: ORMOrder): Order
+    +toOrm(domain: Order): ORMOrder
+  }
+}
+
+package "Database Layer" {
+  class ORMOrder {
+    +id: string
+    +orderCode: string
+    +buyerId: string
+    +status: OrderStatus
+    ...
+  }
+}
+
+' Relationships
+OrderService --> IOrderRepository : uses
+OrmOrderRepository ..|> IOrderRepository : implements
+OrmOrderRepository --> OrderMapper : uses
+OrmOrderRepository --> ORMOrder : queries
+OrderMapper --> ORMOrder : maps
+
+note right of IOrderRepository
+  Interface định nghĩa contract
+  Service chỉ biết interface
+  Không biết implementation
+end note
+
+note right of OrmOrderRepository
+  Implementation cụ thể
+  Sử dụng TypeORM
+  Có thể thay bằng MongoDB, etc.
+end note
+
+@enduml

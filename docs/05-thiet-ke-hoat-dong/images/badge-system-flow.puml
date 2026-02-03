@@ -1,0 +1,130 @@
+@startuml badge-system-flow
+title Hệ thống Badge
+
+|Shop|
+start
+
+split
+  ' ========== PREFERRED BADGE (AUTO) ==========
+  -[#blue]->
+  |Cronjob Badge Eligibility|
+  #LightBlue:Chạy 0:00 hàng ngày;
+
+  :Lấy requirements của PREFERRED;
+  note right
+    Ví dụ requirements:
+    - averageRating >= 4.5
+    - orderSuccessRate >= 95%
+    - totalOrders >= 50
+    - responseTimeHours <= 24
+  end note
+
+  :Duyệt tất cả shops ACTIVE;
+
+  while (Còn shop?) is (Có)
+    :Lấy metrics của shop;
+    :So sánh với requirements;
+
+    if (Đạt tất cả?) then (Có)
+      if (Chưa có PREFERRED badge?) then (Chưa)
+        :Grant PREFERRED badge;
+        #LightGreen:status = ACTIVE;
+      endif
+    else (Không)
+      if (Đang có PREFERRED badge?) then (Có)
+        :Revoke PREFERRED badge;
+        #Pink:status = DISABLED;
+      endif
+    endif
+  endwhile (Không)
+
+  :Log results;
+
+split again
+  ' ========== APPROVED BADGE (MANUAL) ==========
+  -[#green]->
+  |Shop|
+  #LightGreen:Nộp đơn xin badge APPROVED;
+
+  :Upload documents;
+  note right
+    - Giấy phép kinh doanh
+    - Chứng nhận ATTP
+    - ...
+  end note
+
+  |Admin|
+  :Review đơn xin badge;
+  :Kiểm tra documents;
+
+  if (Hợp lệ?) then (Có)
+    :Approve application;
+    :Grant APPROVED badge;
+
+    if (Có thời hạn?) then (Có)
+      :Set expiresAt;
+    endif
+
+    #LightGreen:status = ACTIVE;
+  else (Không)
+    :Reject với lý do;
+    #Pink:status = REJECTED;
+  endif
+
+split again
+  ' ========== OFFICIAL BADGE (MANUAL) ==========
+  -[#orange]->
+  |Shop|
+  #Orange:Nộp đơn xin OFFICIAL cho brand;
+
+  :Upload giấy ủy quyền từ brand;
+
+  |Admin|
+  :Verify ủy quyền;
+
+  if (Hợp lệ?) then (Có)
+    :Approve application;
+    :Tạo shop_official_brand;
+    :Grant OFFICIAL badge;
+
+    :Cập nhật products của brand;
+    note right
+      products.isOfficialApproved = true
+    end note
+
+    #LightGreen:status = ACTIVE;
+  else (Không)
+    :Reject;
+    #Pink:status = REJECTED;
+  endif
+
+end split
+
+' ========== EXPIRY CHECK ==========
+|Cronjob Badge Expiry|
+#LightYellow:Chạy 1:00 AM hàng ngày;
+
+:Tìm APPROVED badges có expiresAt < now;
+
+while (Còn badge hết hạn?) is (Có)
+  :Disable badge;
+  #Pink:status = DISABLED
+  disabledReason = "expired";
+endwhile (Không)
+
+:Tìm official_brands có expiresAt < now;
+
+while (Còn brand hết hạn?) is (Có)
+  :Revoke official brand;
+  :Cập nhật products.isOfficialApproved = false;
+
+  :Kiểm tra shop còn official brand khác?;
+  if (Không còn?) then (Có)
+    :Disable OFFICIAL badge;
+    #Pink:status = DISABLED;
+  endif
+endwhile (Không)
+
+:Log results;
+stop
+@enduml

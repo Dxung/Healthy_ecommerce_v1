@@ -1,0 +1,126 @@
+@startuml use-case-diagram
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+
+title Biểu đồ Use-Case - Healthy Ecommerce
+
+actor "Khách\n(Guest)" as Guest
+actor "Người mua\n(Buyer)" as Buyer
+actor "Chủ shop\n(Seller)" as Seller
+actor "Admin" as Admin
+
+rectangle "Healthy Ecommerce" {
+  ' ========== GUEST USE CASES ==========
+  package "Duyệt sản phẩm" {
+    usecase "Xem danh sách SP" as UC1
+    usecase "Tìm kiếm SP" as UC2
+    usecase "Lọc theo danh mục" as UC3
+    usecase "Lọc theo allergen/diet" as UC4
+    usecase "Xem chi tiết SP" as UC5
+    usecase "Xem thông tin dinh dưỡng" as UC6
+    usecase "Xem đánh giá" as UC7
+  }
+
+  ' ========== BUYER USE CASES ==========
+  package "Tài khoản" {
+    usecase "Đăng ký (OTP)" as UC10
+    usecase "Đăng nhập" as UC11
+    usecase "Quản lý địa chỉ" as UC12
+  }
+
+  package "Mua hàng" {
+    usecase "Thêm vào giỏ" as UC13
+    usecase "Đặt hàng" as UC14
+    usecase "Thanh toán VNPay" as UC15
+    usecase "Theo dõi đơn hàng" as UC16
+    usecase "Hủy đơn hàng" as UC17
+    usecase "Xác nhận nhận hàng" as UC18
+    usecase "Đánh giá SP" as UC19
+  }
+
+  package "Ví & Xu" {
+    usecase "Nạp tiền vào ví" as UC20
+    usecase "Sử dụng xu" as UC21
+  }
+
+  package "Meal Plan" {
+    usecase "Ghi nhận bữa ăn" as UC30
+    usecase "Ghi nhận vận động" as UC31
+    usecase "Xem calories/ngày" as UC32
+    usecase "Quản lý Preset" as UC33
+  }
+
+  ' ========== SELLER USE CASES ==========
+  package "Quản lý Shop" {
+    usecase "Đăng ký shop" as UC40
+    usecase "Quản lý sản phẩm" as UC41
+    usecase "Quản lý đơn hàng" as UC42
+    usecase "Xác nhận giao hàng" as UC43
+    usecase "Phản hồi đánh giá" as UC45
+    usecase "Nộp đơn xin badge" as UC46
+    usecase "Quản lý ví shop" as UC47
+  }
+
+  ' ========== ADMIN USE CASES ==========
+  package "Quản trị hệ thống" {
+    usecase "Quản lý người dùng" as UC50
+    usecase "Quản lý shop" as UC51
+    usecase "Duyệt đăng ký shop" as UC52
+    usecase "Duyệt badge" as UC53
+    usecase "Quản lý danh mục" as UC54
+    usecase "Quản lý allergen/diet" as UC55
+    usecase "Cấu hình badge" as UC56
+  }
+}
+
+' ========== RELATIONSHIPS ==========
+' Guest
+Guest --> UC1
+Guest --> UC2
+Guest --> UC3
+Guest --> UC4
+Guest --> UC5
+Guest --> UC6
+Guest --> UC7
+
+' Buyer (includes Guest)
+Buyer --> UC10
+Buyer --> UC11
+Buyer --> UC12
+Buyer --> UC13
+Buyer --> UC14
+Buyer --> UC15
+Buyer --> UC16
+Buyer --> UC17
+Buyer --> UC18
+Buyer --> UC19
+Buyer --> UC20
+Buyer --> UC21
+Buyer --> UC30
+Buyer --> UC31
+Buyer --> UC32
+Buyer --> UC33
+
+' Seller
+Seller --> UC40
+Seller --> UC41
+Seller --> UC42
+Seller --> UC43
+Seller --> UC45
+Seller --> UC46
+Seller --> UC47
+
+' Admin
+Admin --> UC50
+Admin --> UC51
+Admin --> UC52
+Admin --> UC53
+Admin --> UC54
+Admin --> UC55
+Admin --> UC56
+
+' Inheritance
+Buyer --|> Guest
+
+@enduml

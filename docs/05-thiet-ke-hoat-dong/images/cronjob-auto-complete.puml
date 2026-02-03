@@ -1,0 +1,71 @@
+@startuml cronjob-auto-complete
+title Cronjob: Order Auto Complete
+footer Chạy lúc 2:00 AM hàng ngày (Asia/Ho_Chi_Minh)
+
+|Cronjob|
+start
+:Bắt đầu Order Auto Complete;
+:Log "Starting order auto-complete processing...";
+
+:Lấy config autoCompleteDays;
+note right: Mặc định 3 ngày
+
+if (Lấy config thành công?) then (Không)
+  :Log error;
+  stop
+endif
+
+:Tìm orders cần auto-complete;
+note right
+  Điều kiện:
+  - status = SHIPPING
+  - shippedAt < (now - N days)
+end note
+
+if (Có orders?) then (Không)
+  :Log "No orders to auto-complete";
+  stop
+endif
+
+:Log "Found X order(s) to process";
+
+while (Còn order chưa xử lý?) is (Có)
+  |Transaction|
+  :Bắt đầu UoW Transaction;
+
+  :Lấy order với lock;
+
+  :Cập nhật order status = COMPLETED;
+  :Cập nhật completedAt = now();
+
+  :Tính coinEarned;
+  note right
+    coinEarned = subtotal × coinMultiplier
+    coinMultiplier phụ thuộc buyer tier
+  end note
+
+  :Credit xu vào buyer coin wallet;
+  note right
+    coinWallet.balance += coinEarned
+    Tạo coin_transaction
+  end note
+
+  :Release Escrow;
+  note right
+    shopReceives = subtotal - platformFee + shippingFee
+    platformReceives = platformFee
+  end note
+
+  :Credit tiền vào Shop wallet;
+  :Credit platformFee vào Platform wallet;
+  :Cập nhật escrow status = RELEASED;
+
+  :Commit Transaction;
+
+  |Cronjob|
+  :Log "Auto-completed order: {orderId}";
+endwhile (Không)
+
+:Log "Successfully auto-completed X order(s)";
+stop
+@enduml

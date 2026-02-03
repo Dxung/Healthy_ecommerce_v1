@@ -26,17 +26,19 @@ export interface VnpayReturnHandlerResult {
 
 export interface IPaymentService {
   /**
-   * Create payment transaction for order and generate VNPay URL
-   * @param orderId - Order ID
+   * Create payment transaction for order(s) and generate VNPay URL
+   * @param orderId - Primary order ID (for backward compatibility and indexing)
    * @param amount - Payment amount
    * @param ipAddress - Client IP address
    * @param orderCreatedAt - Order creation time (for timeout validation)
+   * @param allOrderIds - All order IDs (for multi-shop checkout)
    */
   createOrderPayment(
     orderId: string,
     amount: number,
     ipAddress: string,
     orderCreatedAt?: Date,
+    allOrderIds?: string[],
   ): ResultAsync<CreateOrderPaymentResult, DomainError>;
 
   /**

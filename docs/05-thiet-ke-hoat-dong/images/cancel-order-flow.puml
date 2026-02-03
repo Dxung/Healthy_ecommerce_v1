@@ -1,0 +1,72 @@
+@startuml cancel-order-flow
+title Luồng Hủy Đơn Hàng
+
+|Buyer|
+start
+:Yêu cầu hủy đơn hàng;
+:Nhập lý do hủy;
+
+|Backend|
+:Kiểm tra order status;
+
+if (Status = PENDING?) then (Có)
+  :Bắt đầu Transaction;
+
+  :Cập nhật order:;
+  note right
+    status = CANCELLED
+    cancelledAt = now()
+    cancelledBy = BUYER
+    cancelReason = input
+  end note
+
+  :Khôi phục stock sản phẩm;
+  note right
+    Với mỗi order item:
+    variant.stockQuantity += quantity
+  end note
+
+  if (Đã thanh toán?) then (Có)
+    if (Có EscrowHold?) then (Có)
+      :Cập nhật escrow:;
+      note right
+        status = REFUNDED
+      end note
+    endif
+
+    :Hoàn tiền vào ví buyer;
+    note right
+      wallet.balance += totalAmount
+      Tạo wallet_transaction:
+      type = REFUND_RECEIVED
+    end note
+  endif
+
+  if (Đã dùng xu?) then (Có)
+    :Hoàn xu vào coin wallet;
+    note right
+      coinWallet.balance += coinUsed
+      Tạo coin_transaction:
+      type = REFUNDED
+    end note
+  endif
+
+  :Commit Transaction;
+
+  |Buyer|
+  :Hiển thị "Hủy đơn thành công";
+
+else (Không - đã CONFIRMED/SHIPPING)
+  |Backend|
+  :Return error;
+
+  |Buyer|
+  :Hiển thị "Không thể hủy";
+  note right
+    Đơn hàng đã được xác nhận
+    hoặc đang giao không thể hủy
+  end note
+endif
+
+stop
+@enduml

@@ -1,0 +1,129 @@
+@startuml erd-badge
+!theme plain
+skinparam linetype ortho
+
+title ERD - Badge System
+
+entity "shops" as shop {
+  *id : UUID <<PK>>
+  --
+  name : VARCHAR(255)
+  averageRating : DECIMAL
+  orderSuccessRate : DECIMAL
+  totalOrders : INTEGER
+}
+
+entity "shop_badges" as badge {
+  *id : UUID <<PK>>
+  --
+  code : ENUM <<UNIQUE>>
+  name : VARCHAR(100)
+  type : ENUM
+  isActive : BOOLEAN
+}
+
+note right of badge
+  Badge codes:
+  - PREFERRED (auto)
+  - APPROVED (manual)
+  - OFFICIAL (manual)
+end note
+
+entity "badge_requirements" as requirement {
+  *id : UUID <<PK>>
+  --
+  *badgeCode : ENUM <<FK>>
+  requirementType : ENUM
+  --
+  documentTypeId : UUID <<FK>>
+  --
+  attributeCode : ENUM
+  operator : ENUM
+  attributeValue : VARCHAR
+  --
+  isActive : BOOLEAN
+}
+
+note right of requirement
+  Requirement types:
+  - document: need to upload
+  - attribute: auto-checked
+
+  Operators: >, >=, <, <=, =
+end note
+
+entity "badge_document_types" as docType {
+  *id : UUID <<PK>>
+  --
+  code : VARCHAR(50) <<UNIQUE>>
+  name : VARCHAR(100)
+  description : TEXT
+  isActive : BOOLEAN
+}
+
+entity "shop_badge_assignments" as assignment {
+  *id : UUID <<PK>>
+  --
+  *shopId : UUID <<FK>>
+  *badgeCode : ENUM <<FK>>
+  status : ENUM
+  grantedAt : TIMESTAMP
+  expiresAt : TIMESTAMP
+  disabledAt : TIMESTAMP
+  disabledReason : TEXT
+}
+
+entity "badge_applications" as application {
+  *id : UUID <<PK>>
+  --
+  *shopId : UUID <<FK>>
+  *badgeCode : ENUM <<FK>>
+  status : ENUM
+  reviewNote : TEXT
+  reviewedAt : TIMESTAMP
+  reviewedBy : UUID <<FK>>
+  createdAt : TIMESTAMP
+}
+
+entity "badge_application_documents" as appDoc {
+  *id : UUID <<PK>>
+  --
+  *applicationId : UUID <<FK>>
+  *documentTypeId : UUID <<FK>>
+  documentUrl : VARCHAR(500)
+}
+
+entity "shop_official_brands" as officialBrand {
+  *id : UUID <<PK>>
+  --
+  *shopId : UUID <<FK>>
+  *brandId : UUID <<FK>>
+  grantedAt : TIMESTAMP
+  expiresAt : TIMESTAMP
+  revokedAt : TIMESTAMP
+  revokedReason : TEXT
+}
+
+entity "brands" as brand {
+  *id : UUID <<PK>>
+  --
+  name : VARCHAR(255)
+}
+
+' Relationships
+badge ||--o{ requirement : "has"
+badge ||--o{ assignment : "assigned"
+badge ||--o{ application : "applied"
+
+requirement }o--o| docType : "requires"
+
+shop ||--o{ assignment : "has"
+shop ||--o{ application : "submits"
+shop ||--o{ officialBrand : "represents"
+
+application ||--o{ appDoc : "includes"
+appDoc }o--|| docType : "of type"
+
+officialBrand }o--|| brand : "for"
+
+@enduml

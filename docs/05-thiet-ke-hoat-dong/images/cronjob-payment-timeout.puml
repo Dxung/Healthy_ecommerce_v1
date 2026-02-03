@@ -1,0 +1,73 @@
+@startuml cronjob-payment-timeout
+title Cronjob: Order Payment Timeout Check
+footer Chạy mỗi 10 phút (Asia/Ho_Chi_Minh)
+
+|Cronjob|
+start
+:Bắt đầu Payment Timeout Check;
+:Log "Starting pending orders payment check...";
+
+:Tìm orders cần kiểm tra;
+note right
+  Điều kiện:
+  - status = PENDING
+  - paymentStatus = PENDING
+  - createdAt < (now - 15 minutes)
+end note
+
+if (Có orders?) then (Không)
+  :Log "No pending orders to check";
+  stop
+endif
+
+:Log "Found X pending order(s) to check";
+
+while (Còn order chưa xử lý?) is (Có)
+  :Lấy Payment Transaction của order;
+
+  if (Có transaction?) then (Có)
+    |VNPay API|
+    :Query VNPay API;
+    note right
+      txnRef = transaction.vnpayTxnRef
+      transactionDate = transaction.createdAt
+    end note
+
+    |Cronjob|
+    if (VNPay trả về SUCCESS?) then (Có)
+      :Log "VNPay confirms payment success";
+      :Xử lý payment success;
+      note right
+        - Cập nhật transaction
+        - Tạo EscrowHold
+        - Cập nhật order status
+      end note
+      :Đánh dấu: PAID;
+    else (Không)
+      :Kiểm tra tuổi order;
+    endif
+  else (Không)
+    :Kiểm tra tuổi order;
+  endif
+
+  :Tính orderAge (phút);
+
+  if (orderAge >= 30 phút?) then (Có)
+    :Log "Order exceeded timeout, cancelling";
+    :Hủy đơn hàng;
+    note right
+      - status = CANCELLED
+      - cancelReason = "Payment timeout"
+      - Khôi phục stock
+    end note
+    :Đánh dấu: CANCELLED;
+  else (Không)
+    :Log "Order not yet timed out";
+    :Đánh dấu: PENDING;
+  endif
+
+endwhile (Không)
+
+:Log "Processed X: Y paid, Z cancelled";
+stop
+@enduml

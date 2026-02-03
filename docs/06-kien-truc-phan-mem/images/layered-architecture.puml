@@ -1,0 +1,81 @@
+@startuml layered-architecture
+!theme plain
+skinparam componentStyle rectangle
+
+title Kiến trúc phần mềm - Layered Architecture
+
+package "Presentation Layer" {
+  [Controllers] as ctrl
+  [DTOs] as dto
+  [Guards] as guard
+  [Pipes] as pipe
+
+  note right of ctrl
+    - AdminProductController
+    - PublicProductController
+    - ShopProductController
+    - OrderController
+    - PaymentController
+  end note
+}
+
+package "Application Layer" {
+  [Services] as svc
+  [Service Interfaces] as svcInt
+  [Domain Models] as model
+  [Domain Errors] as err
+
+  note right of svc
+    - OrderService
+    - PaymentService
+    - WalletService
+    - EscrowService
+    - BadgeBenefitsService
+  end note
+}
+
+package "Infrastructure Layer" {
+  [Repositories] as repo
+  [Repository Interfaces] as repoInt
+  [External Services] as ext
+  [Unit of Work] as uow
+
+  note right of ext
+    - VnpayService
+    - CloudinaryService
+    - FirebaseService
+  end note
+}
+
+package "Database Layer" {
+  [TypeORM Entities] as entity
+  database "PostgreSQL" as db
+
+  note right of entity
+    - ORMOrder
+    - ORMProduct
+    - ORMWallet
+    - ORMShop
+  end note
+}
+
+' Connections
+ctrl --> dto : uses
+ctrl --> guard : protected by
+ctrl --> pipe : validated by
+ctrl --> svcInt : calls
+
+svc ..|> svcInt : implements
+svc --> model : uses
+svc --> err : returns
+svc --> repoInt : uses
+svc --> uow : transaction
+
+repo ..|> repoInt : implements
+repo --> entity : maps
+
+entity --> db : persisted
+
+ext --> db : may access
+
+@enduml
