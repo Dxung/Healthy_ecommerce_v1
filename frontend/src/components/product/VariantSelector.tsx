@@ -55,58 +55,46 @@ export function VariantSelector({
   return (
     <div className="space-y-4">
       {/* Variants */}
-      {variants.length > 1 && (
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Phân loại</label>
-          <div className="flex flex-wrap gap-2">
-            {variants.map((variant) => {
-              const isAvailable = variant.isActive && variant.stockQuantity > 0;
-              const isSelected = variant.id === selectedVariantId;
+      <div className="space-y-2">
+        <label className="text-sm font-medium text-gray-700">Phân loại</label>
+        <div className="flex flex-wrap gap-2">
+          {variants.map((variant) => {
+            const isAvailable = variant.isActive && variant.stockQuantity > 0;
+            const isSelected = variant.id === selectedVariantId;
 
-              return (
-                <button
-                  key={variant.id}
-                  onClick={() => isAvailable && onSelect(variant.id)}
-                  onMouseEnter={() => isAvailable && variant.imageUrl && onHover?.(variant.id)}
-                  onMouseLeave={() => onHover?.(null)}
-                  disabled={!isAvailable}
-                  className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
-                    isSelected
-                      ? 'border-primary bg-primary/10 text-primary font-medium'
-                      : isAvailable
-                      ? 'border-gray-300 hover:border-primary'
-                      : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    {variant.imageUrl && (
-                      <img
-                        src={variant.imageUrl}
-                        alt=""
-                        className="w-6 h-6 rounded object-cover"
-                      />
-                    )}
-                    <span>{variant.name}</span>
-                  </div>
-                  {!isAvailable && (
-                    <span className="text-xs text-red-500 block">Hết hàng</span>
+            return (
+              <button
+                key={variant.id}
+                onClick={() => isAvailable && onSelect(variant.id)}
+                onMouseEnter={() => isAvailable && variant.imageUrl && onHover?.(variant.id)}
+                onMouseLeave={() => onHover?.(null)}
+                disabled={!isAvailable}
+                className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+                  isSelected
+                    ? 'border-primary bg-primary/10 text-primary font-medium'
+                    : isAvailable
+                    ? 'border-gray-300 hover:border-primary'
+                    : 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {variant.imageUrl && (
+                    <img
+                      src={variant.imageUrl}
+                      alt=""
+                      className="w-6 h-6 rounded object-cover"
+                    />
                   )}
-                </button>
-              );
-            })}
-          </div>
+                  <span>{variant.name}</span>
+                </div>
+                {!isAvailable && (
+                  <span className="text-xs text-red-500 block">Hết hàng</span>
+                )}
+              </button>
+            );
+          })}
         </div>
-      )}
-
-      {/* Single variant info */}
-      {variants.length === 1 && (
-        <div className="text-sm text-gray-600">
-          <span className="font-medium">{variants[0].name}</span>
-          {variants[0].stockQuantity === 0 && (
-            <span className="ml-2 text-red-500">(Hết hàng)</span>
-          )}
-        </div>
-      )}
+      </div>
 
       {/* Quantity */}
       <div className="space-y-2">

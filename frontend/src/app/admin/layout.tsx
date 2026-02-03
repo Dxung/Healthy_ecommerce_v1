@@ -7,7 +7,6 @@ import { Footer } from '@/components/layout/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Store,
-  Package,
   ShoppingCart,
   Settings,
   ChevronDown,
@@ -92,20 +91,16 @@ const buildNavItems = (isSuperAdmin: boolean): NavItem[] => {
       href: '/admin/wallet',
     },
     {
-      label: 'Quản lý sản phẩm',
-      icon: <Package className="w-5 h-5" />,
+      label: 'Cài đặt hệ thống',
+      icon: <Settings className="w-5 h-5" />,
       children: [
+        { label: 'Cấu hình chung', href: '/admin/settings' },
         { label: 'Đơn vị đo lường', href: '/admin/product/units' },
         { label: 'Quản lý nhãn dị ứng', href: '/admin/product/allergens' },
         { label: 'Quản lý nhãn chế độ ăn', href: '/admin/product/diet-tags' },
         { label: 'Quản lý danh mục', href: '/admin/product/categories' },
         { label: 'Quản lý thương hiệu', href: '/admin/product/brands' },
       ],
-    },
-    {
-      label: 'Cài đặt hệ thống',
-      icon: <Settings className="w-5 h-5" />,
-      href: '/admin/settings',
     },
   ];
 };
