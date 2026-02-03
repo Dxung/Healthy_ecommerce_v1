@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { DataSource, LessThan, IsNull } from 'typeorm';
+import { DataSource, LessThan, IsNull, Not, And } from 'typeorm';
 import { ShopBadgeCode } from 'src/database/typeorm/entities/shop/enums/shop-badge-code.enum';
 import { ShopBadgeStatus } from 'src/database/typeorm/entities/shop/enums/shop-badge-status.enum';
 import {
@@ -46,17 +46,19 @@ export class BadgeExpiryCronjob {
 
   /**
    * Checks and disables expired Verified (APPROVED) badges.
+   * Only checks badges that have an expiresAt date (not null/permanent).
    */
   private async checkVerifiedBadgeExpiry(): Promise<void> {
     const badgeRepo = this.dataSource.getRepository(ORMShopBadgeAssignment);
     const now = new Date();
 
     // Find all active APPROVED badges that have expired
+    // Only check badges with non-null expiresAt (permanent badges never expire)
     const expiredBadges = await badgeRepo.find({
       where: {
         badgeCode: ShopBadgeCode.APPROVED,
         status: ShopBadgeStatus.ACTIVE,
-        expiresAt: LessThan(now),
+        expiresAt: And(Not(IsNull()), LessThan(now)),
       },
     });
 
@@ -93,10 +95,11 @@ export class BadgeExpiryCronjob {
     const now = new Date();
 
     // Find all non-revoked official brands that have expired
+    // Only check brands with non-null expiresAt (permanent brands never expire)
     const expiredBrands = await officialBrandRepo.find({
       where: {
         revokedAt: IsNull(),
-        expiresAt: LessThan(now),
+        expiresAt: And(Not(IsNull()), LessThan(now)),
       },
     });
 
@@ -149,7 +152,10 @@ export class BadgeExpiryCronjob {
         },
       });
 
-      const hasActive = activeOfficialBrands.some((b) => b.expiresAt > now);
+      // A brand is active if it has no expiry (permanent) or expiry is in the future
+      const hasActive = activeOfficialBrands.some(
+        (b) => b.expiresAt === null || b.expiresAt > now,
+      );
 
       if (!hasActive) {
         // No more active official brands - disable OFFICIAL badge

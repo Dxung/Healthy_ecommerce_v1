@@ -197,7 +197,8 @@ export default function CheckoutPage() {
           <OrderSummary
             totalItems={checkoutData.totalQuantity}
             subtotal={checkoutData.subtotal}
-            total={checkoutData.subtotal}
+            shippingFee={checkoutData.totalShippingFee}
+            total={checkoutData.subtotal + checkoutData.totalShippingFee}
             onSubmit={handleSubmit}
             isSubmitting={submitting}
             canSubmit={canSubmit}

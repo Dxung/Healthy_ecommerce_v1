@@ -72,11 +72,14 @@ export class ShopBadgeAssignment {
   }
 
   /**
-   * Creates a new APPROVED badge with expiration.
+   * Creates a new APPROVED badge with optional expiration.
    * @param shopId - The shop to assign the badge to
-   * @param expiresAt - Expiration date of the badge
+   * @param expiresAt - Expiration date of the badge, or null for permanent
    */
-  static createApproved(shopId: string, expiresAt: Date): ShopBadgeAssignment {
+  static createApproved(
+    shopId: string,
+    expiresAt: Date | null,
+  ): ShopBadgeAssignment {
     const id = uuidv7();
     const now = new Date();
 
@@ -98,12 +101,12 @@ export class ShopBadgeAssignment {
    * Creates a new OFFICIAL badge for a specific brand.
    * @param shopId - The shop to assign the badge to
    * @param brandId - The brand this badge is for
-   * @param expiresAt - Expiration date of the badge
+   * @param expiresAt - Expiration date of the badge, or null for permanent
    */
   static createOfficial(
     shopId: string,
     brandId: string,
-    expiresAt: Date,
+    expiresAt: Date | null,
   ): ShopBadgeAssignment {
     const id = uuidv7();
     const now = new Date();

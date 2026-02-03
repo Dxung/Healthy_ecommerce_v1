@@ -26,6 +26,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { ApplyOfficialBadgeModal } from '@/components/shop/ApplyOfficialBadgeModal';
+import { ApplyVerifiedBadgeModal } from '@/components/shop/ApplyVerifiedBadgeModal';
 
 type TabType = 'badges' | 'applications' | 'official-brands';
 
@@ -63,7 +64,8 @@ export default function ShopBadgesPage() {
   const [officialBrands, setOfficialBrands] = useState<ShopOfficialBrandResponse[]>([]);
   const [applications, setApplications] = useState<BadgeApplicationResponse[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showApplyOfficialModal, setShowApplyOfficialModal] = useState(false);
+  const [showApplyVerifiedModal, setShowApplyVerifiedModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -227,9 +229,13 @@ export default function ShopBadgesPage() {
                   <p className="text-sm text-gray-600 mt-1">
                     Xác thực giấy tờ hợp lệ để nhận huy hiệu "Shop Xác thực" và tăng độ tin cậy với khách hàng.
                   </p>
-                  <Button className="mt-4" variant="outline" disabled>
+                  <Button
+                    className="mt-4"
+                    variant="outline"
+                    onClick={() => setShowApplyVerifiedModal(true)}
+                  >
                     <Shield className="w-4 h-4 mr-2" />
-                    Sắp ra mắt
+                    Đăng ký ngay
                   </Button>
                 </div>
               </div>
@@ -255,7 +261,7 @@ export default function ShopBadgesPage() {
               <p className="text-sm text-gray-400 mt-1">
                 Đăng ký để trở thành đại lý chính thức của thương hiệu
               </p>
-              <Button onClick={() => setShowApplyModal(true)} className="mt-4">
+              <Button onClick={() => setShowApplyOfficialModal(true)} className="mt-4">
                 <Plus className="w-4 h-4 mr-2" />
                 Đăng ký ngay
               </Button>
@@ -382,12 +388,23 @@ export default function ShopBadgesPage() {
         </div>
       )}
 
-      {/* Apply Modal */}
-      {showApplyModal && (
+      {/* Apply Official Badge Modal */}
+      {showApplyOfficialModal && (
         <ApplyOfficialBadgeModal
-          onClose={() => setShowApplyModal(false)}
+          onClose={() => setShowApplyOfficialModal(false)}
           onSuccess={() => {
-            setShowApplyModal(false);
+            setShowApplyOfficialModal(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* Apply Verified Badge Modal */}
+      {showApplyVerifiedModal && (
+        <ApplyVerifiedBadgeModal
+          onClose={() => setShowApplyVerifiedModal(false)}
+          onSuccess={() => {
+            setShowApplyVerifiedModal(false);
             fetchData();
           }}
         />

@@ -13,13 +13,15 @@ import { BADGE_APPLICATION_ERRORS } from '../errors/badge-application.errors';
  * When a shop gets OFFICIAL badge approved for a brand, this record is created.
  */
 export class ShopOfficialBrand {
+  private _brandName?: string;
+
   constructor(
     private readonly _id: string,
     private readonly _shopId: string,
     private readonly _brandId: string,
     private readonly _applicationId: string | null,
     private readonly _grantedAt: Date,
-    private readonly _expiresAt: Date,
+    private readonly _expiresAt: Date | null,
     private _revokedAt: Date | null,
     private _revokedReason: string | null,
   ) {}
@@ -28,12 +30,13 @@ export class ShopOfficialBrand {
 
   /**
    * Creates a new shop official brand record.
+   * @param expiresAt - The expiration date, or null for permanent authorization
    */
   static create(
     shopId: string,
     brandId: string,
     applicationId: string,
-    expiresAt: Date,
+    expiresAt: Date | null,
   ): ShopOfficialBrand {
     const id = uuidv7();
     const now = new Date();
@@ -54,6 +57,7 @@ export class ShopOfficialBrand {
 
   /**
    * Checks if this official brand status is currently active.
+   * Active means not revoked and not expired (or has no expiry).
    */
   public isActive(): boolean {
     return this._revokedAt === null && !this.isExpired();
@@ -68,8 +72,12 @@ export class ShopOfficialBrand {
 
   /**
    * Checks if this official brand status has expired.
+   * Returns false if expiresAt is null (permanent, never expires).
    */
   public isExpired(): boolean {
+    if (this._expiresAt === null) {
+      return false; // Permanent, never expires
+    }
     return this._expiresAt < new Date();
   }
 
@@ -99,6 +107,13 @@ export class ShopOfficialBrand {
     return ok(undefined);
   }
 
+  /**
+   * Sets brand name (for response mapping).
+   */
+  public setBrandName(brandName: string): void {
+    this._brandName = brandName;
+  }
+
   // ======================== GETTERS ========================
 
   public get id(): string {
@@ -113,6 +128,10 @@ export class ShopOfficialBrand {
     return this._brandId;
   }
 
+  public get brandName(): string | undefined {
+    return this._brandName;
+  }
+
   public get applicationId(): string | null {
     return this._applicationId;
   }
@@ -121,7 +140,7 @@ export class ShopOfficialBrand {
     return this._grantedAt;
   }
 
-  public get expiresAt(): Date {
+  public get expiresAt(): Date | null {
     return this._expiresAt;
   }
 

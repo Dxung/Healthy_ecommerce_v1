@@ -22,8 +22,10 @@ export class ShopOfficialBrandResponseDto {
   @ApiProperty({ description: 'Date when official status was granted' })
   grantedAt: Date;
 
-  @ApiProperty({ description: 'Expiration date of official status' })
-  expiresAt: Date;
+  @ApiPropertyOptional({
+    description: 'Expiration date of official status (null = permanent)',
+  })
+  expiresAt: Date | null;
 
   @ApiPropertyOptional({ description: 'Date when official status was revoked' })
   revokedAt: Date | null;

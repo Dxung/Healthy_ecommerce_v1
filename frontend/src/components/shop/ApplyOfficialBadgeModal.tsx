@@ -11,13 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   apiClient,
   type BrandResponse,
   type DocumentTypeResponse,
   type ApiError,
 } from '@/lib/api';
-import { Loader2, Building2, FileText, Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
+import { Loader2, Building2, Upload, X, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ApplyOfficialBadgeModalProps {
@@ -30,6 +31,7 @@ interface DocumentUpload {
   documentTypeName: string;
   imageUrl: string;
   expiresAt: string;
+  noExpiry: boolean;
 }
 
 export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBadgeModalProps) {
@@ -63,6 +65,7 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
           documentTypeName: req.name,
           imageUrl: '',
           expiresAt: '',
+          noExpiry: false,
         }))
       );
     } catch (err) {
@@ -106,6 +109,14 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
     ));
   };
 
+  const handleNoExpiryChange = (documentTypeId: string, noExpiry: boolean) => {
+    setDocuments(prev => prev.map(doc =>
+      doc.documentTypeId === documentTypeId
+        ? { ...doc, noExpiry, expiresAt: noExpiry ? '' : doc.expiresAt }
+        : doc
+    ));
+  };
+
   const handleRemoveImage = (documentTypeId: string) => {
     setDocuments(prev => prev.map(doc =>
       doc.documentTypeId === documentTypeId
@@ -114,7 +125,10 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
     ));
   };
 
-  const isDocumentsComplete = documents.every(doc => doc.imageUrl && doc.expiresAt);
+  // Document is complete if it has imageUrl and either has expiresAt or noExpiry is checked
+  const isDocumentsComplete = documents.every(doc =>
+    doc.imageUrl && (doc.expiresAt || doc.noExpiry)
+  );
 
   const handleSubmit = async () => {
     if (!selectedBrandId) {
@@ -134,7 +148,7 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
         documents: documents.map(doc => ({
           documentTypeId: doc.documentTypeId,
           imageUrl: doc.imageUrl,
-          expiresAt: doc.expiresAt,
+          expiresAt: doc.noExpiry ? null : doc.expiresAt,
         })),
       });
 
@@ -370,15 +384,35 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
                         )}
 
                         {/* Expiry Date */}
-                        <div>
-                          <Label className="text-sm">Ngày hết hạn giấy tờ</Label>
-                          <Input
-                            type="date"
-                            min={minExpiryDateStr}
-                            value={doc.expiresAt}
-                            onChange={(e) => handleExpiryChange(doc.documentTypeId, e.target.value)}
-                            className="mt-1"
-                          />
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`no-expiry-${doc.documentTypeId}`}
+                              checked={doc.noExpiry}
+                              onCheckedChange={(checked) =>
+                                handleNoExpiryChange(doc.documentTypeId, checked === true)
+                              }
+                            />
+                            <label
+                              htmlFor={`no-expiry-${doc.documentTypeId}`}
+                              className="text-sm text-gray-600 cursor-pointer"
+                            >
+                              Không có hạn sử dụng (vĩnh viễn)
+                            </label>
+                          </div>
+
+                          {!doc.noExpiry && (
+                            <div>
+                              <Label className="text-sm">Ngày hết hạn giấy tờ</Label>
+                              <Input
+                                type="date"
+                                min={minExpiryDateStr}
+                                value={doc.expiresAt}
+                                onChange={(e) => handleExpiryChange(doc.documentTypeId, e.target.value)}
+                                className="mt-1"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         {/* Sample Image */}
@@ -450,7 +484,10 @@ export function ApplyOfficialBadgeModal({ onClose, onSuccess }: ApplyOfficialBad
                           <CheckCircle className="w-4 h-4 text-green-500" />
                           <span className="text-sm text-gray-700">{doc.documentTypeName}</span>
                           <span className="text-xs text-gray-400">
-                            (HH: {new Date(doc.expiresAt).toLocaleDateString('vi-VN')})
+                            {doc.noExpiry
+                              ? '(Không có hạn)'
+                              : `(HH: ${new Date(doc.expiresAt).toLocaleDateString('vi-VN')})`
+                            }
                           </span>
                         </div>
                       ))}

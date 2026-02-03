@@ -11,10 +11,14 @@ export class CartShopGroupResponseDto {
   items: CartItemResponseDto[];
   shopSubtotal: number;
   selectedCount: number;
+  shippingFee: number;
+  isFreeShipping: boolean;
 
   constructor(
     shop: { id: string; name: string; slug: string; logoUrl: string | null },
     items: CartItemWithDetails[],
+    shippingFeeDefault?: number,
+    shippingFreeThreshold?: number,
   ) {
     this.shop = shop;
     this.items = items.map((item) => new CartItemResponseDto(item));
@@ -26,5 +30,15 @@ export class CartShopGroupResponseDto {
       0,
     );
     this.selectedCount = selectedItems.length;
+
+    // Calculate shipping fee for this shop
+    if (shippingFeeDefault !== undefined && shippingFreeThreshold !== undefined) {
+      this.isFreeShipping = this.shopSubtotal >= shippingFreeThreshold;
+      this.shippingFee = this.isFreeShipping ? 0 : shippingFeeDefault;
+    } else {
+      // Default values when not in checkout context
+      this.isFreeShipping = false;
+      this.shippingFee = 0;
+    }
   }
 }

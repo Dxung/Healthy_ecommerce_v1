@@ -69,6 +69,7 @@ const buildNavItems = (isSuperAdmin: boolean): NavItem[] => {
       children: [
         { label: 'Danh sách Shop', href: '/admin/shop/shops' },
         { label: 'Đơn đăng ký Shop', href: '/admin/shop/registrations' },
+        { label: 'Đơn đăng ký Badge', href: '/admin/shop/badge-applications' },
         {
           label: 'Cấu hình huy hiệu shop',
           children: [

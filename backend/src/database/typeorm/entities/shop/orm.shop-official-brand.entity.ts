@@ -40,9 +40,9 @@ export class ORMShopOfficialBrand {
   })
   grantedAt: Date;
 
-  /** Expiration date (earliest expiry from documents) */
-  @Column({ name: 'expires_at', type: 'timestamp' })
-  expiresAt: Date;
+  /** Expiration date (earliest expiry from documents, null = permanent) */
+  @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
+  expiresAt: Date | null;
 
   @Column({ name: 'revoked_at', type: 'timestamp', nullable: true })
   revokedAt: Date | null;

@@ -11,12 +11,13 @@ import {
 export class ORMBadgeApplicationMapper {
   /**
    * Converts an ORM entity to a domain model.
+   * Optionally populates shop name and brand name from relations.
    */
   static toDomain(orm: ORMBadgeApplication): BadgeApplication {
     const documents =
       orm.documents?.map((doc) => this.documentToDomain(doc)) ?? [];
 
-    return new BadgeApplication(
+    const application = new BadgeApplication(
       orm.id,
       orm.shopId,
       orm.applicationType,
@@ -29,6 +30,18 @@ export class ORMBadgeApplicationMapper {
       orm.updatedAt,
       documents,
     );
+
+    // Populate shop name if relation is loaded
+    if (orm.shop) {
+      application.setShopName(orm.shop.name);
+    }
+
+    // Populate brand name if relation is loaded
+    if (orm.brand) {
+      application.setBrandName(orm.brand.name);
+    }
+
+    return application;
   }
 
   /**
@@ -55,6 +68,7 @@ export class ORMBadgeApplicationMapper {
 
   /**
    * Converts document ORM to domain.
+   * Includes document type name if relation is loaded.
    */
   static documentToDomain(
     orm: ORMBadgeApplicationDocument,
@@ -63,6 +77,7 @@ export class ORMBadgeApplicationMapper {
       id: orm.id,
       applicationId: orm.applicationId,
       documentTypeId: orm.documentTypeId,
+      documentTypeName: orm.documentType?.name,
       imageUrl: orm.imageUrl,
       expiresAt: orm.expiresAt,
       createdAt: orm.createdAt,

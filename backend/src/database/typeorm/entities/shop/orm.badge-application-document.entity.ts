@@ -29,9 +29,9 @@ export class ORMBadgeApplicationDocument {
   @Column({ name: 'image_url', type: 'varchar', length: 500 })
   imageUrl: string;
 
-  /** Expiration date of the document (required) */
-  @Column({ name: 'expires_at', type: 'timestamp' })
-  expiresAt: Date;
+  /** Expiration date of the document (null = permanent/no expiry) */
+  @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
+  expiresAt: Date | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt: Date;

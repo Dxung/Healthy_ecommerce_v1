@@ -146,7 +146,7 @@ export class BadgeApplicationService implements IBadgeApplicationService {
             dto.documents.map((doc) => ({
               documentTypeId: doc.documentTypeId,
               imageUrl: doc.imageUrl,
-              expiresAt: new Date(doc.expiresAt),
+              expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null,
             }));
 
           const application = BadgeApplication.createVerified(
@@ -210,7 +210,7 @@ export class BadgeApplicationService implements IBadgeApplicationService {
                   dto.documents.map((doc) => ({
                     documentTypeId: doc.documentTypeId,
                     imageUrl: doc.imageUrl,
-                    expiresAt: new Date(doc.expiresAt),
+                    expiresAt: doc.expiresAt ? new Date(doc.expiresAt) : null,
                   }));
 
                 const application = BadgeApplication.createOfficial(

@@ -10,8 +10,11 @@ import {
 } from './cart.service.interface';
 import { ICartRepository } from './repository/cart.repository.interface';
 import { IPublicProductService } from '../product/public-product.service.interface';
+import { ISystemConfigService } from '../system-config/system-config.service.interface';
 import { CART_REPOSITORY } from 'src/database/typeorm/tokens/database.token';
 import { PUBLIC_PRODUCT_SERVICE } from '../product/tokens/product.token';
+import { SYSTEM_CONFIG_SERVICE } from '../system-config/tokens/system-config.token';
+import { SHIPPING_FEE_DEFAULT } from '../order/constants/order.constants';
 import { CartItem } from './models/cart-item.model';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
 import {
@@ -32,6 +35,8 @@ export class CartService implements ICartService {
     private readonly cartRepository: ICartRepository,
     @Inject(PUBLIC_PRODUCT_SERVICE)
     private readonly productService: IPublicProductService,
+    @Inject(SYSTEM_CONFIG_SERVICE)
+    private readonly systemConfigService: ISystemConfigService,
   ) {}
 
   private getUserId(): string | undefined {
@@ -474,7 +479,8 @@ export class CartService implements ICartService {
         ResultAsync.combine([
           this.cartRepository.findCartItemsWithDetails(cart.id),
           this.cartRepository.findInactiveItemIds(cart.id),
-        ]).andThen(([itemsWithDetails, inactiveIds]) => {
+          this.systemConfigService.getShippingFreeThreshold(),
+        ]).andThen(([itemsWithDetails, inactiveIds, shippingFreeThreshold]) => {
           const selectedItems = itemsWithDetails.filter(
             (item) => item.cartItem.isSelected,
           );
@@ -486,6 +492,8 @@ export class CartService implements ICartService {
           return okAsync({
             selectedItems,
             hasInactiveItems: inactiveIds.length > 0,
+            shippingFeeDefault: SHIPPING_FEE_DEFAULT,
+            shippingFreeThreshold,
           });
         }),
       );

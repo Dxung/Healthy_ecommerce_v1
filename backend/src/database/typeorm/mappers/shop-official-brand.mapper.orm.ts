@@ -7,9 +7,10 @@ import { ShopOfficialBrand } from 'src/modules/shop/models/shop-official-brand.m
 export class ORMShopOfficialBrandMapper {
   /**
    * Converts an ORM entity to a domain model.
+   * Populates brandName if brand relation is loaded.
    */
   static toDomain(orm: ORMShopOfficialBrand): ShopOfficialBrand {
-    return new ShopOfficialBrand(
+    const model = new ShopOfficialBrand(
       orm.id,
       orm.shopId,
       orm.brandId,
@@ -19,6 +20,13 @@ export class ORMShopOfficialBrandMapper {
       orm.revokedAt,
       orm.revokedReason,
     );
+
+    // Populate brand name if relation is loaded
+    if (orm.brand) {
+      model.setBrandName(orm.brand.name);
+    }
+
+    return model;
   }
 
   /**

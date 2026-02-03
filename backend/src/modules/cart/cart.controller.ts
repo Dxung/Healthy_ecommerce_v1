@@ -235,8 +235,18 @@ export class CartController {
   @ApiOperation({ summary: 'Get selected items for checkout preview' })
   prepareCheckout(): Promise<CheckoutPreparationResponseDto> {
     return this.cartService.prepareCheckout().match(
-      ({ selectedItems, hasInactiveItems }) =>
-        new CheckoutPreparationResponseDto(selectedItems, hasInactiveItems),
+      ({
+        selectedItems,
+        hasInactiveItems,
+        shippingFeeDefault,
+        shippingFreeThreshold,
+      }) =>
+        new CheckoutPreparationResponseDto(
+          selectedItems,
+          hasInactiveItems,
+          shippingFeeDefault,
+          shippingFreeThreshold,
+        ),
       (error) => {
         throw CartErrorHttpMapper.toHttpException(
           error,

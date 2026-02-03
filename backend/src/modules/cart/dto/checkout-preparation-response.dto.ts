@@ -8,8 +8,16 @@ export class CheckoutPreparationResponseDto {
   subtotal: number;
   hasInactiveItems: boolean;
   hasPriceChangedItems: boolean;
+  shippingFeeDefault: number;
+  shippingFreeThreshold: number;
+  totalShippingFee: number;
 
-  constructor(selectedItems: CartItemWithDetails[], hasInactiveItems: boolean) {
+  constructor(
+    selectedItems: CartItemWithDetails[],
+    hasInactiveItems: boolean,
+    shippingFeeDefault: number,
+    shippingFreeThreshold: number,
+  ) {
     // Group items by shop
     const shopGroups = new Map<
       string,
@@ -37,7 +45,13 @@ export class CheckoutPreparationResponseDto {
     }
 
     this.shops = Array.from(shopGroups.values()).map(
-      ({ shop, items }) => new CartShopGroupResponseDto(shop, items),
+      ({ shop, items }) =>
+        new CartShopGroupResponseDto(
+          shop,
+          items,
+          shippingFeeDefault,
+          shippingFreeThreshold,
+        ),
     );
 
     this.totalItems = selectedItems.length;
@@ -52,6 +66,16 @@ export class CheckoutPreparationResponseDto {
     this.hasInactiveItems = hasInactiveItems;
     this.hasPriceChangedItems = selectedItems.some(
       (item) => item.hasPriceChanged,
+    );
+
+    // Shipping config
+    this.shippingFeeDefault = shippingFeeDefault;
+    this.shippingFreeThreshold = shippingFreeThreshold;
+
+    // Calculate total shipping fee from all shops
+    this.totalShippingFee = this.shops.reduce(
+      (sum, shop) => sum + shop.shippingFee,
+      0,
     );
   }
 }

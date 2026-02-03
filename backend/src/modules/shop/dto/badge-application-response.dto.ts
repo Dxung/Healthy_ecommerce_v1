@@ -16,11 +16,16 @@ export class BadgeApplicationDocumentResponseDto {
   @ApiProperty({ description: 'Document type ID' })
   documentTypeId: string;
 
+  @ApiProperty({ description: 'Document type name' })
+  documentTypeName: string;
+
   @ApiProperty({ description: 'Document image URL' })
   imageUrl: string;
 
-  @ApiProperty({ description: 'Document expiration date' })
-  expiresAt: Date;
+  @ApiPropertyOptional({
+    description: 'Document expiration date (null = permanent/no expiry)',
+  })
+  expiresAt: Date | null;
 
   @ApiProperty({ description: 'Document created date' })
   createdAt: Date;
@@ -31,6 +36,7 @@ export class BadgeApplicationDocumentResponseDto {
     return {
       id: doc.id,
       documentTypeId: doc.documentTypeId,
+      documentTypeName: doc.documentTypeName ?? '',
       imageUrl: doc.imageUrl,
       expiresAt: doc.expiresAt,
       createdAt: doc.createdAt,
@@ -48,6 +54,9 @@ export class BadgeApplicationResponseDto {
   @ApiProperty({ description: 'Shop ID' })
   shopId: string;
 
+  @ApiPropertyOptional({ description: 'Shop name (for admin view)' })
+  shopName?: string;
+
   @ApiProperty({
     description: 'Application type',
     enum: BadgeApplicationType,
@@ -56,6 +65,11 @@ export class BadgeApplicationResponseDto {
 
   @ApiPropertyOptional({ description: 'Brand ID (for official applications)' })
   brandId: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Brand name (for official applications)',
+  })
+  brandName?: string | null;
 
   @ApiProperty({
     description: 'Application status',
@@ -88,8 +102,10 @@ export class BadgeApplicationResponseDto {
     return {
       id: app.id,
       shopId: app.shopId,
+      shopName: app.shopName,
       applicationType: app.applicationType,
       brandId: app.brandId,
+      brandName: app.brandName,
       status: app.status,
       rejectionReason: app.rejectionReason,
       reviewedBy: app.reviewedBy,
@@ -113,6 +129,9 @@ export class BadgeApplicationListItemDto {
   @ApiProperty({ description: 'Shop ID' })
   shopId: string;
 
+  @ApiPropertyOptional({ description: 'Shop name (for admin view)' })
+  shopName?: string;
+
   @ApiProperty({
     description: 'Application type',
     enum: BadgeApplicationType,
@@ -121,6 +140,11 @@ export class BadgeApplicationListItemDto {
 
   @ApiPropertyOptional({ description: 'Brand ID (for official applications)' })
   brandId: string | null;
+
+  @ApiPropertyOptional({
+    description: 'Brand name (for official applications)',
+  })
+  brandName?: string | null;
 
   @ApiProperty({
     description: 'Application status',
@@ -135,8 +159,10 @@ export class BadgeApplicationListItemDto {
     return {
       id: app.id,
       shopId: app.shopId,
+      shopName: app.shopName,
       applicationType: app.applicationType,
       brandId: app.brandId,
+      brandName: app.brandName,
       status: app.status,
       createdAt: app.createdAt,
     };

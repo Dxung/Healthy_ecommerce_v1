@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Store, Package } from 'lucide-react';
+import { Store, Package, Truck } from 'lucide-react';
 import { type CartShopGroupResponse } from '@/lib/api';
 import { Input } from '@/components/ui/input';
 
@@ -122,14 +122,29 @@ export function ProductsSection({
             </div>
           </div>
 
-          {/* Shop Subtotal */}
-          <div className="flex items-center justify-end gap-4 px-4 py-3 border-t">
-            <span className="text-sm text-gray-500">
-              Tạm tính ({shopGroup.selectedCount} sản phẩm):
-            </span>
-            <span className="font-semibold text-lg text-primary">
-              {formatPrice(shopGroup.shopSubtotal)}
-            </span>
+          {/* Shop Subtotal & Shipping */}
+          <div className="px-4 py-3 border-t space-y-2">
+            <div className="flex items-center justify-end gap-4">
+              <span className="text-sm text-gray-500">
+                Tạm tính ({shopGroup.selectedCount} sản phẩm):
+              </span>
+              <span className="font-semibold text-primary">
+                {formatPrice(shopGroup.shopSubtotal)}
+              </span>
+            </div>
+            <div className="flex items-center justify-end gap-4">
+              <span className="text-sm text-gray-500 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                Phí vận chuyển:
+              </span>
+              {shopGroup.isFreeShipping ? (
+                <span className="font-medium text-green-600">Miễn phí</span>
+              ) : (
+                <span className="font-medium text-gray-700">
+                  {formatPrice(shopGroup.shippingFee)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
       ))}

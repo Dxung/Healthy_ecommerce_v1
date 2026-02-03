@@ -43,6 +43,16 @@ export interface ApiError {
   validationErrors?: Array<{ field: string; errors: string[] }>;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export interface AddressResponse {
   id: string;
   userId: string;
@@ -196,12 +206,13 @@ export interface BadgeApplicationDocumentResponse {
   documentTypeId: string;
   documentTypeName: string;
   imageUrl: string;
-  expiresAt: string;
+  expiresAt: string | null;
 }
 
 export interface BadgeApplicationResponse {
   id: string;
   shopId: string;
+  shopName?: string;
   badgeCode: BadgeCode;
   brandId: string | null;
   brandName: string | null;
@@ -217,7 +228,7 @@ export interface BadgeApplicationResponse {
 export interface ApplyBadgeDocumentRequest {
   documentTypeId: string;
   imageUrl: string;
-  expiresAt: string;
+  expiresAt: string | null;
 }
 
 export interface ApplyVerifiedBadgeRequest {
@@ -881,6 +892,8 @@ export interface CartShopGroupResponse {
   items: CartItemResponse[];
   shopSubtotal: number;
   selectedCount: number;
+  shippingFee: number;
+  isFreeShipping: boolean;
 }
 
 export interface CartResponse {
@@ -910,6 +923,9 @@ export interface CheckoutPreviewResponse {
   subtotal: number;
   hasInactiveItems: boolean;
   hasPriceChangedItems: boolean;
+  shippingFeeDefault: number;
+  shippingFreeThreshold: number;
+  totalShippingFee: number;
 }
 
 // Order Types
@@ -2335,6 +2351,45 @@ export class ApiClient {
   async deleteDocumentType(id: string): Promise<void> {
     return this.request<void>(`/admin/document-types/${id}`, {
       method: 'DELETE',
+    });
+  }
+
+  // ===================== Admin Badge Applications =====================
+
+  async getAdminBadgeApplications(params?: {
+    status?: BadgeApplicationStatus;
+    type?: 'verified' | 'official';
+    page?: number;
+    limit?: number;
+  }): Promise<PaginatedResponse<BadgeApplicationResponse>> {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.set('status', params.status);
+    if (params?.type) queryParams.set('type', params.type);
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    const queryString = queryParams.toString();
+    return this.request<PaginatedResponse<BadgeApplicationResponse>>(
+      `/admin/badge-applications${queryString ? `?${queryString}` : ''}`,
+      { method: 'GET' }
+    );
+  }
+
+  async getAdminBadgeApplicationById(id: string): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>(`/admin/badge-applications/${id}`, {
+      method: 'GET',
+    });
+  }
+
+  async approveBadgeApplication(id: string): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>(`/admin/badge-applications/${id}/approve`, {
+      method: 'POST',
+    });
+  }
+
+  async rejectBadgeApplication(id: string, reason: string): Promise<BadgeApplicationResponse> {
+    return this.request<BadgeApplicationResponse>(`/admin/badge-applications/${id}/reject`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
     });
   }
 

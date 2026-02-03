@@ -7,6 +7,7 @@ import { AlsModule } from 'src/shared/als/als.module';
 import { AuthModule } from '../auth/auth.module';
 import { ProductModule } from '../product/product.module';
 import { SessionModule } from '../session/session.module';
+import { SystemConfigModule } from '../system-config/system-config.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { SessionModule } from '../session/session.module';
     AuthModule,
     ProductModule,
     SessionModule,
+    SystemConfigModule,
   ],
   providers: [
     {

@@ -16,6 +16,8 @@ export interface CartPreviewData {
 export interface CheckoutPreviewData {
   selectedItems: CartItemWithDetails[];
   hasInactiveItems: boolean;
+  shippingFeeDefault: number;
+  shippingFreeThreshold: number;
 }
 
 export interface AddToCartResult {

@@ -78,7 +78,7 @@ export class OrmBadgeApplicationRepository
     return ResultAsync.fromPromise(
       repo.findOne({
         where: { id },
-        relations: ['documents'],
+        relations: ['documents', 'documents.documentType', 'shop', 'brand'],
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
     ).map((ormApp) => {
@@ -93,7 +93,7 @@ export class OrmBadgeApplicationRepository
     return ResultAsync.fromPromise(
       repo.find({
         where: { shopId },
-        relations: ['documents'],
+        relations: ['documents', 'documents.documentType', 'brand'],
         order: { createdAt: 'DESC' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
@@ -194,7 +194,7 @@ export class OrmBadgeApplicationRepository
       Promise.all([
         repo.find({
           where,
-          relations: ['documents', 'shop', 'brand'],
+          relations: ['documents', 'documents.documentType', 'shop', 'brand'],
           order: { createdAt: 'DESC' },
           skip,
           take: limit,

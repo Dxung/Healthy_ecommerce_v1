@@ -15,8 +15,9 @@ export interface BadgeApplicationDocument {
   id: string;
   applicationId: string;
   documentTypeId: string;
+  documentTypeName?: string;
   imageUrl: string;
-  expiresAt: Date;
+  expiresAt: Date | null;
   createdAt: Date;
 }
 
@@ -26,7 +27,7 @@ export interface BadgeApplicationDocument {
 export interface CreateBadgeApplicationDocumentData {
   documentTypeId: string;
   imageUrl: string;
-  expiresAt: Date;
+  expiresAt: Date | null;
 }
 
 /**
@@ -36,6 +37,8 @@ export interface CreateBadgeApplicationDocumentData {
  */
 export class BadgeApplication {
   private _documents: BadgeApplicationDocument[] = [];
+  private _shopName?: string;
+  private _brandName?: string | null;
 
   constructor(
     private readonly _id: string,
@@ -154,15 +157,29 @@ export class BadgeApplication {
   /**
    * Gets the earliest expiration date from all documents.
    * Used to set badge/official-brand expiration.
+   *
+   * Returns null if ALL documents have no expiry (permanent badge).
+   * Ignores documents with null expiresAt when calculating.
    */
-  public getEarliestDocumentExpiry(): Date {
+  public getEarliestDocumentExpiry(): Date | null {
     if (this._documents.length === 0) {
       throw new Error('Application has no documents');
     }
 
-    return this._documents.reduce((earliest, doc) => {
-      return doc.expiresAt < earliest ? doc.expiresAt : earliest;
-    }, this._documents[0].expiresAt);
+    // Filter documents that have an expiry date
+    const docsWithExpiry = this._documents.filter(
+      (doc) => doc.expiresAt !== null,
+    );
+
+    // If no documents have an expiry, the badge is permanent
+    if (docsWithExpiry.length === 0) {
+      return null;
+    }
+
+    // Find the earliest expiry among documents that have one
+    return docsWithExpiry.reduce((earliest, doc) => {
+      return doc.expiresAt! < earliest ? doc.expiresAt! : earliest;
+    }, docsWithExpiry[0].expiresAt!);
   }
 
   // ======================== CHANGE METHODS ========================
@@ -230,6 +247,20 @@ export class BadgeApplication {
     this._documents = documents;
   }
 
+  /**
+   * Sets shop name (for admin view).
+   */
+  public setShopName(shopName: string): void {
+    this._shopName = shopName;
+  }
+
+  /**
+   * Sets brand name (for admin view).
+   */
+  public setBrandName(brandName: string | null): void {
+    this._brandName = brandName;
+  }
+
   // ======================== GETTERS ========================
 
   public get id(): string {
@@ -240,12 +271,20 @@ export class BadgeApplication {
     return this._shopId;
   }
 
+  public get shopName(): string | undefined {
+    return this._shopName;
+  }
+
   public get applicationType(): BadgeApplicationType {
     return this._applicationType;
   }
 
   public get brandId(): string | null {
     return this._brandId;
+  }
+
+  public get brandName(): string | null | undefined {
+    return this._brandName;
   }
 
   public get status(): BadgeApplicationStatus {

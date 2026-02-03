@@ -31,14 +31,14 @@ export class BadgeApplicationDocumentDto {
   @MaxLength(500)
   imageUrl: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'Document expiration date (ISO 8601 format) - required for badge applications',
+      'Document expiration date (ISO 8601 format). Null or omitted for permanent documents with no expiry.',
     example: '2027-12-31',
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsDateString()
-  expiresAt: string;
+  expiresAt?: string | null;
 }
 
 /**
