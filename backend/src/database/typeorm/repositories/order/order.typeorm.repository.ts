@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, LessThan } from 'typeorm';
-import { ResultAsync, errAsync } from 'neverthrow';
+import { ResultAsync, errAsync, okAsync } from 'neverthrow';
 import { AsyncLocalStorage } from 'async_hooks';
 import {
   IOrderRepository,
@@ -302,16 +302,31 @@ export class OrmOrderRepository implements IOrderRepository {
       );
     }
 
-    const repo = em.getRepository(ORMOrder);
+    const orderRepo = em.getRepository(ORMOrder);
+    const itemRepo = em.getRepository(ORMOrderItem);
 
+    // Lock the order first without relations to avoid FOR UPDATE on LEFT JOIN
     return ResultAsync.fromPromise(
-      repo.findOne({
+      orderRepo.findOne({
         where: { id: orderId },
-        relations: ['items'],
         lock: { mode: 'pessimistic_write' },
       }),
       (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
-    ).map((ormOrder) => (ormOrder ? ORMOrderMapper.toDomain(ormOrder) : null));
+    ).andThen((ormOrder) => {
+      if (!ormOrder) return okAsync(null);
+
+      // Load items separately (no lock needed for items)
+      return ResultAsync.fromPromise(
+        itemRepo.find({
+          where: { orderId: ormOrder.id },
+          order: { createdAt: 'ASC' },
+        }),
+        (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+      ).map((items) => {
+        ormOrder.items = items;
+        return ORMOrderMapper.toDomain(ormOrder);
+      });
+    });
   }
 
   @WithPosition()
