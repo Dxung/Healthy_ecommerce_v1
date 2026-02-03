@@ -413,6 +413,15 @@ export class Product {
     return this._totalSold;
   }
 
+  /**
+   * Increments the total sold count for this product.
+   * Called when an order containing this product is completed.
+   */
+  incrementSoldCount(quantity: number): void {
+    this._totalSold += quantity;
+    this._updatedAt = new Date();
+  }
+
   get averageRating(): number {
     return this._averageRating;
   }
