@@ -621,7 +621,7 @@ export class ReviewService implements IReviewService {
       return this.reviewRepository.findByShopId(
         shop.id,
         { page, limit },
-        { withImages: true, withReply: true },
+        { withImages: true, withReply: true, withProduct: true },
       );
     });
   }

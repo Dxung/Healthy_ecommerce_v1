@@ -168,6 +168,7 @@ export default function ShopReviewsPage() {
               <div key={review.id} className="space-y-3">
                 <ReviewCard
                   review={review}
+                  showProductInfo={true}
                   isShopOwner={true}
                   onReply={handleReply}
                   onEditReply={handleEditReply}

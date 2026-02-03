@@ -85,10 +85,12 @@ export class ReviewResponseDto {
     this.images = ReviewImageResponseDto.fromList(review.images);
     this.reply = review.reply ? new ReviewReplyResponseDto(review.reply) : null;
 
+    // Use options if provided, otherwise use values from Review model
     this.userName = options?.userName;
     this.userAvatarUrl = options?.userAvatarUrl;
-    this.productName = options?.productName;
-    this.productThumbnailUrl = options?.productThumbnailUrl;
+    this.productName = options?.productName ?? review.productName;
+    this.productThumbnailUrl =
+      options?.productThumbnailUrl ?? review.productThumbnailUrl ?? undefined;
   }
 
   static fromList(reviews: Review[]): ReviewResponseDto[] {

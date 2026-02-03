@@ -100,16 +100,13 @@ export function OrderDetailDialog({
       await Promise.all(
         order.items.map(async (item) => {
           try {
-            // First check if item can be reviewed
+            // Check review status - returns canCreate, canModify, and existingReview
             const result = await apiClient.canReviewOrderItem(item.id);
-            reviewable[item.id] = result.canReview;
+            reviewable[item.id] = result.canCreate;
 
-            // If can't review, check if already reviewed
-            if (!result.canReview) {
-              const existingReview = await apiClient.getReviewByOrderItemId(item.id);
-              if (existingReview) {
-                reviewed[item.id] = existingReview;
-              }
+            // If already reviewed, use the existing review from the response
+            if (result.existingReview) {
+              reviewed[item.id] = result.existingReview;
             }
           } catch {
             reviewable[item.id] = false;

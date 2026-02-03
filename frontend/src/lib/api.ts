@@ -1077,6 +1077,9 @@ export interface ReviewResponse {
   reply: ReviewReplyResponse | null;
   createdAt: string;
   updatedAt: string;
+  // Optional product info (loaded when withProduct option is used)
+  productName?: string;
+  productThumbnailUrl?: string;
 }
 
 export interface ReviewListResponse {
@@ -1088,8 +1091,10 @@ export interface ReviewListResponse {
 }
 
 export interface CanReviewResponse {
-  canReview: boolean;
+  canCreate: boolean;
+  canModify: boolean;
   reason?: string;
+  existingReview?: ReviewResponse | null;
 }
 
 export interface CreateReviewRequest {

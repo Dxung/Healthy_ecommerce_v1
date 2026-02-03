@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { User, Store, MoreVertical, Edit2, Trash2, MessageSquare, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Store, MoreVertical, Edit2, Trash2, MessageSquare, ChevronDown, ChevronUp, Package } from 'lucide-react';
 import { StarRating } from './StarRating';
 import { type ReviewResponse } from '@/lib/api';
+import Link from 'next/link';
 
 interface ReviewCardProps {
   review: ReviewResponse;
@@ -53,6 +54,31 @@ export function ReviewCard({
 
   return (
     <div className="bg-white rounded-lg border p-4 space-y-3">
+      {/* Product Info (for shop owner view) */}
+      {showProductInfo && review.productName && (
+        <div className="flex items-center gap-3 pb-3 border-b border-gray-100">
+          {review.productThumbnailUrl ? (
+            <img
+              src={review.productThumbnailUrl}
+              alt={review.productName}
+              className="w-12 h-12 rounded-lg object-cover bg-gray-100"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+              <Package className="w-6 h-6 text-gray-400" />
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <Link
+              href={`/product/${review.productId}`}
+              className="font-medium text-gray-900 hover:text-primary line-clamp-2"
+            >
+              {review.productName}
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -61,13 +87,13 @@ export function ReviewCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="font-medium text-gray-900">Nguoi mua</span>
+              <span className="font-medium text-gray-900">Người mua</span>
               <StarRating rating={review.rating} size="sm" />
               <span className="text-xs text-gray-500">{formatDate(review.createdAt)}</span>
             </div>
             {variantName && (
               <p className="text-xs text-gray-500 mt-0.5">
-                Phan loai: <span className="text-gray-700">{variantName}</span>
+                Phân loại: <span className="text-gray-700">{variantName}</span>
               </p>
             )}
           </div>

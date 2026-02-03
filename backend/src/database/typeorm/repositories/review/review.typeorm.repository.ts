@@ -194,6 +194,13 @@ export class OrmReviewRepository implements IReviewRepository {
       );
     }
 
+    if (options?.withProduct) {
+      qb.leftJoinAndSelect(
+        `${REVIEW_ALIAS}.${ReviewRelation.PRODUCT}`,
+        'product',
+      );
+    }
+
     qb.orderBy(ReviewColumn.CREATED_AT, 'DESC').skip(skip).take(limit);
 
     return ResultAsync.fromPromise(qb.getManyAndCount(), (error) =>
@@ -417,6 +424,7 @@ export class OrmReviewRepository implements IReviewRepository {
     const relations: string[] = [];
     if (options?.withImages) relations.push(ReviewRelation.IMAGES);
     if (options?.withReply) relations.push(ReviewRelation.REPLY);
+    if (options?.withProduct) relations.push(ReviewRelation.PRODUCT);
     return relations;
   }
 
