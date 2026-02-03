@@ -183,23 +183,18 @@ export class OrmEscrowRepository implements IEscrowRepository {
       .createQueryBuilder('escrow')
       .innerJoin(ORMOrder, 'order', 'escrow.order_id = order.id')
       .innerJoin(ORMShop, 'shop', 'escrow.shop_id = shop.id')
-      .select([
-        'escrow.id',
-        'escrow.order_id',
-        'escrow.shop_id',
-        'escrow.amount',
-        'escrow.order_subtotal',
-        'escrow.shipping_fee',
-        'escrow.coin_used',
-        'escrow.platform_fee_percent',
-        'escrow.status',
-        'escrow.released_at',
-        'escrow.created_at',
-        'escrow.updated_at',
-        'order.order_code as "orderCode"',
-        'order.platform_ship_discount as "platformShipDiscount"',
-        'shop.name as "shopName"',
-      ])
+      .select('escrow.id', 'escrowId')
+      .addSelect('escrow.order_id', 'escrowOrderId')
+      .addSelect('escrow.shop_id', 'escrowShopId')
+      .addSelect('escrow.amount', 'escrowAmount')
+      .addSelect('escrow.order_subtotal', 'escrowOrderSubtotal')
+      .addSelect('escrow.shipping_fee', 'escrowShippingFee')
+      .addSelect('escrow.coin_used', 'escrowCoinUsed')
+      .addSelect('escrow.platform_fee_percent', 'escrowPlatformFeePercent')
+      .addSelect('escrow.status', 'escrowStatus')
+      .addSelect('escrow.released_at', 'escrowReleasedAt')
+      .addSelect('escrow.created_at', 'escrowCreatedAt')
+      .addSelect('escrow.updated_at', 'escrowUpdatedAt')
       .addSelect('order.order_code', 'orderCode')
       .addSelect('order.platform_ship_discount', 'platformShipDiscount')
       .addSelect('shop.name', 'shopName');
@@ -238,18 +233,18 @@ export class OrmEscrowRepository implements IEscrowRepository {
     ).map(([rawResults, total]) => {
       const items = rawResults.map((raw) => {
         const escrow = ORMEscrowHoldMapper.toDomain({
-          id: raw.escrow_id,
-          orderId: raw.escrow_order_id,
-          shopId: raw.escrow_shop_id,
-          amount: parseFloat(raw.escrow_amount || 0),
-          orderSubtotal: parseFloat(raw.escrow_order_subtotal || 0),
-          shippingFee: parseFloat(raw.escrow_shipping_fee || 0),
-          coinUsed: parseFloat(raw.escrow_coin_used || 0),
-          platformFeePercent: parseFloat(raw.escrow_platform_fee_percent || 0),
-          status: raw.escrow_status,
-          releasedAt: raw.escrow_released_at,
-          createdAt: raw.escrow_created_at,
-          updatedAt: raw.escrow_updated_at,
+          id: raw.escrowId,
+          orderId: raw.escrowOrderId,
+          shopId: raw.escrowShopId,
+          amount: parseFloat(raw.escrowAmount || 0),
+          orderSubtotal: parseFloat(raw.escrowOrderSubtotal || 0),
+          shippingFee: parseFloat(raw.escrowShippingFee || 0),
+          coinUsed: parseFloat(raw.escrowCoinUsed || 0),
+          platformFeePercent: parseFloat(raw.escrowPlatformFeePercent || 0),
+          status: raw.escrowStatus,
+          releasedAt: raw.escrowReleasedAt,
+          createdAt: raw.escrowCreatedAt,
+          updatedAt: raw.escrowUpdatedAt,
         } as ORMEscrowHold);
 
         return {

@@ -6,6 +6,7 @@ interface EscrowData {
   shopId: string;
   amount: number;
   orderSubtotal: number;
+  shippingFee: number;
   coinUsed: number;
   platformFeePercent: number;
   platformShipDiscount: number;
@@ -26,6 +27,7 @@ export class AdminEscrowResponseDto {
   amount: number;
   formattedAmount: string;
   orderSubtotal: number;
+  shippingFee: number;
   coinUsed: number;
   platformFeePercent: number;
   platformShipDiscount: number;
@@ -47,6 +49,7 @@ export class AdminEscrowResponseDto {
     this.amount = escrow.amount;
     this.formattedAmount = this.formatCurrency(escrow.amount);
     this.orderSubtotal = escrow.orderSubtotal;
+    this.shippingFee = escrow.shippingFee;
     this.coinUsed = escrow.coinUsed;
     this.platformFeePercent = escrow.platformFeePercent;
     this.platformShipDiscount = escrow.platformShipDiscount;

@@ -19,6 +19,7 @@ export interface EscrowWithOrderAndShop {
   shopName: string;
   amount: number;
   orderSubtotal: number;
+  shippingFee: number;
   coinUsed: number;
   platformFeePercent: number;
   platformShipDiscount: number;

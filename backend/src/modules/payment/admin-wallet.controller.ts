@@ -122,6 +122,7 @@ export class AdminWalletController {
                 shopId: item.shopId,
                 amount: item.amount,
                 orderSubtotal: item.orderSubtotal,
+                shippingFee: item.shippingFee,
                 coinUsed: item.coinUsed,
                 platformFeePercent: item.platformFeePercent,
                 platformShipDiscount: item.platformShipDiscount,

@@ -461,6 +461,7 @@ export interface AdminEscrowResponse {
   amount: number;
   formattedAmount: string;
   orderSubtotal: number;
+  shippingFee: number;
   coinUsed: number;
   platformFeePercent: number;
   platformShipDiscount: number;

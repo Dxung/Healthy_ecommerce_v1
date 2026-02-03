@@ -399,6 +399,9 @@ export default function AdminWalletPage() {
                           Tiền hàng
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Phí ship
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Xu đã dùng
                         </th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -438,7 +441,10 @@ export default function AdminWalletPage() {
                               {formatCurrency(escrow.orderSubtotal || 0)}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                              {escrow.coinUsed > 0 ? formatCurrency(escrow.coinUsed) : '0 xu'}
+                              {formatCurrency(escrow.shippingFee || 0)}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                              {(escrow.coinUsed || 0) > 0 ? formatCurrency(escrow.coinUsed) : '0 xu'}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
                               {(escrow.platformShipDiscount || 0) > 0 ? formatCurrency(escrow.platformShipDiscount) : '0 ₫'}
