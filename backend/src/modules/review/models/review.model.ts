@@ -15,6 +15,9 @@ export class Review {
   private _updatedAt: Date;
   private _images: ReviewImage[];
   private _reply: ReviewReply | null;
+  // Optional product info (loaded when withProduct option is true)
+  private _productName?: string;
+  private _productThumbnailUrl?: string | null;
 
   constructor(
     private readonly _id: string,
@@ -30,6 +33,8 @@ export class Review {
     updatedAt: Date,
     images: ReviewImage[] = [],
     reply: ReviewReply | null = null,
+    productName?: string,
+    productThumbnailUrl?: string | null,
   ) {
     this._rating = rating;
     this._content = content;
@@ -38,6 +43,8 @@ export class Review {
     this._updatedAt = updatedAt;
     this._images = images;
     this._reply = reply;
+    this._productName = productName;
+    this._productThumbnailUrl = productThumbnailUrl;
   }
 
   /**
@@ -134,6 +141,14 @@ export class Review {
     return this._reply;
   }
 
+  get productName(): string | undefined {
+    return this._productName;
+  }
+
+  get productThumbnailUrl(): string | null | undefined {
+    return this._productThumbnailUrl;
+  }
+
   // ======================== BUSINESS LOGIC ========================
 
   /**
@@ -214,5 +229,13 @@ export class Review {
    */
   setReply(reply: ReviewReply | null): void {
     this._reply = reply;
+  }
+
+  /**
+   * Set product info (used when loading with withProduct option)
+   */
+  setProductInfo(name: string, thumbnailUrl: string | null): void {
+    this._productName = name;
+    this._productThumbnailUrl = thumbnailUrl;
   }
 }

@@ -15,6 +15,7 @@ export interface ReviewLoadOptions {
   withImages?: boolean;
   withReply?: boolean;
   withUser?: boolean;
+  withProduct?: boolean;
 }
 
 /**
