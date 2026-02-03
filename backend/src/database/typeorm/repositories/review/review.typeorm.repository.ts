@@ -75,6 +75,26 @@ export class OrmReviewRepository implements IReviewRepository {
   }
 
   @WithPosition()
+  findByOrderItemIds(orderItemIds: string[]): ResultAsync<Review[], DomainError> {
+    if (orderItemIds.length === 0) {
+      return okAsync([]);
+    }
+
+    const repo = this.getReviewRepository();
+
+    return ResultAsync.fromPromise(
+      repo.find({
+        where: {
+          orderItemId: In(orderItemIds),
+          status: ReviewStatus.ACTIVE,
+        },
+        select: ['id', 'orderItemId'],
+      }),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((orms) => ORMReviewMapper.toDomainList(orms));
+  }
+
+  @WithPosition()
   findByProductId(
     productId: string,
     pagination: PaginationParams,

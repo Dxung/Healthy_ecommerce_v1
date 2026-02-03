@@ -240,12 +240,14 @@ export class CartController {
         hasInactiveItems,
         shippingFeeDefault,
         shippingFreeThreshold,
+        coinMaxUsagePercent,
       }) =>
         new CheckoutPreparationResponseDto(
           selectedItems,
           hasInactiveItems,
           shippingFeeDefault,
           shippingFreeThreshold,
+          coinMaxUsagePercent,
         ),
       (error) => {
         throw CartErrorHttpMapper.toHttpException(

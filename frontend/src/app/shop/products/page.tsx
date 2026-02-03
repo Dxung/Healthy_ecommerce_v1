@@ -7,6 +7,7 @@ import {
   type ShopProductListItemResponse,
   type ShopProductListParams,
   type ProductStatus,
+  type ProductSlotsInfoResponse,
   type ApiError,
 } from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,9 @@ export default function ShopProductsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Product slots info
+  const [slotsInfo, setSlotsInfo] = useState<ProductSlotsInfoResponse | null>(null);
+
   // Filters
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProductStatus | ''>('');
@@ -47,7 +51,17 @@ export default function ShopProductsPage() {
 
   useEffect(() => {
     fetchProducts();
+    fetchSlotsInfo();
   }, [page, status, isVisible]);
+
+  const fetchSlotsInfo = async () => {
+    try {
+      const info = await apiClient.getProductSlotsInfo();
+      setSlotsInfo(info);
+    } catch {
+      // Silently fail - not critical
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -100,16 +114,38 @@ export default function ShopProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý sản phẩm</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Tổng cộng {total} sản phẩm
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            {slotsInfo ? (
+              <>
+                <p className="text-sm text-gray-500">
+                  {slotsInfo.currentCount} / {slotsInfo.maxSlots} sản phẩm
+                </p>
+                {slotsInfo.isAtLimit && (
+                  <span className="text-xs text-orange-600 bg-orange-100 px-2 py-0.5 rounded">
+                    Đã đạt giới hạn
+                  </span>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-500">
+                Tổng cộng {total} sản phẩm
+              </p>
+            )}
+          </div>
         </div>
-        <Link href="/shop/products/new">
-          <Button>
+        {slotsInfo?.isAtLimit ? (
+          <Button disabled title="Bạn đã đạt giới hạn số sản phẩm">
             <Plus className="w-4 h-4 mr-2" />
             Thêm sản phẩm
           </Button>
-        </Link>
+        ) : (
+          <Link href="/shop/products/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              Thêm sản phẩm
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -179,12 +215,19 @@ export default function ShopProductsPage() {
           <p className="text-gray-500 mb-6">
             Bắt đầu bán hàng bằng cách thêm sản phẩm đầu tiên
           </p>
-          <Link href="/shop/products/new">
-            <Button>
+          {slotsInfo?.isAtLimit ? (
+            <Button disabled title="Bạn đã đạt giới hạn số sản phẩm">
               <Plus className="w-4 h-4 mr-2" />
               Thêm sản phẩm
             </Button>
-          </Link>
+          ) : (
+            <Link href="/shop/products/new">
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                Thêm sản phẩm
+              </Button>
+            </Link>
+          )}
         </div>
       ) : (
         <>

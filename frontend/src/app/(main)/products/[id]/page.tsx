@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { apiClient, type PublicProductDetailResponse, type ApiError } from '@/lib/api';
+import { apiClient, type PublicProductDetailResponse, type ApiError, type ReviewableOrderItemResponse, type ReviewResponse } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { VariantSelector } from '@/components/product/VariantSelector';
 import { CategoryBreadcrumb } from '@/components/product/CategoryBreadcrumb';
@@ -12,13 +12,18 @@ import { ProductPrice } from '@/components/product/ProductPrice';
 import { ShopInfoSection } from '@/components/product/ShopInfoSection';
 import { ProductDetailSection } from '@/components/product/ProductDetailSection';
 import { ReviewList } from '@/components/review/ReviewList';
+import { ReviewForm } from '@/components/review/ReviewForm';
 import { StarRatingVisual } from '@/components/ui/StarRatingVisual';
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Loader2,
   Package,
   ShoppingCart,
   Zap,
+  Star,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,6 +33,7 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { addToCart } = useCart();
+  const { user } = useAuth();
   const productId = params.id as string;
   const reviewSectionRef = useRef<HTMLDivElement>(null);
 
@@ -39,11 +45,35 @@ export default function ProductDetailPage() {
   const [addingToCart, setAddingToCart] = useState(false);
   const [buyingNow, setBuyingNow] = useState(false);
 
+  // Review-related state
+  const [reviewableItems, setReviewableItems] = useState<ReviewableOrderItemResponse[]>([]);
+  const [selectedReviewItem, setSelectedReviewItem] = useState<ReviewableOrderItemResponse | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewListKey, setReviewListKey] = useState(0); // To force refresh ReviewList
+
   useEffect(() => {
     if (productId) {
       fetchProduct();
     }
   }, [productId]);
+
+  // Fetch reviewable items when user is logged in and product is loaded
+  useEffect(() => {
+    if (user && product?.id) {
+      fetchReviewableItems();
+    }
+  }, [user, product?.id]);
+
+  const fetchReviewableItems = async () => {
+    if (!product?.id) return;
+    try {
+      const items = await apiClient.getReviewableItemsForProduct(product.id);
+      setReviewableItems(items);
+    } catch {
+      // Silently fail - user may not have any reviewable items
+      setReviewableItems([]);
+    }
+  };
 
   const fetchProduct = async () => {
     try {
@@ -118,6 +148,25 @@ export default function ProductDetailPage() {
 
   const scrollToReviews = () => {
     reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleReviewSuccess = (review: ReviewResponse) => {
+    toast.success('Đánh giá của bạn đã được gửi thành công!');
+    setShowReviewForm(false);
+    setSelectedReviewItem(null);
+    // Remove the reviewed item from the list
+    setReviewableItems((prev) => prev.filter((item) => item.orderItemId !== review.orderItemId));
+    // Refresh the review list
+    setReviewListKey((prev) => prev + 1);
+  };
+
+  const handleStartReview = (item: ReviewableOrderItemResponse) => {
+    setSelectedReviewItem(item);
+    setShowReviewForm(true);
+    // Scroll to review section
+    setTimeout(() => {
+      reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, 100);
   };
 
   if (loading) {
@@ -291,6 +340,7 @@ export default function ProductDetailPage() {
           allergenTags={product.allergenTags}
           dietTags={product.dietTags}
           description={product.description}
+          ingredients={product.ingredients}
           nutrition={product.nutrition}
           totalStock={totalStock}
           shopProvince={product.shop.province}
@@ -299,7 +349,68 @@ export default function ProductDetailPage() {
         {/* Reviews Section */}
         <div ref={reviewSectionRef} className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 scroll-mt-4">
           <h2 className="text-xl font-bold mb-4">Đánh giá sản phẩm</h2>
-          <ReviewList productId={product.id} />
+
+          {/* Reviewable Items Banner */}
+          {reviewableItems.length > 0 && (
+            <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
+              <div className="flex items-center gap-2 text-primary mb-2">
+                <Star className="w-5 h-5" />
+                <span className="font-medium">Bạn có thể đánh giá sản phẩm này!</span>
+              </div>
+              <p className="text-sm text-gray-600 mb-3">
+                Bạn đã mua sản phẩm này và có thể viết đánh giá cho {reviewableItems.length} đơn hàng.
+              </p>
+              {showReviewForm && selectedReviewItem ? (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm text-gray-500">
+                      Đánh giá cho đơn hàng #{selectedReviewItem.orderCode} ({selectedReviewItem.variantName})
+                    </p>
+                    <button
+                      onClick={() => {
+                        setShowReviewForm(false);
+                        setSelectedReviewItem(null);
+                      }}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Thu gọn
+                    </button>
+                  </div>
+                  <ReviewForm
+                    orderItemId={selectedReviewItem.orderItemId}
+                    productName={product.name}
+                    productImageUrl={product.thumbnailUrl ?? undefined}
+                    onSuccess={handleReviewSuccess}
+                    onCancel={() => {
+                      setShowReviewForm(false);
+                      setSelectedReviewItem(null);
+                    }}
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {reviewableItems.map((item) => (
+                    <button
+                      key={item.orderItemId}
+                      onClick={() => handleStartReview(item)}
+                      className="w-full flex items-center justify-between p-3 bg-white rounded-lg border hover:border-primary hover:bg-primary/5 transition-colors text-left"
+                    >
+                      <div>
+                        <p className="font-medium text-sm">Đơn hàng #{item.orderCode}</p>
+                        <p className="text-xs text-gray-500">
+                          {item.variantName} - Hoàn thành{' '}
+                          {new Date(item.completedAt).toLocaleDateString('vi-VN')}
+                        </p>
+                      </div>
+                      <Star className="w-5 h-5 text-primary" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <ReviewList key={reviewListKey} productId={product.id} />
         </div>
       </div>
     </div>

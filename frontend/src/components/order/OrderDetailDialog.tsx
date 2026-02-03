@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { apiClient, type OrderResponse, type OrderStatus, type ApiError } from '@/lib/api';
+import { apiClient, type OrderResponse, type OrderStatus, type ApiError, type ReviewResponse } from '@/lib/api';
 import {
   Loader2,
   Store,
@@ -20,8 +20,10 @@ import {
   CheckCircle,
   XCircle,
   Truck,
+  Star,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ReviewForm } from '@/components/review/ReviewForm';
 
 interface OrderDetailDialogProps {
   open: boolean;
@@ -62,11 +64,65 @@ export function OrderDetailDialog({
   const [loading, setLoading] = useState(true);
   const [operating, setOperating] = useState(false);
 
+  // Review-related state
+  const [reviewableItems, setReviewableItems] = useState<Record<string, boolean>>({});
+  const [reviewedItems, setReviewedItems] = useState<Record<string, ReviewResponse>>({});
+  const [reviewingItemId, setReviewingItemId] = useState<string | null>(null);
+  const [checkingReviewability, setCheckingReviewability] = useState(false);
+
   useEffect(() => {
     if (open && orderId) {
       fetchOrder();
+    } else if (!open) {
+      // Reset state when dialog closes
+      setReviewableItems({});
+      setReviewedItems({});
+      setReviewingItemId(null);
     }
   }, [open, orderId]);
+
+  // Check reviewability for each item when order is loaded and completed
+  useEffect(() => {
+    if (order && order.status === 'completed') {
+      checkItemsReviewability();
+    }
+  }, [order?.id, order?.status]);
+
+  const checkItemsReviewability = async () => {
+    if (!order || order.status !== 'completed') return;
+
+    setCheckingReviewability(true);
+    const reviewable: Record<string, boolean> = {};
+    const reviewed: Record<string, ReviewResponse> = {};
+
+    try {
+      // Check each item in parallel
+      await Promise.all(
+        order.items.map(async (item) => {
+          try {
+            // First check if item can be reviewed
+            const result = await apiClient.canReviewOrderItem(item.id);
+            reviewable[item.id] = result.canReview;
+
+            // If can't review, check if already reviewed
+            if (!result.canReview) {
+              const existingReview = await apiClient.getReviewByOrderItemId(item.id);
+              if (existingReview) {
+                reviewed[item.id] = existingReview;
+              }
+            }
+          } catch {
+            reviewable[item.id] = false;
+          }
+        })
+      );
+
+      setReviewableItems(reviewable);
+      setReviewedItems(reviewed);
+    } finally {
+      setCheckingReviewability(false);
+    }
+  };
 
   const fetchOrder = async () => {
     if (!orderId) return;
@@ -134,6 +190,14 @@ export function OrderDetailDialog({
 
   const canCancel = order?.status === 'pending';
   const canConfirmDelivery = order?.status === 'shipping';
+  const isCompleted = order?.status === 'completed';
+
+  const handleReviewSuccess = (itemId: string, review: ReviewResponse) => {
+    setReviewedItems((prev) => ({ ...prev, [itemId]: review }));
+    setReviewableItems((prev) => ({ ...prev, [itemId]: false }));
+    setReviewingItemId(null);
+    toast.success('Đánh giá của bạn đã được gửi thành công!');
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -187,37 +251,81 @@ export function OrderDetailDialog({
               {/* Items */}
               <div className="border rounded-lg divide-y">
                 {order.items.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={`/products/${item.productId}`}
-                    className="flex gap-4 p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                      {item.productImageUrl ? (
-                        <img
-                          src={item.productImageUrl}
-                          alt={item.productName}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Package className="w-6 h-6 text-gray-300" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 hover:text-primary">{item.productName}</p>
-                      <p className="text-sm text-gray-500">{item.variantName}</p>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-sm">
-                          {formatPrice(item.unitPrice)} x {item.quantity}
-                        </span>
-                        <span className="font-medium text-primary">
-                          {formatPrice(item.totalPrice)}
-                        </span>
+                  <div key={item.id} className="p-4">
+                    <Link
+                      href={`/products/${item.productId}`}
+                      className="flex gap-4 hover:bg-gray-50 transition-colors rounded-lg -m-2 p-2"
+                    >
+                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        {item.productImageUrl ? (
+                          <img
+                            src={item.productImageUrl}
+                            alt={item.productName}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Package className="w-6 h-6 text-gray-300" />
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  </Link>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 hover:text-primary">{item.productName}</p>
+                        <p className="text-sm text-gray-500">{item.variantName}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-sm">
+                            {formatPrice(item.unitPrice)} x {item.quantity}
+                          </span>
+                          <span className="font-medium text-primary">
+                            {formatPrice(item.totalPrice)}
+                          </span>
+                        </div>
+                      </div>
+                    </Link>
+
+                    {/* Review section for completed orders */}
+                    {isCompleted && (
+                      <div className="mt-3 pt-3 border-t">
+                        {checkingReviewability ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            <span>Đang kiểm tra...</span>
+                          </div>
+                        ) : reviewedItems[item.id] ? (
+                          <div className="flex items-center gap-2 text-sm text-green-600">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Đã đánh giá ({reviewedItems[item.id].rating} sao)</span>
+                          </div>
+                        ) : reviewableItems[item.id] ? (
+                          reviewingItemId === item.id ? (
+                            <div className="mt-2">
+                              <ReviewForm
+                                orderItemId={item.id}
+                                productName={item.productName}
+                                productImageUrl={item.productImageUrl}
+                                onSuccess={(review) => handleReviewSuccess(item.id, review)}
+                                onCancel={() => setReviewingItemId(null)}
+                              />
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setReviewingItemId(item.id)}
+                              className="text-primary border-primary hover:bg-primary/10"
+                            >
+                              <Star className="w-4 h-4 mr-1" />
+                              Viết đánh giá
+                            </Button>
+                          )
+                        ) : (
+                          <div className="text-sm text-gray-400">
+                            Không thể đánh giá
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 

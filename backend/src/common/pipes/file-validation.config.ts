@@ -24,3 +24,12 @@ export const PRODUCT_IMAGE_CONFIG: FileValidationConfig = {
   minHeight: 500,
   maxHeight: 1200,
 };
+
+export const REVIEW_IMAGE_CONFIG: FileValidationConfig = {
+  maxSizeInMB: 2,
+  allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+  minWidth: 500,
+  maxWidth: 1500,
+  minHeight: 500,
+  maxHeight: 1500,
+};

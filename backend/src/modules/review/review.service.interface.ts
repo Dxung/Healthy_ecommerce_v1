@@ -122,6 +122,27 @@ export interface IReviewService {
     orderItemId: string,
   ): ResultAsync<{ canReview: boolean; reason?: string }, DomainError>;
 
+  /**
+   * Gets reviewable order items for a product by the current user.
+   * Returns order items that: belong to completed orders, not yet reviewed, within review window.
+   * Requires AuthGuard to set userId in ALS.
+   *
+   * @param productId - The product ID
+   * @returns List of reviewable order items
+   */
+  getReviewableItemsForProduct(
+    productId: string,
+  ): ResultAsync<
+    Array<{
+      orderItemId: string;
+      orderId: string;
+      orderCode: string;
+      variantName: string;
+      completedAt: Date;
+    }>,
+    DomainError
+  >;
+
   // ======================== REFUND INTEGRATION ========================
 
   /**
@@ -204,4 +225,13 @@ export interface IReviewService {
     page: number,
     limit: number,
   ): ResultAsync<PaginatedResult<Review>, DomainError>;
+
+  // ======================== IMAGE UPLOAD ========================
+
+  /**
+   * Uploads a review image to cloud storage.
+   * @param file - The uploaded file (validated by FileValidationPipe).
+   * @returns The uploaded image URL.
+   */
+  uploadReviewImage(file: Express.Multer.File): ResultAsync<string, DomainError>;
 }

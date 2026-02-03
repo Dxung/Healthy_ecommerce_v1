@@ -189,6 +189,9 @@ export default function CheckoutPage() {
             onUseCoinChange={setUseCoin}
             coinBalance={coinBalance}
             walletBalance={walletBalance}
+            totalAmount={checkoutData.subtotal + checkoutData.totalShippingFee}
+            subtotal={checkoutData.subtotal}
+            coinMaxUsagePercent={checkoutData.coinMaxUsagePercent}
           />
         </div>
 

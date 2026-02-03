@@ -8,6 +8,7 @@ import {
   MapPin,
   ShoppingBag,
   Shield,
+  Star,
   ChevronDown,
   ChevronRight
 } from 'lucide-react';
@@ -34,6 +35,11 @@ const menuItems: MenuItem[] = [
     label: 'Đơn mua',
     href: '/user/orders',
     icon: <ShoppingBag className="w-4 h-4" />,
+  },
+  {
+    label: 'Đánh giá của tôi',
+    href: '/user/reviews',
+    icon: <Star className="w-4 h-4" />,
   },
   {
     label: 'Bảo mật',

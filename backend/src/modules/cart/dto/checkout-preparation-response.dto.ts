@@ -11,12 +11,14 @@ export class CheckoutPreparationResponseDto {
   shippingFeeDefault: number;
   shippingFreeThreshold: number;
   totalShippingFee: number;
+  coinMaxUsagePercent: number;
 
   constructor(
     selectedItems: CartItemWithDetails[],
     hasInactiveItems: boolean,
     shippingFeeDefault: number,
     shippingFreeThreshold: number,
+    coinMaxUsagePercent: number,
   ) {
     // Group items by shop
     const shopGroups = new Map<
@@ -77,5 +79,8 @@ export class CheckoutPreparationResponseDto {
       (sum, shop) => sum + shop.shippingFee,
       0,
     );
+
+    // Coin usage config
+    this.coinMaxUsagePercent = coinMaxUsagePercent;
   }
 }

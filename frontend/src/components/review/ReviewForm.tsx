@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Upload, Loader2 } from 'lucide-react';
 import { StarRating } from './StarRating';
+import { UploadReviewImageModal } from './UploadReviewImageModal';
 import { apiClient, type ReviewResponse } from '@/lib/api';
 
 interface ReviewFormProps {
@@ -29,6 +30,7 @@ export function ReviewForm({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const isEditing = !!existingReview;
 
@@ -70,11 +72,8 @@ export function ReviewForm({
     }
   };
 
-  const handleAddImageUrl = () => {
-    const url = prompt('Nhập URL hình ảnh:');
-    if (url && url.trim()) {
-      setImageUrls([...imageUrls, url.trim()]);
-    }
+  const handleUploadSuccess = (imageUrl: string) => {
+    setImageUrls([...imageUrls, imageUrl]);
   };
 
   const handleRemoveImage = (index: number) => {
@@ -179,7 +178,7 @@ export function ReviewForm({
           {imageUrls.length < 5 && (
             <button
               type="button"
-              onClick={handleAddImageUrl}
+              onClick={() => setShowUploadModal(true)}
               className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-primary hover:text-primary transition-colors"
             >
               <Upload className="w-5 h-5" />
@@ -218,6 +217,13 @@ export function ReviewForm({
           {isEditing ? 'Cập nhật' : 'Gửi đánh giá'}
         </button>
       </div>
+
+      {/* Upload Image Modal */}
+      <UploadReviewImageModal
+        isOpen={showUploadModal}
+        onClose={() => setShowUploadModal(false)}
+        onUploadSuccess={handleUploadSuccess}
+      />
     </form>
   );
 }

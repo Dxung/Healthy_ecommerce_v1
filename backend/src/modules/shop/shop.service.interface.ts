@@ -30,4 +30,14 @@ export interface IShopService {
    * @returns A ResultAsync that resolves to Shop or null if none exists.
    */
   getMyShop(): ResultAsync<Shop | null, DomainError>;
+
+  /**
+   * Gets the current user's shop product slots information.
+   * Requires AuthGuard to set userId in ALS.
+   * @returns A ResultAsync that resolves to { currentCount, maxSlots }.
+   */
+  getProductSlotsInfo(): ResultAsync<
+    { currentCount: number; maxSlots: number },
+    DomainError
+  >;
 }

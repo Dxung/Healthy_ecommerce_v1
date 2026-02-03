@@ -11,6 +11,9 @@ interface PaymentMethodSectionProps {
   onUseCoinChange: (useCoin: boolean) => void;
   coinBalance: number;
   walletBalance: number;
+  totalAmount: number;
+  subtotal: number;
+  coinMaxUsagePercent: number;
 }
 
 const paymentMethods: {
@@ -40,6 +43,9 @@ export function PaymentMethodSection({
   onUseCoinChange,
   coinBalance,
   walletBalance,
+  totalAmount,
+  subtotal,
+  coinMaxUsagePercent,
 }: PaymentMethodSectionProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -52,6 +58,12 @@ export function PaymentMethodSection({
     return new Intl.NumberFormat('vi-VN').format(coin);
   };
 
+  const isWalletInsufficient = walletBalance < totalAmount;
+
+  // Calculate max usable coins: min of (user's balance, max allowed by percent)
+  const maxCoinAllowed = Math.floor((subtotal * coinMaxUsagePercent) / 100);
+  const usableCoin = Math.min(coinBalance, maxCoinAllowed);
+
   return (
     <div className="bg-white rounded-lg border p-4">
       <h2 className="font-medium mb-4">Phương thức thanh toán</h2>
@@ -59,37 +71,63 @@ export function PaymentMethodSection({
       <div className="space-y-3">
         {paymentMethods.map((method) => {
           const isSelected = selectedMethod === method.value;
+          const isWalletDisabled = method.value === 'wallet' && isWalletInsufficient;
+
           return (
             <button
               key={method.value}
-              onClick={() => onMethodChange(method.value)}
+              onClick={() => !isWalletDisabled && onMethodChange(method.value)}
+              disabled={isWalletDisabled}
               className={`w-full flex items-center gap-4 p-4 rounded-lg border-2 transition-colors text-left ${
-                isSelected
+                isWalletDisabled
+                  ? 'border-gray-200 bg-gray-50 cursor-not-allowed opacity-60'
+                  : isSelected
                   ? 'border-primary bg-primary/5'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
               <div
                 className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                  isSelected ? 'border-primary' : 'border-gray-300'
+                  isWalletDisabled
+                    ? 'border-gray-300'
+                    : isSelected
+                    ? 'border-primary'
+                    : 'border-gray-300'
                 }`}
               >
-                {isSelected && <div className="w-3 h-3 rounded-full bg-primary" />}
+                {isSelected && !isWalletDisabled && (
+                  <div className="w-3 h-3 rounded-full bg-primary" />
+                )}
               </div>
               <div
                 className={`p-2 rounded-lg ${
-                  isSelected ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600'
+                  isWalletDisabled
+                    ? 'bg-gray-100 text-gray-400'
+                    : isSelected
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-600'
                 }`}
               >
                 {method.icon}
               </div>
               <div className="flex-1">
-                <p className="font-medium">{method.label}</p>
-                <p className="text-sm text-gray-500">{method.description}</p>
+                <p className={`font-medium ${isWalletDisabled ? 'text-gray-400' : ''}`}>
+                  {method.label}
+                </p>
+                <p className={`text-sm ${isWalletDisabled ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {method.description}
+                </p>
                 {method.value === 'wallet' && (
-                  <p className="text-sm text-primary font-medium mt-1">
-                    Số dư: {formatPrice(walletBalance)}
-                  </p>
+                  <div className="mt-1">
+                    <p className={`text-sm font-medium ${isWalletInsufficient ? 'text-red-500' : 'text-primary'}`}>
+                      Số dư: {formatPrice(walletBalance)}
+                    </p>
+                    {isWalletInsufficient && (
+                      <p className="text-xs text-red-500">
+                        Số dư ví không đủ để thanh toán đơn hàng
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </button>
@@ -105,12 +143,12 @@ export function PaymentMethodSection({
               id="use-coin"
               checked={useCoin}
               onCheckedChange={(checked) => onUseCoinChange(checked === true)}
-              disabled={coinBalance <= 0}
+              disabled={usableCoin <= 0}
             />
             <label
               htmlFor="use-coin"
               className={`flex items-center gap-2 cursor-pointer ${
-                coinBalance <= 0 ? 'text-gray-400' : 'text-gray-700'
+                usableCoin <= 0 ? 'text-gray-400' : 'text-gray-700'
               }`}
             >
               <Coins className="w-5 h-5 text-yellow-500" />
@@ -124,9 +162,18 @@ export function PaymentMethodSection({
             </p>
           </div>
         </div>
-        {coinBalance <= 0 && (
+        {coinBalance <= 0 ? (
           <p className="text-xs text-gray-400 mt-2 ml-7">
             Bạn chưa có xu. Hoàn thành đơn hàng để nhận xu.
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500 mt-2 ml-7">
+            Có thể dùng tối đa{' '}
+            <span className="font-medium text-yellow-600">{formatCoin(usableCoin)} xu</span>
+            {' '}(-{formatPrice(usableCoin)})
+            {coinBalance > maxCoinAllowed && (
+              <span className="text-gray-400"> (tối đa {coinMaxUsagePercent}% giá trị đơn hàng)</span>
+            )}
           </p>
         )}
       </div>

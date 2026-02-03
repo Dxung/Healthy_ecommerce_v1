@@ -30,6 +30,8 @@ import {
 } from 'src/modules/system-config/system-config.constants';
 import type { ISystemConfigService } from 'src/modules/system-config/system-config.service.interface';
 import { SYSTEM_CONFIG_SERVICE } from 'src/modules/system-config/tokens/system-config.token';
+import { IMAGE_PROCESSING_SERVICE } from 'src/shared/image-processing/tokens/image-processing.token';
+import type { IImageProcessingService } from 'src/shared/image-processing/interfaces/image-processing.service.interface';
 
 @Injectable()
 export class ReviewService implements IReviewService {
@@ -44,6 +46,8 @@ export class ReviewService implements IReviewService {
     private readonly shopRepository: IShopRepository,
     @Inject(SYSTEM_CONFIG_SERVICE)
     private readonly systemConfigService: ISystemConfigService,
+    @Inject(IMAGE_PROCESSING_SERVICE)
+    private readonly imageProcessingService: IImageProcessingService,
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
   ) {}
 
@@ -338,6 +342,62 @@ export class ReviewService implements IReviewService {
       });
   }
 
+  @WithPosition()
+  getReviewableItemsForProduct(
+    productId: string,
+  ): ResultAsync<
+    Array<{
+      orderItemId: string;
+      orderId: string;
+      orderCode: string;
+      variantName: string;
+      completedAt: Date;
+    }>,
+    DomainError
+  > {
+    const userId = this.getUserId();
+    if (!userId) {
+      return okAsync([]);
+    }
+
+    // Get completed order items for this product by the user
+    return this.orderRepository
+      .findCompletedOrderItemsByProductAndUser(userId, productId)
+      .andThen((orderItems) => {
+        if (orderItems.length === 0) {
+          return okAsync([]);
+        }
+
+        // Get existing reviews for these order items
+        const orderItemIds = orderItems.map((item) => item.orderItemId);
+        return this.reviewRepository
+          .findByOrderItemIds(orderItemIds)
+          .andThen((existingReviews) => {
+            const reviewedItemIds = new Set(
+              existingReviews.map((r) => r.orderItemId),
+            );
+
+            // Filter out already reviewed items
+            const unreviewed = orderItems.filter(
+              (item) => !reviewedItemIds.has(item.orderItemId),
+            );
+
+            // Get review window days to filter by window
+            return ResultAsync.fromPromise(
+              this.getReviewWindowDays(),
+              () => createDomainError(SHARED_ERRORS.SYSTEM_ERROR),
+            ).map((windowDays) => {
+              const now = new Date();
+              return unreviewed.filter((item) => {
+                const deadline = new Date(item.completedAt);
+                deadline.setDate(deadline.getDate() + windowDays);
+                return now <= deadline;
+              });
+            });
+          });
+      });
+  }
+
   // ======================== REFUND INTEGRATION ========================
 
   @WithPosition()
@@ -602,5 +662,18 @@ export class ReviewService implements IReviewService {
       default:
         return createDomainError(SHARED_ERRORS.SYSTEM_ERROR, { cause: reason });
     }
+  }
+
+  // ======================== IMAGE UPLOAD ========================
+
+  private static readonly REVIEW_IMAGE_PRESET = 'Healthy_review_image';
+
+  @WithPosition()
+  uploadReviewImage(
+    file: Express.Multer.File,
+  ): ResultAsync<string, DomainError> {
+    return this.imageProcessingService
+      .uploadImage(file.buffer, ReviewService.REVIEW_IMAGE_PRESET)
+      .map((result) => result.url);
   }
 }

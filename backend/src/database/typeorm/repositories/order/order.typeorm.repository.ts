@@ -558,6 +558,53 @@ export class OrmOrderRepository implements IOrderRepository {
     ).map((ormOrders) => ORMOrderMapper.toDomainList(ormOrders));
   }
 
+  // ===================== REVIEW SUPPORT =====================
+
+  @WithPosition()
+  findCompletedOrderItemsByProductAndUser(
+    userId: string,
+    productId: string,
+  ): ResultAsync<
+    Array<{
+      orderItemId: string;
+      orderId: string;
+      orderCode: string;
+      variantName: string;
+      completedAt: Date;
+    }>,
+    DomainError
+  > {
+    const itemRepo = this.getOrderItemRepository();
+
+    return ResultAsync.fromPromise(
+      itemRepo
+        .createQueryBuilder('item')
+        .innerJoin('item.order', 'order')
+        .select([
+          'item.id AS "orderItemId"',
+          'order.id AS "orderId"',
+          'order.orderCode AS "orderCode"',
+          'item.variantName AS "variantName"',
+          'order.completedAt AS "completedAt"',
+        ])
+        .where('order.buyerId = :userId', { userId })
+        .andWhere('item.productId = :productId', { productId })
+        .andWhere('order.status = :status', { status: OrderStatus.COMPLETED })
+        .andWhere('order.completedAt IS NOT NULL')
+        .orderBy('order.completedAt', 'DESC')
+        .getRawMany(),
+      (error) => createDomainError(SHARED_ERRORS.DB_ERROR, { cause: error }),
+    ).map((results) =>
+      results.map((row) => ({
+        orderItemId: row.orderItemId,
+        orderId: row.orderId,
+        orderCode: row.orderCode,
+        variantName: row.variantName,
+        completedAt: new Date(row.completedAt),
+      })),
+    );
+  }
+
   private getEntityManager() {
     const store = this.als.getStore();
     if (!store || !store.ctx) return null;

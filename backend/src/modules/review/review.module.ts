@@ -4,6 +4,7 @@ import { AlsModule } from 'src/shared/als/als.module';
 import { AuthorizationModule } from '../authorization/authorization.module';
 import { SystemConfigModule } from '../system-config/system-config.module';
 import { SessionModule } from '../session/session.module';
+import { ImageProcessingModule } from 'src/shared/image-processing/image-processing.module';
 
 // Tokens
 import { REVIEW_SERVICE } from './tokens/review.token';
@@ -25,6 +26,7 @@ import {
     AuthorizationModule,
     SystemConfigModule,
     SessionModule,
+    ImageProcessingModule,
   ],
   providers: [
     {

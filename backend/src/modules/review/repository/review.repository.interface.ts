@@ -58,6 +58,13 @@ export interface IReviewRepository {
   ): ResultAsync<Review | null, DomainError>;
 
   /**
+   * Finds reviews by multiple order item IDs.
+   * @param orderItemIds - The order item IDs.
+   * @returns List of Review domain models (only non-deleted).
+   */
+  findByOrderItemIds(orderItemIds: string[]): ResultAsync<Review[], DomainError>;
+
+  /**
    * Finds all reviews for a product with pagination.
    * Only returns active reviews (excludes hidden and deleted).
    * @param productId - The product ID.

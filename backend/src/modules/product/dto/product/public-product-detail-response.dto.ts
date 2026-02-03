@@ -281,6 +281,12 @@ export class PublicProductDetailResponseDto {
   })
   shop: ShopInfoDto;
 
+  @ApiProperty({
+    description: 'Product ingredients',
+    type: [String],
+  })
+  ingredients: string[];
+
   constructor(
     product: Product,
     options: {
@@ -294,6 +300,7 @@ export class PublicProductDetailResponseDto {
       allergenTags?: AllergenTag[];
       dietTags?: DietTag[];
       nutrition?: ProductNutrition | null;
+      ingredients?: string[];
     },
   ) {
     this.id = product.id;
@@ -341,5 +348,7 @@ export class PublicProductDetailResponseDto {
       : null;
 
     this.shop = new ShopInfoDto(options.shop, options.shopProvince);
+
+    this.ingredients = options.ingredients ?? [];
   }
 }

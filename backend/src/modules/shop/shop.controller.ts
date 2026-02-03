@@ -12,6 +12,7 @@ import { ApiTags } from '@nestjs/swagger';
 import type { IShopService } from './shop.service.interface';
 import { SHOP_SERVICE } from './tokens/shop.token';
 import { RegisterShopArgumentDto, ShopInfoResponseDto } from './dto';
+import { ProductSlotsInfoResponseDto } from './dto/product-slots-info-response.dto';
 import { ExceptionSource } from 'src/common/exception filters/exception-source';
 import { ShopErrorHttpMapper } from './errors/shop-errors-http.mapper';
 import { AuthGuard } from '../auth/guards/auth.guard';
@@ -67,6 +68,26 @@ export class ShopController {
   async getMyShop(): Promise<ShopInfoResponseDto | null> {
     return this.shopService.getMyShop().match(
       (shop) => (shop ? new ShopInfoResponseDto(shop) : null),
+      (error) => {
+        throw ShopErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
+      },
+    );
+  }
+
+  /**
+   * Gets the current shop's product slots information.
+   * @returns Promise that resolves to ProductSlotsInfoResponseDto
+   */
+  @Get('product-slots')
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions('shop:read-product')
+  @HttpCode(HttpStatus.OK)
+  async getProductSlotsInfo(): Promise<ProductSlotsInfoResponseDto> {
+    return this.shopService.getProductSlotsInfo().match(
+      (info) => new ProductSlotsInfoResponseDto(info.currentCount, info.maxSlots),
       (error) => {
         throw ShopErrorHttpMapper.toHttpException(
           error,

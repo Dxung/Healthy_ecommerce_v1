@@ -26,6 +26,7 @@ import {
   BRAND_REPOSITORY,
   UNIT_REPOSITORY,
   LOCATION_REPOSITORY,
+  PRODUCT_INGREDIENT_REPOSITORY,
 } from 'src/database/typeorm/tokens/database.token';
 import { ICategoryRepository } from './repository/category.repository.interface';
 import { IShopRepository } from 'src/modules/shop/repository/shop.repository.interface';
@@ -35,6 +36,7 @@ import { IProductNutritionRepository } from './repository/product-nutrition.repo
 import { IBrandRepository } from './repository/brand.repository.interface';
 import { IUnitRepository } from './repository/unit.repository.interface';
 import { ILocationRepository } from 'src/modules/location/repository/location.repository.interface';
+import { IProductIngredientRepository } from './repository/product-ingredient.repository.interface';
 import { Product } from './models/product.model';
 
 @ApiTags('Products')
@@ -59,6 +61,8 @@ export class PublicProductController {
     private readonly unitRepository: IUnitRepository,
     @Inject(LOCATION_REPOSITORY)
     private readonly locationRepository: ILocationRepository,
+    @Inject(PRODUCT_INGREDIENT_REPOSITORY)
+    private readonly ingredientRepository: IProductIngredientRepository,
   ) {}
 
   @Get()
@@ -386,6 +390,7 @@ export class PublicProductController {
       product.servingUnitId
         ? this.unitRepository.findById(product.servingUnitId)
         : ResultAsync.fromSafePromise(Promise.resolve(null)),
+      this.ingredientRepository.findByProductId(product.id),
     ]).andThen(
       ([
         categoryHierarchy,
@@ -395,6 +400,7 @@ export class PublicProductController {
         nutrition,
         brand,
         servingUnit,
+        ingredients,
       ]) => {
         if (!shop) {
           // This shouldn't happen, but handle it gracefully
@@ -426,6 +432,7 @@ export class PublicProductController {
               allergenTags,
               dietTags,
               nutrition,
+              ingredients: ingredients.map((ing) => ing.name),
             });
           });
       },

@@ -227,19 +227,24 @@ export class OrderService implements IOrderService {
         }),
       )
       .andThen(({ selectedItems, address }) =>
-        // Step 3: Get coin config + shipping threshold + buyer coin balance
+        // Step 3: Get coin config + shipping threshold + buyer coin balance + wallet balance
         ResultAsync.combine([
           this.systemConfigService.getCoinMaxUsagePercent(),
           this.systemConfigService.getShippingFreeThreshold(),
           input.useCoin
             ? this.buyerCoinWalletRepository.findByBuyerId(userId)
             : okAsync(null),
-        ]).map(([coinMaxPercent, shippingFreeThreshold, coinWallet]) => ({
+          // Get wallet balance if payment method is WALLET
+          input.paymentMethod === PaymentMethod.WALLET
+            ? this.walletService.getMyWallet()
+            : okAsync(null),
+        ]).map(([coinMaxPercent, shippingFreeThreshold, coinWallet, wallet]) => ({
           selectedItems,
           address,
           coinMaxPercent,
           shippingFreeThreshold,
           availableCoins: coinWallet?.balance ?? 0,
+          walletBalance: wallet?.availableBalance ?? 0,
         })),
       )
       .andThen(
@@ -249,6 +254,7 @@ export class OrderService implements IOrderService {
           coinMaxPercent,
           shippingFreeThreshold,
           availableCoins,
+          walletBalance,
         }) => {
           // Step 4: Group items by shop and calculate subtotals
           const shopGroups = new Map<string, CartItemWithDetails[]>();
@@ -289,6 +295,34 @@ export class OrderService implements IOrderService {
             } else {
               // Use as much as allowed
               totalCoinToUse = Math.min(availableCoins, maxCoinAllowed);
+            }
+          }
+
+          // Step 5.1: Pre-calculate total payment amount and validate wallet balance
+          if (input.paymentMethod === PaymentMethod.WALLET) {
+            // Calculate total shipping and discount
+            let totalShippingFee = 0;
+            let totalShipDiscount = 0;
+            for (const [shopId, subtotal] of shopSubtotals) {
+              totalShippingFee += SHIPPING_FEE_DEFAULT;
+              if (subtotal >= shippingFreeThreshold) {
+                totalShipDiscount += SHIPPING_FEE_DEFAULT;
+              }
+            }
+
+            const grandTotalAmount =
+              grandSubtotal +
+              totalShippingFee -
+              totalShipDiscount -
+              totalCoinToUse;
+
+            // Check wallet balance BEFORE entering transaction
+            if (walletBalance < grandTotalAmount) {
+              return errAsync(
+                createDomainError(ORDER_ERRORS.INSUFFICIENT_WALLET_BALANCE, {
+                  cause: `Required: ${grandTotalAmount}, Available: ${walletBalance}`,
+                }),
+              );
             }
           }
 

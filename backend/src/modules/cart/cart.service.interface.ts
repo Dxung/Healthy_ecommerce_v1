@@ -18,6 +18,7 @@ export interface CheckoutPreviewData {
   hasInactiveItems: boolean;
   shippingFeeDefault: number;
   shippingFreeThreshold: number;
+  coinMaxUsagePercent: number;
 }
 
 export interface AddToCartResult {

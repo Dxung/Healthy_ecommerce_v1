@@ -12,7 +12,10 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -32,11 +35,14 @@ import {
   ReviewReplyResponseDto,
   CanReviewResponseDto,
 } from './dto';
+import { ReviewableOrderItemResponseDto } from './dto/reviewable-order-item-response.dto';
 import { ReviewErrorHttpMapper } from './errors/review-errors-http.mapper';
 import { ExceptionSource } from 'src/common/exception filters/exception-source';
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { PermissionsGuard } from '../authorization/guards/permissions.guard';
 import { Permissions } from '../authorization/decorators/permissions.decorator';
+import { FileValidationPipe } from 'src/common/pipes/file-validation.pipe';
+import { REVIEW_IMAGE_CONFIG } from 'src/common/pipes/file-validation.config';
 
 // ======================== BUYER REVIEW CONTROLLER ========================
 
@@ -47,6 +53,43 @@ export class ReviewController {
     @Inject(REVIEW_SERVICE)
     private readonly reviewService: IReviewService,
   ) {}
+
+  @Post('images/upload')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions('buyer:create-review')
+  @UseInterceptors(FileInterceptor('image'))
+  @ApiOperation({
+    summary: 'Upload a review image',
+    description:
+      'Uploads an image and returns the URL. Use this URL when creating a review. ' +
+      'Accepted formats: JPG, PNG, WEBP. Size: 500x500 to 1500x1500 pixels, max 2MB.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Image uploaded successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        imageUrl: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid image file' })
+  uploadReviewImage(
+    @UploadedFile(new FileValidationPipe(REVIEW_IMAGE_CONFIG))
+    file: Express.Multer.File,
+  ): Promise<{ imageUrl: string }> {
+    return this.reviewService.uploadReviewImage(file).match(
+      (imageUrl) => ({ imageUrl }),
+      (error) => {
+        throw ReviewErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
+      },
+    );
+  }
 
   @Post()
   @ApiBearerAuth()
@@ -92,6 +135,27 @@ export class ReviewController {
   ): Promise<CanReviewResponseDto> {
     return this.reviewService.canReviewOrderItem(orderItemId).match(
       (result) => new CanReviewResponseDto(result.canReview, result.reason),
+      (error) => {
+        throw ReviewErrorHttpMapper.toHttpException(
+          error,
+          ExceptionSource.CONTROLLER,
+        );
+      },
+    );
+  }
+
+  @Get('reviewable-items/:productId')
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @Permissions('buyer:create-review')
+  @ApiOperation({ summary: 'Get reviewable order items for a product' })
+  @ApiParam({ name: 'productId', description: 'Product ID' })
+  @ApiResponse({ status: 200, type: [ReviewableOrderItemResponseDto] })
+  getReviewableItemsForProduct(
+    @Param('productId', new ParseUUIDPipe()) productId: string,
+  ): Promise<ReviewableOrderItemResponseDto[]> {
+    return this.reviewService.getReviewableItemsForProduct(productId).match(
+      (items) => items.map((item) => new ReviewableOrderItemResponseDto(item)),
       (error) => {
         throw ReviewErrorHttpMapper.toHttpException(
           error,

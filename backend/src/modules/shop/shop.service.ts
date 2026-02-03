@@ -26,6 +26,8 @@ import { SHOP_ERRORS } from './errors/shop.errors';
 import { LOCATION_ERRORS } from '../location/errors/location.errors';
 import { AUTH_ERRORS } from '../auth/errors/auth.errors';
 import type { RegisterShopArgumentDto } from './dto';
+import type { IShopBadgeBenefitsService } from './shop-badge-benefits.service.interface';
+import { SHOP_BADGE_BENEFITS_SERVICE } from './tokens/shop.token';
 
 @Injectable()
 export class ShopService implements IShopService {
@@ -42,6 +44,8 @@ export class ShopService implements IShopService {
     private readonly authorizationService: IAuthorizationService,
     @Inject(UOW_TOKEN)
     private readonly uow: IUow,
+    @Inject(SHOP_BADGE_BENEFITS_SERVICE)
+    private readonly shopBadgeBenefitsService: IShopBadgeBenefitsService,
     private readonly als: AsyncLocalStorage<ITypeORMAlsStore>,
   ) {}
 
@@ -214,5 +218,41 @@ export class ShopService implements IShopService {
 
     // Step 2: Find shop by user ID
     return this.shopRepository.findByUserId(store.userId);
+  }
+
+  /**
+   * Gets the current user's shop product slots information.
+   */
+  @WithPosition()
+  getProductSlotsInfo(): ResultAsync<
+    { currentCount: number; maxSlots: number },
+    DomainError
+  > {
+    const store = this.als.getStore();
+    if (!store?.userId) {
+      return errAsync(
+        createDomainError(SHARED_ERRORS.SYSTEM_ERROR, {
+          cause: 'User ID not found in context',
+        }),
+      );
+    }
+
+    return this.shopRepository.findByUserId(store.userId).andThen((shop) => {
+      if (!shop) {
+        return errAsync(
+          createDomainError(SHOP_ERRORS.SHOP_NOT_FOUND, {
+            cause: 'User does not own a shop',
+          }),
+        );
+      }
+
+      // Get current product count and max slots from badge benefits
+      return this.shopBadgeBenefitsService
+        .getShopBadgeBenefits(shop.id)
+        .map((benefits) => ({
+          currentCount: shop.totalProducts,
+          maxSlots: benefits.maxProductSlots ?? 50, // fallback to 50 if somehow null
+        }));
+    });
   }
 }

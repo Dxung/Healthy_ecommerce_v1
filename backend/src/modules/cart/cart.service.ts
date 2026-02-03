@@ -480,22 +480,31 @@ export class CartService implements ICartService {
           this.cartRepository.findCartItemsWithDetails(cart.id),
           this.cartRepository.findInactiveItemIds(cart.id),
           this.systemConfigService.getShippingFreeThreshold(),
-        ]).andThen(([itemsWithDetails, inactiveIds, shippingFreeThreshold]) => {
-          const selectedItems = itemsWithDetails.filter(
-            (item) => item.cartItem.isSelected,
-          );
-
-          if (selectedItems.length === 0) {
-            return errAsync(createDomainError(CART_ERRORS.NO_ITEMS_SELECTED));
-          }
-
-          return okAsync({
-            selectedItems,
-            hasInactiveItems: inactiveIds.length > 0,
-            shippingFeeDefault: SHIPPING_FEE_DEFAULT,
+          this.systemConfigService.getCoinMaxUsagePercent(),
+        ]).andThen(
+          ([
+            itemsWithDetails,
+            inactiveIds,
             shippingFreeThreshold,
-          });
-        }),
+            coinMaxUsagePercent,
+          ]) => {
+            const selectedItems = itemsWithDetails.filter(
+              (item) => item.cartItem.isSelected,
+            );
+
+            if (selectedItems.length === 0) {
+              return errAsync(createDomainError(CART_ERRORS.NO_ITEMS_SELECTED));
+            }
+
+            return okAsync({
+              selectedItems,
+              hasInactiveItems: inactiveIds.length > 0,
+              shippingFeeDefault: SHIPPING_FEE_DEFAULT,
+              shippingFreeThreshold,
+              coinMaxUsagePercent,
+            });
+          },
+        ),
       );
   }
 }

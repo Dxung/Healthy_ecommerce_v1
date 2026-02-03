@@ -235,4 +235,24 @@ export interface IOrderRepository {
     minutesSinceCreation: number,
     limit?: number,
   ): ResultAsync<Order[], DomainError>;
+
+  /**
+   * Find completed order items for a specific product by a user.
+   * Returns order items with their parent order info.
+   * @param userId - The buyer's user ID
+   * @param productId - The product ID
+   */
+  findCompletedOrderItemsByProductAndUser(
+    userId: string,
+    productId: string,
+  ): ResultAsync<
+    Array<{
+      orderItemId: string;
+      orderId: string;
+      orderCode: string;
+      variantName: string;
+      completedAt: Date;
+    }>,
+    DomainError
+  >;
 }

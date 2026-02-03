@@ -177,6 +177,13 @@ export interface ShopInfoResponse {
   updatedAt: string;
 }
 
+export interface ProductSlotsInfoResponse {
+  currentCount: number;
+  maxSlots: number;
+  remainingSlots: number;
+  isAtLimit: boolean;
+}
+
 // ===================== Shop Badge Application Types =====================
 export type BadgeApplicationStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
@@ -926,6 +933,7 @@ export interface CheckoutPreviewResponse {
   shippingFeeDefault: number;
   shippingFreeThreshold: number;
   totalShippingFee: number;
+  coinMaxUsagePercent: number;
 }
 
 // Order Types
@@ -1103,6 +1111,14 @@ export interface CreateReviewReplyRequest {
 
 export interface UpdateReviewReplyRequest {
   content: string;
+}
+
+export interface ReviewableOrderItemResponse {
+  orderItemId: string;
+  orderId: string;
+  orderCode: string;
+  variantName: string;
+  completedAt: string;
 }
 
 // Product Types
@@ -1439,6 +1455,7 @@ export interface PublicProductDetailResponse {
   slug: string;
   description: string | null;
   shortDescription: string | null;
+  ingredients: string | null;
   categoryId: string | null;
   categoryName: string | null;
   brandId: string | null;
@@ -2215,6 +2232,12 @@ export class ApiClient {
 
   async getMyShop(): Promise<ShopInfoResponse | null> {
     return this.request<ShopInfoResponse | null>('/shop/my-shop', {
+      method: 'GET',
+    });
+  }
+
+  async getProductSlotsInfo(): Promise<ProductSlotsInfoResponse> {
+    return this.request<ProductSlotsInfoResponse>('/shop/product-slots', {
       method: 'GET',
     });
   }
@@ -3607,6 +3630,30 @@ export class ApiClient {
     });
   }
 
+  async uploadReviewImage(file: File): Promise<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const url = `${this.baseUrl}/reviews/images/upload`;
+    const config: RequestInit = {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    };
+
+    const response = await fetch(url, config);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        message: errorData.message || 'Upload failed',
+        statusCode: response.status,
+        details: errorData,
+      } as ApiError;
+    }
+
+    return response.json();
+  }
+
   async updateReview(reviewId: string, data: UpdateReviewRequest): Promise<ReviewResponse> {
     return this.request<ReviewResponse>(`/reviews/${reviewId}`, {
       method: 'PATCH',
@@ -3639,6 +3686,12 @@ export class ApiClient {
 
   async getReviewByOrderItemId(orderItemId: string): Promise<ReviewResponse | null> {
     return this.request<ReviewResponse | null>(`/reviews/order-item/${orderItemId}`, {
+      method: 'GET',
+    });
+  }
+
+  async getReviewableItemsForProduct(productId: string): Promise<ReviewableOrderItemResponse[]> {
+    return this.request<ReviewableOrderItemResponse[]>(`/reviews/reviewable-items/${productId}`, {
       method: 'GET',
     });
   }
