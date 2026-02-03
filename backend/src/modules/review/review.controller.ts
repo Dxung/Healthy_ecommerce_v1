@@ -134,7 +134,7 @@ export class ReviewController {
     @Param('orderItemId', new ParseUUIDPipe()) orderItemId: string,
   ): Promise<CanReviewResponseDto> {
     return this.reviewService.canReviewOrderItem(orderItemId).match(
-      (result) => new CanReviewResponseDto(result.canReview, result.reason),
+      (result) => new CanReviewResponseDto(result),
       (error) => {
         throw ReviewErrorHttpMapper.toHttpException(
           error,

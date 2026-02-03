@@ -76,7 +76,7 @@ export class ReviewService implements IReviewService {
 
     // Check if user can review
     return this.canReviewOrderItem(orderItemId).andThen((canReviewResult) => {
-      if (!canReviewResult.canReview) {
+      if (!canReviewResult.canCreate) {
         // Map reason to appropriate error
         return errAsync(this.getCanReviewError(canReviewResult.reason));
       }
@@ -295,10 +295,22 @@ export class ReviewService implements IReviewService {
   @WithPosition()
   canReviewOrderItem(
     orderItemId: string,
-  ): ResultAsync<{ canReview: boolean; reason?: string }, DomainError> {
+  ): ResultAsync<
+    {
+      canCreate: boolean;
+      canModify: boolean;
+      reason?: string;
+      existingReview?: Review | null;
+    },
+    DomainError
+  > {
     const userId = this.getUserId();
     if (!userId) {
-      return okAsync({ canReview: false, reason: 'not_authenticated' });
+      return okAsync({
+        canCreate: false,
+        canModify: false,
+        reason: 'not_authenticated',
+      });
     }
 
     // Get order item with order
@@ -306,39 +318,67 @@ export class ReviewService implements IReviewService {
       .findOrderItemById(orderItemId)
       .andThen((result) => {
         if (!result) {
-          return okAsync({ canReview: false, reason: 'order_item_not_found' });
+          return okAsync({
+            canCreate: false,
+            canModify: false,
+            reason: 'order_item_not_found',
+          });
         }
 
         const { order } = result;
 
         // Check buyer
         if (order.buyerId !== userId) {
-          return okAsync({ canReview: false, reason: 'not_buyer' });
+          return okAsync({
+            canCreate: false,
+            canModify: false,
+            reason: 'not_buyer',
+          });
         }
 
         // Check order status
         if (order.status !== OrderStatus.COMPLETED) {
-          return okAsync({ canReview: false, reason: 'order_not_completed' });
+          return okAsync({
+            canCreate: false,
+            canModify: false,
+            reason: 'order_not_completed',
+          });
         }
 
         // TODO: Check refund status via refund_requests table when implemented
 
-        // Check existing review
-        return this.reviewRepository
-          .findByOrderItemId(orderItemId)
-          .andThen((existingReview) => {
-            if (existingReview) {
-              return okAsync({ canReview: false, reason: 'already_reviewed' });
-            }
+        // Check existing review and window
+        return ResultAsync.combine([
+          this.reviewRepository.findByOrderItemId(orderItemId, {
+            withImages: true,
+            withReply: true,
+          }),
+          this.isWithinReviewWindow(orderItemId),
+        ]).map(([existingReview, isWithinWindow]) => {
+          if (existingReview) {
+            // Already reviewed - can modify if within window
+            return {
+              canCreate: false,
+              canModify: isWithinWindow,
+              reason: isWithinWindow ? undefined : 'window_expired',
+              existingReview,
+            };
+          }
 
-            // Check review window
-            return this.isWithinReviewWindow(orderItemId).map((isWithin) => {
-              if (!isWithin) {
-                return { canReview: false, reason: 'window_expired' };
-              }
-              return { canReview: true };
-            });
-          });
+          // No review yet - can create if within window
+          if (!isWithinWindow) {
+            return {
+              canCreate: false,
+              canModify: false,
+              reason: 'window_expired',
+            };
+          }
+
+          return {
+            canCreate: true,
+            canModify: false,
+          };
+        });
       });
   }
 

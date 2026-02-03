@@ -112,15 +112,25 @@ export interface IReviewService {
 
   /**
    * Checks if the current user can review an order item.
-   * Returns canReview: true if all conditions are met, otherwise false with reason.
-   * Requires AuthGuard to set userId in ALS.
+   * Returns comprehensive status including:
+   * - canCreate: true if user can create a new review
+   * - canModify: true if user can update/delete existing review (within window)
+   * - existingReview: the existing review if already reviewed
+   * - reason: why user cannot create/modify
    *
    * @param orderItemId - The order item ID to check
-   * @returns { canReview: boolean, reason?: string }
    */
   canReviewOrderItem(
     orderItemId: string,
-  ): ResultAsync<{ canReview: boolean; reason?: string }, DomainError>;
+  ): ResultAsync<
+    {
+      canCreate: boolean;
+      canModify: boolean;
+      reason?: string;
+      existingReview?: Review | null;
+    },
+    DomainError
+  >;
 
   /**
    * Gets reviewable order items for a product by the current user.
