@@ -12,6 +12,7 @@ export class PaymentTransaction {
     private readonly _id: string,
     private readonly _topupId: string | null,
     private readonly _orderId: string | null,
+    private readonly _relatedOrderIds: string[], // All order IDs for multi-shop checkout
     private readonly _type: PaymentType,
     private readonly _amount: number,
     private _status: PaymentStatus,
@@ -48,6 +49,7 @@ export class PaymentTransaction {
       uuidv7(),
       params.topupId,
       null,
+      [], // No related orders for topup
       PaymentType.TOPUP,
       params.amount,
       PaymentStatus.PENDING,
@@ -65,16 +67,22 @@ export class PaymentTransaction {
 
   /**
    * Creates a new payment transaction for order payment
+   * @param orderId - Primary order ID (for backward compatibility and indexing)
+   * @param orderIds - All order IDs (for multi-shop checkout)
+   * @param amount - Total payment amount
    */
   static createForOrder(params: {
     orderId: string;
+    orderIds?: string[];
     amount: number;
   }): PaymentTransaction {
     const now = new Date();
+    const allOrderIds = params.orderIds ?? [params.orderId];
     return new PaymentTransaction(
       uuidv7(),
       null,
       params.orderId,
+      allOrderIds,
       PaymentType.ORDER_PAYMENT,
       params.amount,
       PaymentStatus.PENDING,
@@ -157,6 +165,21 @@ export class PaymentTransaction {
 
   get orderId(): string | null {
     return this._orderId;
+  }
+
+  get relatedOrderIds(): string[] {
+    return this._relatedOrderIds;
+  }
+
+  /**
+   * Gets all order IDs associated with this transaction.
+   * Returns relatedOrderIds if available, otherwise falls back to [orderId].
+   */
+  getAllOrderIds(): string[] {
+    if (this._relatedOrderIds.length > 0) {
+      return this._relatedOrderIds;
+    }
+    return this._orderId ? [this._orderId] : [];
   }
 
   get type(): PaymentType {
