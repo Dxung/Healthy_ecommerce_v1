@@ -11,7 +11,7 @@ export class ORMReviewMapper {
 
   /**
    * Converts a Review ORM entity to domain model.
-   * Maps images and reply if loaded.
+   * Maps images, reply, and product info if loaded.
    */
   static toDomain(orm: ORMReview): Review {
     const images = orm.images
@@ -19,6 +19,10 @@ export class ORMReviewMapper {
       : [];
 
     const reply = orm.reply ? this.replyToDomain(orm.reply) : null;
+
+    // Extract product info if loaded
+    const productName = orm.product?.name;
+    const productThumbnailUrl = orm.product?.thumbnailUrl ?? null;
 
     return new Review(
       orm.id,
@@ -34,6 +38,8 @@ export class ORMReviewMapper {
       orm.updatedAt,
       images,
       reply,
+      productName,
+      productThumbnailUrl,
     );
   }
 
