@@ -59,6 +59,19 @@ export interface IWalletService {
     amount: number,
   ): ResultAsync<WalletTransaction, DomainError>;
 
+  /**
+   * Credit buyer wallet from escrow refund (order cancellation)
+   * Creates wallet transaction record for history
+   * @param buyerId - Buyer ID to credit
+   * @param orderId - Order ID for reference
+   * @param amount - Amount to refund
+   */
+  creditBuyerFromEscrowRefund(
+    buyerId: string,
+    orderId: string,
+    amount: number,
+  ): ResultAsync<WalletTransaction, DomainError>;
+
   getShopWallet(shopId: string): ResultAsync<Wallet, DomainError>;
 
   getShopWalletBalance(

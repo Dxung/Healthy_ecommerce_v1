@@ -339,6 +339,41 @@ export class WalletService implements IWalletService {
   }
 
   @WithPosition()
+  creditBuyerFromEscrowRefund(
+    buyerId: string,
+    orderId: string,
+    amount: number,
+  ): ResultAsync<WalletTransaction, DomainError> {
+    return this.walletRepository
+      .findByOwner(WalletOwnerType.BUYER, buyerId)
+      .andThen((wallet) => {
+        if (!wallet) {
+          return errAsync(
+            createDomainError(PAYMENT_ERRORS.WALLET_NOT_FOUND, { cause: null }),
+          );
+        }
+
+        const balanceBefore = wallet.credit(amount);
+        const balanceAfter = wallet.balance;
+
+        const walletTxn = WalletTransaction.create({
+          walletId: wallet.id,
+          type: WalletTransactionType.REFUND_RECEIVED,
+          amount,
+          balanceBefore,
+          balanceAfter,
+          referenceType: 'order',
+          referenceId: orderId,
+          description: `Hoàn tiền đơn hàng #${orderId.slice(0, 8)}`,
+        });
+
+        return this.walletRepository
+          .saveWallet(wallet)
+          .andThen(() => this.walletRepository.createTransaction(walletTxn));
+      });
+  }
+
+  @WithPosition()
   getShopWallet(shopId: string): ResultAsync<Wallet, DomainError> {
     return this.walletRepository.findOrCreateForShop(shopId);
   }

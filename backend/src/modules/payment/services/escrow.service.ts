@@ -3,14 +3,9 @@ import { ResultAsync, okAsync, errAsync } from 'neverthrow';
 import { IEscrowService } from './escrow.service.interface';
 import { IWalletService } from './wallet.service.interface';
 import { IEscrowRepository } from '../repository/escrow.repository.interface';
-import { IWalletRepository } from '../repository/wallet.repository.interface';
 import { EscrowHold } from '../models/escrow-hold.model';
-import { WalletOwnerType } from 'src/database/typeorm/entities/payment/enums/wallet-owner-type.enum';
 import { WALLET_SERVICE } from '../tokens/payment.token';
-import {
-  ESCROW_REPOSITORY,
-  WALLET_REPOSITORY,
-} from 'src/database/typeorm/tokens/database.token';
+import { ESCROW_REPOSITORY } from 'src/database/typeorm/tokens/database.token';
 import {
   createDomainError,
   DomainError,
@@ -19,22 +14,16 @@ import { PAYMENT_ERRORS } from '../errors/payment.errors';
 import { CUSTOM_LOG } from 'src/shared/custom-loggers/tokens/custom-logger.token';
 import { ICustomLoggerService } from 'src/shared/custom-loggers/interfaces/custom-logger.service.interface';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
-import { IUow } from 'src/shared/unitOfWork/interfaces/uow.interface';
-import { UOW_TOKEN } from 'src/shared/unitOfWork/tokens/uow.token';
 
 @Injectable()
 export class EscrowService implements IEscrowService {
   constructor(
     @Inject(ESCROW_REPOSITORY)
     private readonly escrowRepository: IEscrowRepository,
-    @Inject(WALLET_REPOSITORY)
-    private readonly walletRepository: IWalletRepository,
     @Inject(WALLET_SERVICE)
     private readonly walletService: IWalletService,
     @Inject(CUSTOM_LOG)
     private readonly logger: ICustomLoggerService,
-    @Inject(UOW_TOKEN)
-    private readonly uow: IUow,
   ) {}
 
   @WithPosition()
@@ -146,44 +135,32 @@ export class EscrowService implements IEscrowService {
     escrowId: string,
     buyerId: string,
   ): ResultAsync<void, DomainError> {
-    // Wrap in transaction to ensure atomicity:
-    // - updateHold (escrow status → REFUNDED)
-    // - credit buyer wallet
-    // If any step fails, the entire operation is rolled back
-    return this.uow.executeInTransaction(() =>
-      this.escrowRepository.findById(escrowId).andThen((escrowHold) => {
-        if (!escrowHold) {
-          return errAsync(
-            createDomainError(PAYMENT_ERRORS.ESCROW_NOT_FOUND, { cause: null }),
-          );
-        }
+    // NOTE: This method is always called within an existing transaction (from cancelMyOrder/cancelShopOrder)
+    // Do NOT wrap in executeInTransaction to avoid nested transaction issues
+    return this.escrowRepository.findById(escrowId).andThen((escrowHold) => {
+      if (!escrowHold) {
+        return errAsync(
+          createDomainError(PAYMENT_ERRORS.ESCROW_NOT_FOUND, { cause: null }),
+        );
+      }
 
-        const refundResult = escrowHold.refund();
-        if (refundResult.isErr()) {
-          return errAsync(refundResult.error);
-        }
+      const refundResult = escrowHold.refund();
+      if (refundResult.isErr()) {
+        return errAsync(refundResult.error);
+      }
 
-        // Update escrow and credit buyer wallet
-        // Both operations run in the same transaction
-        return this.escrowRepository
-          .updateHold(escrowHold)
-          .andThen(() =>
-            this.walletRepository.findByOwner(WalletOwnerType.BUYER, buyerId),
-          )
-          .andThen((wallet) => {
-            if (!wallet) {
-              return errAsync(
-                createDomainError(PAYMENT_ERRORS.WALLET_NOT_FOUND, {
-                  cause: null,
-                }),
-              );
-            }
-
-            wallet.credit(escrowHold.amount);
-            return this.walletRepository.saveWallet(wallet);
-          })
-          .map(() => undefined);
-      }),
-    );
+      // Update escrow and credit buyer wallet with transaction record
+      // Both operations run in the caller's transaction
+      return this.escrowRepository
+        .updateHold(escrowHold)
+        .andThen(() =>
+          this.walletService.creditBuyerFromEscrowRefund(
+            buyerId,
+            escrowHold.orderId,
+            escrowHold.amount,
+          ),
+        )
+        .map(() => undefined);
+    });
   }
 }
