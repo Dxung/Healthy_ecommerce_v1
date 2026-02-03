@@ -666,7 +666,7 @@ export class ReviewService implements IReviewService {
 
   // ======================== IMAGE UPLOAD ========================
 
-  private static readonly REVIEW_IMAGE_PRESET = 'Healthy_review_image';
+  private static readonly REVIEW_IMAGE_PRESET = 'Healthy_product_image';
 
   @WithPosition()
   uploadReviewImage(

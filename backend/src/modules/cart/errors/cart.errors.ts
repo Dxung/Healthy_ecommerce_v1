@@ -47,4 +47,8 @@ export const CART_ERRORS = {
     code: 'CART_NO_ITEMS_SELECTED',
     message: 'Vui lòng chọn ít nhất một sản phẩm.',
   },
+  CANNOT_BUY_OWN_PRODUCT: {
+    code: 'CART_CANNOT_BUY_OWN_PRODUCT',
+    message: 'Bạn không thể mua sản phẩm của chính shop mình.',
+  },
 } as const satisfies Record<string, { code: string; message: string }>;

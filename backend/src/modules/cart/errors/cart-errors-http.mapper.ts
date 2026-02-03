@@ -26,6 +26,7 @@ export class CartErrorHttpMapper {
 
       case CART_ERRORS.PRODUCT_NOT_AVAILABLE.code:
       case CART_ERRORS.VARIANT_NOT_ACTIVE.code:
+      case CART_ERRORS.VARIANT_EXPIRED.code:
       case CART_ERRORS.INSUFFICIENT_STOCK.code:
         return new ConflictException(error.message, { cause });
 
@@ -35,6 +36,7 @@ export class CartErrorHttpMapper {
         return new BadRequestException(error.message, { cause });
 
       case CART_ERRORS.CART_ITEM_NOT_OWNED.code:
+      case CART_ERRORS.CANNOT_BUY_OWN_PRODUCT.code:
         return new ForbiddenException(error.message, { cause });
 
       default:

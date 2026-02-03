@@ -11,9 +11,13 @@ import {
 import { ICartRepository } from './repository/cart.repository.interface';
 import { IPublicProductService } from '../product/public-product.service.interface';
 import { ISystemConfigService } from '../system-config/system-config.service.interface';
-import { CART_REPOSITORY } from 'src/database/typeorm/tokens/database.token';
+import {
+  CART_REPOSITORY,
+  SHOP_REPOSITORY,
+} from 'src/database/typeorm/tokens/database.token';
 import { PUBLIC_PRODUCT_SERVICE } from '../product/tokens/product.token';
 import { SYSTEM_CONFIG_SERVICE } from '../system-config/tokens/system-config.token';
+import type { IShopRepository } from '../shop/repository/shop.repository.interface';
 import { SHIPPING_FEE_DEFAULT } from '../order/constants/order.constants';
 import { CartItem } from './models/cart-item.model';
 import { WithPosition } from 'src/common/decorators/with-position.decorator';
@@ -37,6 +41,8 @@ export class CartService implements ICartService {
     private readonly productService: IPublicProductService,
     @Inject(SYSTEM_CONFIG_SERVICE)
     private readonly systemConfigService: ISystemConfigService,
+    @Inject(SHOP_REPOSITORY)
+    private readonly shopRepository: IShopRepository,
   ) {}
 
   private getUserId(): string | undefined {
@@ -140,6 +146,17 @@ export class CartService implements ICartService {
 
         return okAsync(variant);
       })
+      // Check user is not buying their own shop's product
+      .andThen((variant) =>
+        this.shopRepository.findByUserId(userId).andThen((userShop) => {
+          if (userShop && userShop.id === variant.product.shopId) {
+            return errAsync(
+              createDomainError(CART_ERRORS.CANNOT_BUY_OWN_PRODUCT),
+            );
+          }
+          return okAsync(variant);
+        }),
+      )
       .andThen((variant) =>
         this.cartRepository.findOrCreateByUserId(userId).andThen((cart) => {
           // If selectItem is true (Buy Now), deselect all other items first
