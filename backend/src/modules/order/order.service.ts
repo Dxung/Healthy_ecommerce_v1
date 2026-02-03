@@ -270,14 +270,16 @@ export class OrderService implements IOrderService {
           input.paymentMethod === PaymentMethod.WALLET
             ? this.walletService.getMyWallet()
             : okAsync(null),
-        ]).map(([coinMaxPercent, shippingFreeThreshold, coinWallet, wallet]) => ({
-          selectedItems,
-          address,
-          coinMaxPercent,
-          shippingFreeThreshold,
-          availableCoins: coinWallet?.balance ?? 0,
-          walletBalance: wallet?.availableBalance ?? 0,
-        })),
+        ]).map(
+          ([coinMaxPercent, shippingFreeThreshold, coinWallet, wallet]) => ({
+            selectedItems,
+            address,
+            coinMaxPercent,
+            shippingFreeThreshold,
+            availableCoins: coinWallet?.balance ?? 0,
+            walletBalance: wallet?.availableBalance ?? 0,
+          }),
+        ),
       )
       .andThen(
         ({
