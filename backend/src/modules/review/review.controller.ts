@@ -57,7 +57,7 @@ export class ReviewController {
   @Post('images/upload')
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:create-review')
+  @Permissions('review:create')
   @UseInterceptors(FileInterceptor('image'))
   @ApiOperation({
     summary: 'Upload a review image',
@@ -94,7 +94,7 @@ export class ReviewController {
   @Post()
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:create-review')
+  @Permissions('review:create')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a review for an order item' })
   @ApiResponse({
@@ -126,7 +126,7 @@ export class ReviewController {
   @Get('can-review/:orderItemId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:create-review')
+  @Permissions('review:create')
   @ApiOperation({ summary: 'Check if user can review an order item' })
   @ApiParam({ name: 'orderItemId', description: 'Order item ID' })
   @ApiResponse({ status: 200, type: CanReviewResponseDto })
@@ -147,7 +147,7 @@ export class ReviewController {
   @Get('reviewable-items/:productId')
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:create-review')
+  @Permissions('review:create')
   @ApiOperation({ summary: 'Get reviewable order items for a product' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiResponse({ status: 200, type: [ReviewableOrderItemResponseDto] })
@@ -167,8 +167,7 @@ export class ReviewController {
 
   @Get('my-reviews')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:read-review')
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: "Get current user's reviews" })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -205,8 +204,7 @@ export class ReviewController {
 
   @Get('order-item/:orderItemId')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:read-review')
+  @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get review by order item ID' })
   @ApiParam({ name: 'orderItemId', description: 'Order item ID' })
   @ApiResponse({ status: 200, type: ReviewResponseDto })
@@ -227,7 +225,7 @@ export class ReviewController {
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:update-review')
+  @Permissions('review:update')
   @ApiOperation({ summary: 'Update a review' })
   @ApiParam({ name: 'id', description: 'Review ID' })
   @ApiResponse({ status: 200, type: ReviewResponseDto })
@@ -251,7 +249,7 @@ export class ReviewController {
   @Delete(':id')
   @ApiBearerAuth()
   @UseGuards(AuthGuard, PermissionsGuard)
-  @Permissions('buyer:delete-review')
+  @Permissions('review:delete')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete a review' })
   @ApiParam({ name: 'id', description: 'Review ID' })
@@ -355,7 +353,7 @@ export class ProductReviewsController {
 @ApiTags('Shop - Reviews')
 @ApiBearerAuth()
 @Controller('shop/reviews')
-@UseGuards(AuthGuard, PermissionsGuard)
+@UseGuards(AuthGuard)
 export class ShopReviewsController {
   constructor(
     @Inject(REVIEW_SERVICE)
@@ -363,7 +361,6 @@ export class ShopReviewsController {
   ) {}
 
   @Get()
-  @Permissions('shop:read-review')
   @ApiOperation({ summary: 'Get reviews for my shop' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -399,7 +396,8 @@ export class ShopReviewsController {
   }
 
   @Post(':reviewId/reply')
-  @Permissions('shop:reply-review')
+  @UseGuards(PermissionsGuard)
+  @Permissions('review:reply')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Reply to a review' })
   @ApiParam({ name: 'reviewId', description: 'Review ID' })
@@ -420,7 +418,8 @@ export class ShopReviewsController {
   }
 
   @Patch(':reviewId/reply')
-  @Permissions('shop:reply-review')
+  @UseGuards(PermissionsGuard)
+  @Permissions('review:reply')
   @ApiOperation({ summary: 'Update reply to a review' })
   @ApiParam({ name: 'reviewId', description: 'Review ID' })
   @ApiResponse({ status: 200, type: ReviewReplyResponseDto })
@@ -440,7 +439,8 @@ export class ShopReviewsController {
   }
 
   @Delete(':reviewId/reply')
-  @Permissions('shop:reply-review')
+  @UseGuards(PermissionsGuard)
+  @Permissions('review:reply')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete reply to a review' })
   @ApiParam({ name: 'reviewId', description: 'Review ID' })
